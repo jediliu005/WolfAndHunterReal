@@ -38,7 +38,7 @@ import java.util.HashSet;
 /**
  * Created by Administrator on 2017/3/13.
  */
-//testingggggggggggggggg
+
 public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Callback {
     private static final String TAG = "BaseCharacterView";
     public static final int HIDDEN_LEVEL_NO_HIDDEN = 0;
@@ -107,7 +107,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public boolean isDead = false;
     public long deadTime;
     public boolean isForceToBeSawByMe = false;//注意！这属性只针对本机玩家视觉，对AI判行为无效
-    public boolean isAttacking = true;
+    public boolean judgeingAttack = false;
     public HashSet<Integer> seeMeTeamIDs;
     public GameBaseAreaActivity.GameHandler gameHandler;
     public HashSet<BaseCharacterView> theyDiscoverMe;
@@ -366,46 +366,48 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
     }
 
+
     public void normalModeOffsetLRTBParams() {
         int nowOffX = 0;
         int nowOffY = 0;
         //跳跃移动
-        if (jumpToX > -99999 && jumpToY > -99999) {
-            FrameLayout parent = (FrameLayout) getParent();
-            keepDirectionAndJump(0, 0, parent.getWidth(), parent.getHeight());
+//        if (jumpToX > -99999 && jumpToY > -99999) {
+//            FrameLayout parent = (FrameLayout) getParent();
+//            keepDirectionAndJump(0, 0, parent.getWidth(), parent.getHeight());
+//            jumpToX = -99999;
+//            jumpToY = -99999;
+//        } else {
+        //一般移动
+        nowOffX = offX;
+        nowOffY = offY;
+        //根据设定速度修正位移量
+        double offDistance = Math.sqrt(nowOffX * nowOffX + nowOffY * nowOffY);
+        int nowSpeed = speed;
+        if (offDistance < JRocker.padRadius * 3 / 4)
+            nowSpeed = speed / 2;
 
-        } else {
-            //一般移动
-            nowOffX = offX;
-            nowOffY = offY;
-            //根据设定速度修正位移量
-            double offDistance = Math.sqrt(nowOffX * nowOffX + nowOffY * nowOffY);
-            int nowSpeed = speed;
-            if (offDistance < JRocker.padRadius * 3 / 4)
-                nowSpeed = speed / 2;
+        nowOffX = (int) (nowSpeed * nowOffX / offDistance);
+        nowOffY = (int) (nowSpeed * nowOffY / offDistance);
 
-            nowOffX = (int) (nowSpeed * nowOffX / offDistance);
-            nowOffY = (int) (nowSpeed * nowOffY / offDistance);
+        //保证不超出父View边界
+        try {
+            nowOffX = ViewUtils.reviseOffX(this, (View) this.getParent(), nowOffX);
 
-            //保证不超出父View边界
-            try {
-                nowOffX = ViewUtils.reviseOffX(this, (View) this.getParent(), nowOffX);
-
-                nowOffY = ViewUtils.reviseOffY(this, (View) this.getParent(), nowOffY);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            nowOffY = ViewUtils.reviseOffY(this, (View) this.getParent(), nowOffY);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+//        }
         nowLeft = nowLeft + nowOffX;
         nowTop = nowTop + nowOffY;
         nowRight = nowLeft + getWidth();
         nowBottom = nowTop + getHeight();
-        if (jumpToX > 0 && jumpToY > 0) {
-            if (nowLeft + characterBodySize / 2 == jumpToX && nowTop + characterBodySize / 2 == jumpToY) {
-                jumpToX = -99999;
-                jumpToY = -99999;
-            }
-        }
+//        if (jumpToX > 0 && jumpToY > 0) {
+//            if (nowLeft + characterBodySize / 2 == jumpToX && nowTop + characterBodySize / 2 == jumpToY) {
+//                jumpToX = -99999;
+//                jumpToY = -99999;
+//            }
+//        }
 
 
         //判定character位置修正是否在当前视窗内，若不在，根据sight和character位置修正视窗位置
@@ -794,17 +796,14 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         int resultRelateY = 0;
 
         if (jumpToX > realLimitLeft && jumpToX < realLimitRight && jumpToY > realLimitTop && jumpToY < realLimitBottom) {
-            nowLeft = jumpToX - characterBodySize;
-            nowTop = jumpToY - characterBodySize;
+            nowLeft = jumpToX - characterBodySize/2;
+            nowTop = jumpToY - characterBodySize/2;
         } else {
-
+            judgeingAttack = false;
 
             int relateX = jumpToX - centerX;
             int relateY = jumpToY - centerY;
-            if (relateX == 0 && relateY == 0) {
-                isAttacking = false;
-                return;
-            }
+
             if (relateX == 0) {
                 if (relateY > 0)
                     resultRelateY = realLimitBottom;
@@ -888,10 +887,14 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
             nowLeft = newCenterX - getWidth() / 2;
             nowTop = newCenterY - getHeight() / 2;
-            nowRight = nowLeft + getWidth();
-            nowBottom = nowTop + getHeight();
-        }
 
+        }
+        nowRight = nowLeft + getWidth();
+        nowBottom = nowTop + getHeight();
+        if(judgeingAttack==false){
+            jumpToX=-99999;
+            jumpToY=-99999;
+        }
     }
 
     public void judgeAttack() {

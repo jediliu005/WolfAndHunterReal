@@ -30,7 +30,7 @@ public class NormalWolf extends BaseCharacterView {
     private int bolletWidth=1;
 
     boolean isReloading=false;
-    static MediaPlayer fireMediaPlayer;
+    static MediaPlayer attackMediaPlayer;
     //下面一行控制bitmap是否自适应分辨率，不强制设flase可能出现图片分辨率和draw分辨率不一致
     BitmapFactory.Options option=new BitmapFactory.Options();
     {option.inScaled=false;}
@@ -58,7 +58,7 @@ public class NormalWolf extends BaseCharacterView {
 
     public void initNormalHunter(){
         Bitmap bitmap= BitmapFactory.decodeResource(getResources(), R.drawable.word,option);
-        characterPic=Bitmap.createBitmap(bitmap,24,5,76,76,matrixForCP,true);
+        characterPic=Bitmap.createBitmap(bitmap,100,5,76,76,matrixForCP,true);
         super.reloadAttackNeedTime=reloadAttackNeedTime;
         attackCount=defaultMaxAttackCount;
         maxAttackCount=defaultMaxAttackCount;
@@ -106,7 +106,8 @@ public class NormalWolf extends BaseCharacterView {
 
         @Override
         public void run() {
-            while(isAttacking){
+            judgeingAttack=true;
+            while(judgeingAttack){
                 synchronized (GameBaseAreaActivity.allCharacters) {
                     int nowCenterX=(getLeft()+getRight())/2;
                     int nowCenterY=(getTop()+getBottom())/2;
@@ -115,18 +116,24 @@ public class NormalWolf extends BaseCharacterView {
                     double nowJumpToPointDistance = Math.sqrt(nowJumpToPointOffX * nowJumpToPointOffX + nowJumpToPointOffY * nowJumpToPointOffY);
                     int jumpSpeed = 3*speed;
                     boolean attackSuccess=false;
-
-                    int realOffX = (int) (jumpSpeed * nowJumpToPointOffX / nowJumpToPointDistance);
-                    int realOffY = (int) (jumpSpeed * nowJumpToPointOffY / nowJumpToPointDistance);
-
+                    int realOffX = 0;
+                    int realOffY = 0;
+                    if(nowJumpToPointDistance>jumpSpeed) {
+                        realOffX = (int) (jumpSpeed * nowJumpToPointOffX / nowJumpToPointDistance);
+                        realOffY = (int) (jumpSpeed * nowJumpToPointOffY / nowJumpToPointDistance);
+                    }else{
+                        realOffX=nowJumpToPointOffX;
+                        realOffY=nowJumpToPointOffY;
+                        judgeingAttack=false;
+                    }
                     for (BaseCharacterView targetCharacter : GameBaseAreaActivity.allCharacters) {
 
                         if (attackCharacter == targetCharacter||targetCharacter.getTeamID()==attackCharacter.getTeamID())
                             continue;
                         double distance = MyMathsUtils.getDistance(new Point(centerX, centerY), new Point(targetCharacter.centerX, targetCharacter.centerY));
-                        if (distance > jumpSpeed+characterBodySize/2)
+                        double realOffDistance=Math.sqrt(realOffX*realOffX+realOffY*realOffY);
+                        if (distance > realOffDistance+characterBodySize/2)
                             continue;
-
 
                         int targetCharacterSize = targetCharacter.characterBodySize;
                         int relateX = targetCharacter.centerX - centerX;
@@ -155,7 +162,7 @@ public class NormalWolf extends BaseCharacterView {
                             targetCharacter.deadTime = new Date().getTime();
                             attackCharacter.jumpToX=targetCharacter.centerX;
                             attackCharacter.jumpToY=targetCharacter.centerY;
-                            isAttacking=false;
+                            judgeingAttack=false;
                             attackSuccess=true;
                             break;
                         }
@@ -173,12 +180,13 @@ public class NormalWolf extends BaseCharacterView {
 
     @Override
     public void judgeAttack() {
-        if(attackCount<=0||isReloading||isDead){
+        super.judgeAttack();
+
+        if(judgeingAttack||attackCount<=0||isReloading||isDead){
             return;
         }
-        super.judgeAttack();
-        fireMediaPlayer=MediaPlayer.create(getContext(),R.raw.gun_fire);
-        fireMediaPlayer.start();
+        attackMediaPlayer=MediaPlayer.create(getContext(),R.raw.wolf_attack);
+        attackMediaPlayer.start();
         attackCount-=1;
         double cosAlpha=Math.cos(Math.toRadians(nowFacingAngle));
         double endX=cosAlpha*nowAttackRadius;
@@ -235,12 +243,12 @@ public class NormalWolf extends BaseCharacterView {
 //
 //            }
 //
-//        }
-
-
-        Trajectory trajectory=new Trajectory(getContext(),fromPoint,toPoint,this);
-        Message msg=gameHandler.obtainMessage(GameBaseAreaActivity.GameHandler.ADD_TRAJECTORY,trajectory);
-        gameHandler.sendMessage(msg);
+////        }
+//
+//
+//        Trajectory trajectory=new Trajectory(getContext(),fromPoint,toPoint,this);
+//        Message msg=gameHandler.obtainMessage(GameBaseAreaActivity.GameHandler.ADD_TRAJECTORY,trajectory);
+//        gameHandler.sendMessage(msg);
 
     }
 

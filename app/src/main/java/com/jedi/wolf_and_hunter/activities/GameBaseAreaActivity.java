@@ -25,6 +25,7 @@ import com.jedi.wolf_and_hunter.myViews.Trajectory;
 import com.jedi.wolf_and_hunter.myViews.ViewRange;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 import com.jedi.wolf_and_hunter.myViews.characters.NormalHunter;
+import com.jedi.wolf_and_hunter.myViews.characters.NormalWolf;
 import com.jedi.wolf_and_hunter.myViews.landform.Landform;
 import com.jedi.wolf_and_hunter.myViews.landform.TallGrassland;
 import com.jedi.wolf_and_hunter.R;
@@ -170,7 +171,7 @@ public class GameBaseAreaActivity extends Activity {
 
     private synchronized void reflashCharacterState() {
 
-        if (myCharacter == null || leftRocker == null || rightRocker == null)
+        if (myCharacter == null || leftRocker == null || rightRocker == null||mapBaseFrame==null)
             return;
         boolean isMyCharacterMoving = myCharacter.needMove;
         boolean needChange = false;
@@ -191,7 +192,10 @@ public class GameBaseAreaActivity extends Activity {
                     myCharacter.deadReset();
                     needChange = true;
 
-                } else {
+                }if(myCharacter.jumpToX>-99999&&myCharacter.jumpToY>-99999){
+                    myCharacter.keepDirectionAndJump(0,0,mapBaseFrame.getWidth(),mapBaseFrame.getHeight());
+                    needChange=true;
+                }else {
                     if (controlMode == CONTROL_MODE_MASTER) {
                         if (myCharacter.needMove == true) {
                             Log.i("GBA", "Moving Character Started");
@@ -365,7 +369,7 @@ public class GameBaseAreaActivity extends Activity {
 
         //添加我的角色
         allCharacters = new ArrayList<BaseCharacterView>();
-        myCharacter = new NormalHunter(this, virtualWindow);
+        myCharacter = new NormalWolf(this, virtualWindow);
         myCharacter.setTeamID(1);
 
         allCharacters.add(myCharacter);
@@ -374,6 +378,10 @@ public class GameBaseAreaActivity extends Activity {
 //        mapBaseFrame.addView(myCharacter);
         mapBaseFrame.myCharacter = myCharacter;
 
+
+        NormalHunter testCharacter = new NormalHunter(this, virtualWindow);
+        testCharacter.setTeamID(2);
+        allCharacters.add(testCharacter);
 
         //添加视点
         mySight = new SightView(this);
@@ -425,7 +433,7 @@ public class GameBaseAreaActivity extends Activity {
         rightAtttackButton.bringToFront();
 
 
-        startAI();
+//        startAI();
 
         for (BaseCharacterView character : allCharacters) {
 //            int left = -1;
