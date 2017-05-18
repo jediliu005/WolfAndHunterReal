@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:myView="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.jedi.wolf_and_hunter.activities.MapBaseActivity">
+
+
+    <com.jedi.wolf_and_hunter.myViews.MapBaseFrame
+        android:id="@+id/map_base_frame"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#000000"
+        >
+        <com.jedi.wolf_and_hunter.myViews.JRocker
+            android:layout_height="100dp"
+            android:layout_width="100dp"
+            android:background="#0055FF"
+            >
+
+        </com.jedi.wolf_and_hunter.myViews.JRocker>
+    </com.jedi.wolf_and_hunter.myViews.MapBaseFrame>
+
+</android.support.constraint.ConstraintLayout>

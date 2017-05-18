@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+    <resources>
+
+        <declare-styleable name="JRocker">
+            <attr name="rocker_img" format="reference" />
+            <attr name="background_ing" format="reference" />
+            <attr name="rocker_radius" format="dimension" />
+            <attr name="pad_radius" format="dimension" />
+        </declare-styleable>
+    </resources>
