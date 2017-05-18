@@ -38,7 +38,7 @@ import java.util.HashSet;
 /**
  * Created by Administrator on 2017/3/13.
  */
-
+//testing
 public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Callback {
     private static final String TAG = "BaseCharacterView";
     public static final int HIDDEN_LEVEL_NO_HIDDEN = 0;
@@ -107,7 +107,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public boolean isDead = false;
     public long deadTime;
     public boolean isForceToBeSawByMe = false;//注意！这属性只针对本机玩家视觉，对AI判行为无效
-    public boolean isAttacking=true;
+    public boolean isAttacking = true;
     public HashSet<Integer> seeMeTeamIDs;
     public GameBaseAreaActivity.GameHandler gameHandler;
     public HashSet<BaseCharacterView> theyDiscoverMe;
@@ -802,7 +802,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             int relateX = jumpToX - centerX;
             int relateY = jumpToY - centerY;
             if (relateX == 0 && relateY == 0) {
-                isAttacking=false;
+                isAttacking = false;
                 return;
             }
             if (relateX == 0) {
