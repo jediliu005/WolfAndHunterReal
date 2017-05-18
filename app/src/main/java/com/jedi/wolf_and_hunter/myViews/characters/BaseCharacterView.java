@@ -38,7 +38,7 @@ import java.util.HashSet;
 /**
  * Created by Administrator on 2017/3/13.
  */
-//testing
+//testingggggggggggggggg
 public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Callback {
     private static final String TAG = "BaseCharacterView";
     public static final int HIDDEN_LEVEL_NO_HIDDEN = 0;
