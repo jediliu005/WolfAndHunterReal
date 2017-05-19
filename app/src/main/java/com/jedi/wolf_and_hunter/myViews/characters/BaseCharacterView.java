@@ -75,9 +75,9 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public int dieCount;
     public final int defaultHiddenLevel = HIDDEN_LEVEL_NO_HIDDEN;
     public int nowAttackRadius = 600;
-    public int nowViewRadius = 460;
+    public int nowViewRadius = 500;
     public int nowForceViewRadius = 200;
-    public int speed = 10;
+    public int nowSpeed = 10;
     public SightView sight;
     public AttackRange attackRange;
     public ViewRange viewRange;
@@ -85,6 +85,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public int lastEffectY = -1;
     public Landform lastLandform;
     private int teamID;
+    public int id;
     //以下为绘图杂项
     public Bitmap characterPic;
     public Matrix matrixForCP;
@@ -325,9 +326,9 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
         //根据设定速度修正位移量
         double offDistance = Math.sqrt(nowOffX * nowOffX + nowOffY * nowOffY);
-        int nowSpeed = speed;
+        int nowMoveSpeed = nowSpeed;
         if (offDistance < JRocker.padRadius * 3 / 4)
-            nowSpeed = speed / 2;
+            nowMoveSpeed = nowSpeed / 2;
 
         nowOffX = (int) (nowSpeed * nowOffX / offDistance);
         nowOffY = (int) (nowSpeed * nowOffY / offDistance);
@@ -382,9 +383,9 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         nowOffY = offY;
         //根据设定速度修正位移量
         double offDistance = Math.sqrt(nowOffX * nowOffX + nowOffY * nowOffY);
-        int nowSpeed = speed;
+        int nowMoveSpeed = nowSpeed;
         if (offDistance < JRocker.padRadius * 3 / 4)
-            nowSpeed = speed / 2;
+            nowMoveSpeed = nowSpeed / 2;
 
         nowOffX = (int) (nowSpeed * nowOffX / offDistance);
         nowOffY = (int) (nowSpeed * nowOffY / offDistance);
@@ -402,20 +403,16 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         nowTop = nowTop + nowOffY;
         nowRight = nowLeft + getWidth();
         nowBottom = nowTop + getHeight();
-//        if (jumpToX > 0 && jumpToY > 0) {
-//            if (nowLeft + characterBodySize / 2 == jumpToX && nowTop + characterBodySize / 2 == jumpToY) {
-//                jumpToX = -99999;
-//                jumpToY = -99999;
-//            }
-//        }
+
+
 
 
         //判定character位置修正是否在当前视窗内，若不在，根据sight和character位置修正视窗位置
-        if (sight.isCharacterInWindow() == false) {
-
-            sight.goWatchingCharacter();
-
-        }
+//        if (sight.isCharacterInWindow() == false) {
+//
+//            sight.goWatchingCharacter();
+//
+//        }
 
     }
 
@@ -426,7 +423,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
         //根据设定速度修正位移量
         double offDistance = Math.sqrt(nowOffX * nowOffX + nowOffY * nowOffY);
-        int nowSpeed = speed;
+        int nowMoveSpeed = nowSpeed;
         if (offDistance > nowSpeed) {
             nowOffX = (int) (nowSpeed * nowOffX / offDistance);
             nowOffY = (int) (nowSpeed * nowOffY / offDistance);
@@ -772,11 +769,17 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             }
             centerX = nowLeft + getWidth() / 2;
             centerY = nowTop + getHeight() / 2;
+            if(isMyCharacter){
+                virtualWindow.targetLeft=centerX-MyVirtualWindow.getWindowWidth(getContext())/2;
+                virtualWindow.targetTop=centerY-MyVirtualWindow.getWindowHeight(getContext())/2;
+            }
 
         }
         if (nowTime - deadTime > 2500) {
             isDead = false;
             deadTime = 0;
+
+
         }
 
     }
@@ -786,11 +789,19 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         centerX = (nowLeft + nowRight) / 2;
         centerY = (nowTop + nowBottom) / 2;
 
+
+
         //注意添加Character本身宽度修正
         int realLimitLeft = limitLeft + getWidth() / 2;
         int realLimitTop = limitTop + getHeight() / 2;
         int realLimitRight = limitRight - getWidth() / 2;
         int realLimitBottom = limitBottom - getHeight() / 2;
+
+
+        int realRelateLimitLeft = realLimitLeft-centerX;
+        int realRelateLimitTop = realLimitTop-centerY;
+        int realRelateLimitRight = realLimitRight-centerX;
+        int realRelateLimitBottom = realLimitBottom-centerY;
 
         int resultRelateX = 0;
         int resultRelateY = 0;
@@ -806,15 +817,15 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
             if (relateX == 0) {
                 if (relateY > 0)
-                    resultRelateY = realLimitBottom;
+                    resultRelateY = realRelateLimitBottom;
                 else {
-                    resultRelateY = realLimitTop;
+                    resultRelateY = realRelateLimitTop;
                 }
             } else if (relateY == 0) {
                 if (relateX > 0)
-                    resultRelateX = realLimitRight;
+                    resultRelateX = realRelateLimitRight;
                 else {
-                    resultRelateX = realLimitLeft;
+                    resultRelateX = realRelateLimitLeft;
                 }
             } else {
 
@@ -828,47 +839,47 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                 if (tanAlpha > 0) {
                     if (relateX > 0) {
                         //BR
-                        resultRelateY = (int) (tanAlpha * realLimitRight);
+                        resultRelateY = (int) (tanAlpha * realRelateLimitRight);
 
-                        if (resultRelateY > realLimitBottom) {
-                            resultRelateY = realLimitBottom;
-                            resultRelateX = (int) (realLimitBottom / tanAlpha);
+                        if (resultRelateY > realRelateLimitBottom) {
+                            resultRelateY = realRelateLimitBottom;
+                            resultRelateX = (int) (realRelateLimitBottom / tanAlpha);
                         } else {
-                            resultRelateX = realLimitRight;
+                            resultRelateX = realRelateLimitRight;
                         }
 
                     } else if (relateX < 0) {
                         //TL
-                        resultRelateY = (int) (tanAlpha * realLimitLeft);
+                        resultRelateY = (int) (tanAlpha * realRelateLimitLeft);
 
-                        if (resultRelateY < realLimitTop) {
-                            resultRelateY = realLimitTop;
-                            resultRelateX = (int) (realLimitTop / tanAlpha);
+                        if (resultRelateY < realRelateLimitTop) {
+                            resultRelateY = realRelateLimitTop;
+                            resultRelateX = (int) (realRelateLimitTop / tanAlpha);
                         } else {
-                            resultRelateX = realLimitLeft;
+                            resultRelateX = realRelateLimitLeft;
                         }
                     }
 
                 } else if (tanAlpha < 0) {
                     if (relateX > 0) {
                         //TR
-                        resultRelateY = (int) (tanAlpha * realLimitRight);
+                        resultRelateY = (int) (tanAlpha * realRelateLimitRight);
 
-                        if (resultRelateY < realLimitTop) {
-                            resultRelateY = realLimitTop;
-                            resultRelateX = (int) (realLimitTop / tanAlpha);
+                        if (resultRelateY < realRelateLimitTop) {
+                            resultRelateY = realRelateLimitTop;
+                            resultRelateX = (int) (realRelateLimitTop / tanAlpha);
                         } else {
-                            resultRelateX = realLimitRight;
+                            resultRelateX = realRelateLimitRight;
                         }
                     } else if (relateX < 0) {
                         //BL
-                        resultRelateY = (int) (tanAlpha * realLimitLeft);
+                        resultRelateY = (int) (tanAlpha * realRelateLimitLeft);
 
-                        if (resultRelateY > realLimitBottom) {
-                            resultRelateY = realLimitBottom;
-                            resultRelateX = (int) (realLimitBottom / tanAlpha);
+                        if (resultRelateY > realRelateLimitBottom) {
+                            resultRelateY = realRelateLimitBottom;
+                            resultRelateX = (int) (realRelateLimitBottom / tanAlpha);
                         } else {
-                            resultRelateX = realLimitLeft;
+                            resultRelateX = realRelateLimitLeft;
                         }
                     }
 

@@ -203,7 +203,7 @@ public class BaseAI extends TimerTask {
                     targetCharacter = character;
                     intent = INTENT_ATTACK;
                     return;
-                } else {//对方不在我方发现范围内
+                } else {//对方此刻没被发现
                     //如果对方是突然消失的话即展开追击
                     if (targetCharacter != null) {
                         hasDealTrackOnce = false;
@@ -215,10 +215,6 @@ public class BaseAI extends TimerTask {
                         intent = INTENT_TRACK_CHARACTER;
                         continue;
 
-                    } else {//没有目标或者目标丢失，改为狩猎模式
-
-                        intent = INTENT_HUNT;
-                        continue;
                     }
                 }
             }
@@ -285,11 +281,12 @@ public class BaseAI extends TimerTask {
     }
 
     public void trackCharacter() {
-        if(targetCharacter==null||targetCharacter.isDead==true){
-            reset();
-            return;
-        }
+
         if (hasDealTrackOnce == false) {
+            if(targetCharacter==null||targetCharacter.isDead==true){
+                reset();
+                return;
+            }
             int searchRelateX = targetCharacter.centerX - bindingCharacter.centerX;
             int searchRelateY = targetCharacter.centerY - bindingCharacter.centerY;
             float searchToAngle = MyMathsUtils.getAngleBetweenXAxus(searchRelateX, searchRelateY);
@@ -333,6 +330,7 @@ public class BaseAI extends TimerTask {
         trackTrajectory=null;
         hasDealTrackOnce = false;
     }
+
 
 //    public void initBeforeAttact() {
 //        targetX = -1;
@@ -424,15 +422,15 @@ public class BaseAI extends TimerTask {
             targetX = 100;
         }
         if (bindingCharacter.centerX < targetX) {
-            if (bindingCharacter.centerX + bindingCharacter.speed > targetX)
+            if (bindingCharacter.centerX + bindingCharacter.nowSpeed > targetX)
                 bindingCharacter.nowLeft = targetX - bindingCharacter.getWidth() / 2;
             else
-                bindingCharacter.nowLeft = bindingCharacter.nowLeft + bindingCharacter.speed;
+                bindingCharacter.nowLeft = bindingCharacter.nowLeft + bindingCharacter.nowSpeed;
         } else {
-            if (bindingCharacter.centerX - bindingCharacter.speed < targetX)
+            if (bindingCharacter.centerX - bindingCharacter.nowSpeed < targetX)
                 bindingCharacter.nowLeft = targetX - bindingCharacter.getWidth() / 2;
             else
-                bindingCharacter.nowLeft = bindingCharacter.nowLeft - bindingCharacter.speed;
+                bindingCharacter.nowLeft = bindingCharacter.nowLeft - bindingCharacter.nowSpeed;
         }
         bindingCharacter.centerX = bindingCharacter.nowLeft + bindingCharacter.getWidth() / 2;
         bindingCharacter.centerY = bindingCharacter.nowTop + bindingCharacter.getHeight() / 2;

@@ -16,8 +16,8 @@ import java.util.TimerTask;
         */
 
 public class MyVirtualWindow {
-    public static int windowWidth;
-    public static int windowHeight;
+    private static int windowWidth;
+    private static int windowHeight;
     public int left;
     public int top;
     public int right;

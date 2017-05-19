@@ -145,10 +145,10 @@ public class SightView extends SurfaceView implements SurfaceHolder.Callback {
         int nowSightCenterX = (nowLeft + nowRight) / 2;
         int nowSightCenterY = (nowTop + nowBottom) / 2;
         //注意添加sight本身宽度修正
-        int realLimitLeft = limitLeft + getWidth() / 2 - nowCharacterCenterX;
-        int realLimitTop = limitTop + getHeight() / 2 - nowCharacterCenterY;
-        int realLimitRight = limitRight - getWidth() / 2 - nowCharacterCenterX;
-        int realLimitBottom = limitBottom - getHeight() / 2 - nowCharacterCenterY;
+        int realRelateLimitLeft = limitLeft + getWidth() / 2 - nowCharacterCenterX;
+        int realRelateLimitTop = limitTop + getHeight() / 2 - nowCharacterCenterY;
+        int realRelateLimitRight = limitRight - getWidth() / 2 - nowCharacterCenterX;
+        int realRelateLimitBottom = limitBottom - getHeight() / 2 - nowCharacterCenterY;
 
         int resultRelateX = 0;
         int resultRelateY = 0;
@@ -159,15 +159,15 @@ public class SightView extends SurfaceView implements SurfaceHolder.Callback {
 
         if (relateX == 0) {
             if (relateY > 0)
-                resultRelateY = realLimitBottom;
+                resultRelateY = realRelateLimitBottom;
             else {
-                resultRelateY = realLimitTop;
+                resultRelateY = realRelateLimitTop;
             }
         } else if (relateY == 0) {
             if (relateX > 0)
-                resultRelateX = realLimitRight;
+                resultRelateX = realRelateLimitRight;
             else {
-                resultRelateX = realLimitLeft;
+                resultRelateX = realRelateLimitLeft;
             }
         } else {
 
@@ -181,47 +181,47 @@ public class SightView extends SurfaceView implements SurfaceHolder.Callback {
             if (tanAlpha > 0) {
                 if (relateX > 0) {
                     //BR
-                    resultRelateY = (int) (tanAlpha * realLimitRight);
+                    resultRelateY = (int) (tanAlpha * realRelateLimitRight);
 
-                    if (resultRelateY > realLimitBottom) {
-                        resultRelateY = realLimitBottom;
-                        resultRelateX = (int) (realLimitBottom / tanAlpha);
+                    if (resultRelateY > realRelateLimitBottom) {
+                        resultRelateY = realRelateLimitBottom;
+                        resultRelateX = (int) (realRelateLimitBottom / tanAlpha);
                     } else {
-                        resultRelateX = realLimitRight;
+                        resultRelateX = realRelateLimitRight;
                     }
 
                 } else if (relateX < 0) {
                     //TL
-                    resultRelateY = (int) (tanAlpha * realLimitLeft);
+                    resultRelateY = (int) (tanAlpha * realRelateLimitLeft);
 
-                    if (resultRelateY < realLimitTop) {
-                        resultRelateY = realLimitTop;
-                        resultRelateX = (int) (realLimitTop / tanAlpha);
+                    if (resultRelateY < realRelateLimitTop) {
+                        resultRelateY = realRelateLimitTop;
+                        resultRelateX = (int) (realRelateLimitTop / tanAlpha);
                     } else {
-                        resultRelateX = realLimitLeft;
+                        resultRelateX = realRelateLimitLeft;
                     }
                 }
 
             } else if (tanAlpha < 0) {
                 if (relateX > 0) {
                     //TR
-                    resultRelateY = (int) (tanAlpha * realLimitRight);
+                    resultRelateY = (int) (tanAlpha * realRelateLimitRight);
 
-                    if (resultRelateY < realLimitTop) {
-                        resultRelateY = realLimitTop;
-                        resultRelateX = (int) (realLimitTop / tanAlpha);
+                    if (resultRelateY < realRelateLimitTop) {
+                        resultRelateY = realRelateLimitTop;
+                        resultRelateX = (int) (realRelateLimitTop / tanAlpha);
                     } else {
-                        resultRelateX = realLimitRight;
+                        resultRelateX = realRelateLimitRight;
                     }
                 } else if (relateX < 0) {
                     //BL
-                    resultRelateY = (int) (tanAlpha * realLimitLeft);
+                    resultRelateY = (int) (tanAlpha * realRelateLimitLeft);
 
-                    if (resultRelateY > realLimitBottom) {
-                        resultRelateY = realLimitBottom;
-                        resultRelateX = (int) (realLimitBottom / tanAlpha);
+                    if (resultRelateY > realRelateLimitBottom) {
+                        resultRelateY = realRelateLimitBottom;
+                        resultRelateX = (int) (realRelateLimitBottom / tanAlpha);
                     } else {
-                        resultRelateX = realLimitLeft;
+                        resultRelateX = realRelateLimitLeft;
                     }
                 }
 
@@ -474,7 +474,12 @@ public class SightView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
 
-
+    public void virtualWindowPassiveFollow(){
+        int nowCenterX=bindingCharacter.nowLeft+getWidth()/2;
+        int nowCenterY=bindingCharacter.nowTop+getHeight()/2;
+        virtualWindow.targetLeft=nowCenterX-MyVirtualWindow.getWindowWidth(getContext())/2;
+        virtualWindow.targetTop=nowCenterY-MyVirtualWindow.getWindowHeight(getContext())/2;
+    }
 
 
     @Override

@@ -26,6 +26,9 @@ public class NormalHunter extends BaseCharacterView {
     private final static String characterName="普通猎人";
     private final static int defaultMaxAttackCount=2;
     private final static int reloadAttackNeedTime=3000;
+    public  final static int defaultAttackRadius=700;
+    public  final static int defaultViewRadius=500;
+    public  final static int defaultSpeed=10;
     public  final static int defaultAngleChangSpeed=2;
     private int bolletWidth=1;
     boolean isReloading=false;
@@ -63,6 +66,9 @@ public class NormalHunter extends BaseCharacterView {
         super.reloadAttackNeedTime=reloadAttackNeedTime;
         attackCount=defaultMaxAttackCount;
         maxAttackCount=defaultMaxAttackCount;
+        nowAttackRadius=defaultAttackRadius;
+        nowViewRadius=defaultViewRadius;
+        nowSpeed=defaultSpeed;
         super.angleChangSpeed=defaultAngleChangSpeed;
         if(this.virtualWindow==null)
             this.virtualWindow=GameBaseAreaActivity.virtualWindow;

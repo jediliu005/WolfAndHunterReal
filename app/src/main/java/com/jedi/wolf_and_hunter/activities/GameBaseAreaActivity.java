@@ -192,7 +192,7 @@ public class GameBaseAreaActivity extends Activity {
                     myCharacter.deadReset();
                     needChange = true;
 
-                }if(myCharacter.jumpToX>-99999&&myCharacter.jumpToY>-99999){
+                }else if(myCharacter.jumpToX>-99999&&myCharacter.jumpToY>-99999){
                     myCharacter.keepDirectionAndJump(0,0,mapBaseFrame.getWidth(),mapBaseFrame.getHeight());
                     needChange=true;
                 }else {
@@ -221,6 +221,8 @@ public class GameBaseAreaActivity extends Activity {
                             mySight.normalModeOffsetLRTBParams();
                             Log.i("GBA", "Moving Sight ended");
                             needChange = true;
+                        }else{
+                            mySight.virtualWindowPassiveFollow();
                         }
 
                     }
@@ -316,7 +318,7 @@ public class GameBaseAreaActivity extends Activity {
     }
 
     private void startAI() {
-        for (int i = 3; i < 6; i++) {
+        for (int i = 3; i < 4; i++) {
             NormalHunter aiCharacter = new NormalHunter(this,virtualWindow);
 //            FrameLayout.LayoutParams c1LP = (FrameLayout.LayoutParams) aiCharacter.getLayoutParams();
 //            c1LP.leftMargin = mapBaseFrame.getWidth() - 200;
@@ -324,7 +326,8 @@ public class GameBaseAreaActivity extends Activity {
 //            aiCharacter.nowFacingAngle = new Random().nextInt(359);
 //            aiCharacter.setLayoutParams(c1LP);
             aiCharacter.gameHandler=gameHandler;
-            aiCharacter.setTeamID(i%2+1);
+            aiCharacter.setTeamID(i-1);
+//            aiCharacter.setTeamID(i%2+1);
 //            ViewRange viewRange = new ViewRange(this, aiCharacter);
 //            AttackRange attackRange = new AttackRange(this, aiCharacter);
 //            mapBaseFrame.addView(viewRange);
@@ -350,14 +353,21 @@ public class GameBaseAreaActivity extends Activity {
         int widthCount = mapBaseFrame.mapWidth / 100;
         int heightCount = mapBaseFrame.mapHeight / 100;
         landformses = new Landform[heightCount][widthCount];
+        Random r=new Random();
         for (int i = 0; i < landformses.length; i++) {
-            if (Math.abs(i) % 3 == 0) {
                 for (int j = 0; j < landformses[i].length; j++) {
-                    if (Math.abs(i - j) % 3 == 0)
+                    if (r.nextInt(10) >5 )
                         landformses[i][j] = new TallGrassland(this);
                 }
-            }
         }
+//        for (int i = 0; i < landformses.length; i++) {
+//            if (Math.abs(i) % 3 == 0) {
+//                for (int j = 0; j < landformses[i].length; j++) {
+//                    if (Math.abs(i - j) % 3 == 0)
+//                        landformses[i][j] = new TallGrassland(this);
+//                }
+//            }
+//        }
 
         allTrajectories=new ArrayList<Trajectory>();
 
@@ -369,6 +379,7 @@ public class GameBaseAreaActivity extends Activity {
 
         //添加我的角色
         allCharacters = new ArrayList<BaseCharacterView>();
+//        myCharacter = new NormalHunter(this, virtualWindow);
         myCharacter = new NormalWolf(this, virtualWindow);
         myCharacter.setTeamID(1);
 
@@ -379,9 +390,9 @@ public class GameBaseAreaActivity extends Activity {
         mapBaseFrame.myCharacter = myCharacter;
 
 
-        NormalHunter testCharacter = new NormalHunter(this, virtualWindow);
-        testCharacter.setTeamID(2);
-        allCharacters.add(testCharacter);
+//        NormalHunter testCharacter = new NormalHunter(this, virtualWindow);
+//        testCharacter.setTeamID(2);
+//        allCharacters.add(testCharacter);
 
         //添加视点
         mySight = new SightView(this);
@@ -433,7 +444,7 @@ public class GameBaseAreaActivity extends Activity {
         rightAtttackButton.bringToFront();
 
 
-//        startAI();
+        startAI();
 
         for (BaseCharacterView character : allCharacters) {
 //            int left = -1;

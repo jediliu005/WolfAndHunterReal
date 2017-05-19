@@ -23,31 +23,40 @@ import java.util.Date;
 
 public class NormalWolf extends BaseCharacterView {
     private static final String TAG = "NormalHunter";
-    private final static String characterName="普通狼";
-    private final static int defaultMaxAttackCount=3;
-    private final static int reloadAttackNeedTime=2000;
-    public  final static int defaultAngleChangSpeed=2;
-    private int bolletWidth=1;
+    private final static String characterName = "普通狼";
+    private final static int defaultMaxAttackCount = 3;
+    private final static int reloadAttackNeedTime = 2000;
+    public final static int defaultAngleChangSpeed = 2;
+    public final static int defaultAttackRadius = 300;
+    public final static int defaultViewRadius = 400;
+    public final static int defaultSpeed = 13;
+    private int bolletWidth = 1;
+    boolean isStop = false;
 
-    boolean isReloading=false;
     static MediaPlayer attackMediaPlayer;
     //下面一行控制bitmap是否自适应分辨率，不强制设flase可能出现图片分辨率和draw分辨率不一致
-    BitmapFactory.Options option=new BitmapFactory.Options();
-    {option.inScaled=false;}
-    public static final int defaultHiddenLevel=BaseCharacterView.HIDDEN_LEVEL_NO_HIDDEN;
+    BitmapFactory.Options option = new BitmapFactory.Options();
+
+    {
+        option.inScaled = false;
+    }
+
+    public static final int defaultHiddenLevel = BaseCharacterView.HIDDEN_LEVEL_NO_HIDDEN;
 
     public NormalWolf(Context context) {
         super(context);
         initNormalHunter();
     }
+
     /**
      * myCharacter最好用这个构造方法
+     *
      * @param context
      * @param virtualWindow
      */
     public NormalWolf(Context context, MyVirtualWindow virtualWindow) {
         super(context);
-        this.virtualWindow=virtualWindow;
+        this.virtualWindow = virtualWindow;
         initNormalHunter();
     }
 
@@ -56,38 +65,44 @@ public class NormalWolf extends BaseCharacterView {
         initNormalHunter();
     }
 
-    public void initNormalHunter(){
-        Bitmap bitmap= BitmapFactory.decodeResource(getResources(), R.drawable.word,option);
-        characterPic=Bitmap.createBitmap(bitmap,100,5,76,76,matrixForCP,true);
-        super.reloadAttackNeedTime=reloadAttackNeedTime;
-        attackCount=defaultMaxAttackCount;
-        maxAttackCount=defaultMaxAttackCount;
-        super.angleChangSpeed=defaultAngleChangSpeed;
-        if(this.virtualWindow==null)
-            this.virtualWindow=GameBaseAreaActivity.virtualWindow;
+    public void initNormalHunter() {
+        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.word, option);
+        characterPic = Bitmap.createBitmap(bitmap, 100, 5, 76, 76, matrixForCP, true);
+        super.reloadAttackNeedTime = reloadAttackNeedTime;
+        attackCount = defaultMaxAttackCount;
+        maxAttackCount = defaultMaxAttackCount;
+        nowAttackRadius = defaultAttackRadius;
+        nowViewRadius = defaultViewRadius;
+        nowSpeed = defaultSpeed;
+        super.angleChangSpeed = defaultAngleChangSpeed;
+        if (this.virtualWindow == null)
+            this.virtualWindow = GameBaseAreaActivity.virtualWindow;
+        reloadAttackCount();
     }
 
     @Override
-    public void reloadAttackCount(){
-        if(isReloading==true)
-            return;
+    public void reloadAttackCount() {
         new Thread(
                 new Runnable() {
                     @Override
                     public void run() {
-                        isReloading=true;
-                        Date now=new Date();
-                        reloadAttackStartTime=now.getTime();//这参数用于攻击按钮饼图显示
-                        try {
-                            Thread.sleep(reloadAttackNeedTime);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+                        while (isStop == false) {
+                            if (attackCount == maxAttackCount)
+                                continue;
+                            long nowTime = new Date().getTime();
+                            if (reloadAttackStartTime == 0) {
+                                reloadAttackStartTime = nowTime;//这参数用于攻击按钮饼图显示
+                                continue;
+                            } else if (nowTime - reloadAttackStartTime >= reloadAttackNeedTime) {
+                                attackCount++;
+                                reloadAttackStartTime = 0;
+                            }
+                            try {
+                                Thread.sleep(200);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
                         }
-                        if(attackCount<maxAttackCount)
-                              attackCount=attackCount++;
-
-                        reloadAttackStartTime=0;
-                        isReloading=false;
                     }
                 }
 
@@ -95,44 +110,45 @@ public class NormalWolf extends BaseCharacterView {
 
     }
 
-    private class AttackThread implements Runnable{
+    private class AttackThread implements Runnable {
 
         BaseCharacterView attackCharacter;
         Point jumpToPoint;
-        public AttackThread(BaseCharacterView attackCharacter,Point jumpToPoint){
-            this.attackCharacter=attackCharacter;
-            this.jumpToPoint=jumpToPoint;
+
+        public AttackThread(BaseCharacterView attackCharacter, Point jumpToPoint) {
+            this.attackCharacter = attackCharacter;
+            this.jumpToPoint = jumpToPoint;
         }
 
         @Override
         public void run() {
-            judgeingAttack=true;
-            while(judgeingAttack){
+            judgeingAttack = true;
+            while (judgeingAttack) {
                 synchronized (GameBaseAreaActivity.allCharacters) {
-                    int nowCenterX=(getLeft()+getRight())/2;
-                    int nowCenterY=(getTop()+getBottom())/2;
-                    int nowJumpToPointOffX=jumpToPoint.x-nowCenterX;
-                    int nowJumpToPointOffY=jumpToPoint.y-nowCenterY;
+                    int nowCenterX = (getLeft() + getRight()) / 2;
+                    int nowCenterY = (getTop() + getBottom()) / 2;
+                    int nowJumpToPointOffX = jumpToPoint.x - nowCenterX;
+                    int nowJumpToPointOffY = jumpToPoint.y - nowCenterY;
                     double nowJumpToPointDistance = Math.sqrt(nowJumpToPointOffX * nowJumpToPointOffX + nowJumpToPointOffY * nowJumpToPointOffY);
-                    int jumpSpeed = 3*speed;
-                    boolean attackSuccess=false;
+                    int jumpSpeed = 3 * nowSpeed;
+                    boolean attackSuccess = false;
                     int realOffX = 0;
                     int realOffY = 0;
-                    if(nowJumpToPointDistance>jumpSpeed) {
+                    if (nowJumpToPointDistance > jumpSpeed) {
                         realOffX = (int) (jumpSpeed * nowJumpToPointOffX / nowJumpToPointDistance);
                         realOffY = (int) (jumpSpeed * nowJumpToPointOffY / nowJumpToPointDistance);
-                    }else{
-                        realOffX=nowJumpToPointOffX;
-                        realOffY=nowJumpToPointOffY;
-                        judgeingAttack=false;
+                    } else {
+                        realOffX = nowJumpToPointOffX;
+                        realOffY = nowJumpToPointOffY;
+                        judgeingAttack = false;
                     }
                     for (BaseCharacterView targetCharacter : GameBaseAreaActivity.allCharacters) {
 
-                        if (attackCharacter == targetCharacter||targetCharacter.getTeamID()==attackCharacter.getTeamID())
+                        if (attackCharacter == targetCharacter || targetCharacter.getTeamID() == attackCharacter.getTeamID())
                             continue;
                         double distance = MyMathsUtils.getDistance(new Point(centerX, centerY), new Point(targetCharacter.centerX, targetCharacter.centerY));
-                        double realOffDistance=Math.sqrt(realOffX*realOffX+realOffY*realOffY);
-                        if (distance > realOffDistance+characterBodySize/2)
+                        double realOffDistance = Math.sqrt(realOffX * realOffX + realOffY * realOffY);
+                        if (distance > realOffDistance + characterBodySize / 2)
                             continue;
 
                         int targetCharacterSize = targetCharacter.characterBodySize;
@@ -160,17 +176,17 @@ public class NormalWolf extends BaseCharacterView {
                             attackCharacter.killCount++;
                             targetCharacter.dieCount++;
                             targetCharacter.deadTime = new Date().getTime();
-                            attackCharacter.jumpToX=targetCharacter.centerX;
-                            attackCharacter.jumpToY=targetCharacter.centerY;
-                            judgeingAttack=false;
-                            attackSuccess=true;
+                            attackCharacter.jumpToX = targetCharacter.centerX;
+                            attackCharacter.jumpToY = targetCharacter.centerY;
+                            judgeingAttack = false;
+                            attackSuccess = true;
                             break;
                         }
 
                     }
-                    if(attackSuccess==false){
-                        attackCharacter.jumpToX=nowCenterX+realOffX;
-                        attackCharacter.jumpToY=nowCenterY+realOffY;
+                    if (attackSuccess == false) {
+                        attackCharacter.jumpToX = nowCenterX + realOffX;
+                        attackCharacter.jumpToY = nowCenterY + realOffY;
                     }
 
                 }
@@ -182,23 +198,23 @@ public class NormalWolf extends BaseCharacterView {
     public void judgeAttack() {
         super.judgeAttack();
 
-        if(judgeingAttack||attackCount<=0||isReloading||isDead){
+        if (judgeingAttack || attackCount <= 0  || isDead) {
             return;
         }
-        attackMediaPlayer=MediaPlayer.create(getContext(),R.raw.wolf_attack);
+        attackMediaPlayer = MediaPlayer.create(getContext(), R.raw.wolf_attack);
         attackMediaPlayer.start();
-        attackCount-=1;
-        double cosAlpha=Math.cos(Math.toRadians(nowFacingAngle));
-        double endX=cosAlpha*nowAttackRadius;
+        attackCount -= 1;
+        double cosAlpha = Math.cos(Math.toRadians(nowFacingAngle));
+        double endX = cosAlpha * nowAttackRadius;
 
-        double endY=Math.sqrt(nowAttackRadius*nowAttackRadius-endX*endX);
-        if(nowFacingAngle>=180)
-            endY=-endY;
-        endX=endX+centerX;
-        endY=endY+centerY;
-        Point fromPoint=new Point(centerX,centerY);
-        Point toPoint=new Point((int)endX,(int)endY);
-        new Thread(new AttackThread(this,toPoint)).start();
+        double endY = Math.sqrt(nowAttackRadius * nowAttackRadius - endX * endX);
+        if (nowFacingAngle >= 180)
+            endY = -endY;
+        endX = endX + centerX;
+        endY = endY + centerY;
+        Point fromPoint = new Point(centerX, centerY);
+        Point toPoint = new Point((int) endX, (int) endY);
+        new Thread(new AttackThread(this, toPoint)).start();
 //        synchronized (GameBaseAreaActivity.allCharacters) {
 //            for (BaseCharacterView targetCharacter : GameBaseAreaActivity.allCharacters) {
 //
