@@ -14,6 +14,7 @@ import android.widget.TextView;
 
 import com.jedi.wolf_and_hunter.ai.BaseAI;
 import com.jedi.wolf_and_hunter.myObj.MyVirtualWindow;
+import com.jedi.wolf_and_hunter.myObj.PlayerInfo;
 import com.jedi.wolf_and_hunter.myViews.AttackButton;
 import com.jedi.wolf_and_hunter.myViews.AttackRange;
 import com.jedi.wolf_and_hunter.myViews.GameMap;
@@ -68,6 +69,7 @@ public class GameBaseAreaActivity extends Activity {
     Timer timerForAllMoving = new Timer();
     Timer timerForTrajectory = new Timer();
     ArrayList<Timer> timerForAIList = new ArrayList<Timer>();
+    ArrayList<PlayerInfo> playerInfos;
     Landform[][] landformses;
     public static MyVirtualWindow virtualWindow;
 
@@ -95,21 +97,21 @@ public class GameBaseAreaActivity extends Activity {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case ADD_TRAJECTORY:
-                    Trajectory trajectory=(Trajectory)(msg.obj);
-                    trajectory.addTime=new Date().getTime();
+                    Trajectory trajectory = (Trajectory) (msg.obj);
+                    trajectory.addTime = new Date().getTime();
                     allTrajectories.add(trajectory);
                     trajectory.addTrajectory(mapBaseFrame);
                     break;
                 case REMOVE_TRAJECTORY:
-                    long nowTime=new Date().getTime();
-                    ArrayList<Trajectory> removeTrajectories=new ArrayList<Trajectory>();
-                    for(Trajectory t:allTrajectories){
-                        if(nowTime-t.addTime>1000){
+                    long nowTime = new Date().getTime();
+                    ArrayList<Trajectory> removeTrajectories = new ArrayList<Trajectory>();
+                    for (Trajectory t : allTrajectories) {
+                        if (nowTime - t.addTime > 1000) {
                             removeTrajectories.add(t);
                             t.parent.removeView(t);
                         }
                     }
-                    for(Trajectory removeTarjectory:removeTrajectories){
+                    for (Trajectory removeTarjectory : removeTrajectories) {
                         allTrajectories.remove(removeTarjectory);
                     }
                     break;
@@ -119,20 +121,20 @@ public class GameBaseAreaActivity extends Activity {
             }
 
 
-            for(int i=0;i<allCharacters.size();i++) {
-                BaseCharacterView c=allCharacters.get(i);
-                TextView target=null;
-                if(i==0)
-                    target=t1;
-                else if(i==1)
-                    target=t2;
-                else if(i==2)
-                    target=t3;
-                else if(i==3)
-                    target=t4;
-                if(target==null)
+            for (int i = 0; i < allCharacters.size(); i++) {
+                BaseCharacterView c = allCharacters.get(i);
+                TextView target = null;
+                if (i == 0)
+                    target = t1;
+                else if (i == 1)
+                    target = t2;
+                else if (i == 2)
+                    target = t3;
+                else if (i == 3)
+                    target = t4;
+                if (target == null)
                     continue;
-                target.setText((i+1)+"P:杀" + Integer.toString(c.killCount)+"  挂"+ Integer.toString(c.dieCount));
+                target.setText((i + 1) + "P:杀" + Integer.toString(c.killCount) + "  挂" + Integer.toString(c.dieCount));
 
 
             }
@@ -168,10 +170,9 @@ public class GameBaseAreaActivity extends Activity {
 //    }
 
 
-
     private synchronized void reflashCharacterState() {
 
-        if (myCharacter == null || leftRocker == null || rightRocker == null||mapBaseFrame==null)
+        if (myCharacter == null || leftRocker == null || rightRocker == null || mapBaseFrame == null)
             return;
         boolean isMyCharacterMoving = myCharacter.needMove;
         boolean needChange = false;
@@ -181,7 +182,7 @@ public class GameBaseAreaActivity extends Activity {
                 virtualWindow.hasUpdatedWindowPosition = false;
                 //获得当前位置
                 myCharacter.updateNowPosition();
-                if(mySight!=null) {
+                if (mySight != null) {
                     mySight.hasUpdatedPosition = false;
                     mySight.updateNowPosition();
                 }
@@ -192,10 +193,10 @@ public class GameBaseAreaActivity extends Activity {
                     myCharacter.deadReset();
                     needChange = true;
 
-                }else if(myCharacter.jumpToX>-99999&&myCharacter.jumpToY>-99999){
-                    myCharacter.keepDirectionAndJump(0,0,mapBaseFrame.getWidth(),mapBaseFrame.getHeight());
-                    needChange=true;
-                }else {
+                } else if (myCharacter.jumpToX > -99999 && myCharacter.jumpToY > -99999) {
+                    myCharacter.keepDirectionAndJump(0, 0, mapBaseFrame.getWidth(), mapBaseFrame.getHeight());
+                    needChange = true;
+                } else {
                     if (controlMode == CONTROL_MODE_MASTER) {
                         if (myCharacter.needMove == true) {
                             Log.i("GBA", "Moving Character Started");
@@ -203,7 +204,7 @@ public class GameBaseAreaActivity extends Activity {
                             needChange = true;
                             Log.i("GBA", "Moving Character ended");
                         }
-                        if (mySight!=null&&mySight.needMove == true) {
+                        if (mySight != null && mySight.needMove == true) {
                             Log.i("GBA", "Moving Sight Started");
                             mySight.masterModeOffsetLRTBParams(isMyCharacterMoving);
                             Log.i("GBA", "Moving Sight ended");
@@ -216,12 +217,12 @@ public class GameBaseAreaActivity extends Activity {
                             needChange = true;
                             Log.i("GBA", "Moving Character ended");
                         }
-                        if (mySight!=null&&mySight.needMove == true) {
+                        if (mySight != null && mySight.needMove == true) {
                             Log.i("GBA", "Moving Sight Started");
                             mySight.normalModeOffsetLRTBParams();
                             Log.i("GBA", "Moving Sight ended");
                             needChange = true;
-                        }else{
+                        } else {
                             mySight.virtualWindowPassiveFollow();
                         }
 
@@ -318,15 +319,22 @@ public class GameBaseAreaActivity extends Activity {
     }
 
     private void startAI() {
-        for (int i = 3; i < 4; i++) {
-            NormalHunter aiCharacter = new NormalHunter(this,virtualWindow);
+        for (int i = 1; i < playerInfos.size(); i++) {
+            PlayerInfo playerInfo=playerInfos.get(i);
+            if(playerInfo.isAvailable==false)
+                continue;
+            BaseCharacterView aiCharacter=null;
+            if(playerInfo.characterType==PlayerInfo.CHARACTER_TYPE_NORMAL_HUNTER)
+                aiCharacter = new NormalHunter(this, virtualWindow);
+            else
+                aiCharacter = new NormalWolf(this, virtualWindow);
 //            FrameLayout.LayoutParams c1LP = (FrameLayout.LayoutParams) aiCharacter.getLayoutParams();
 //            c1LP.leftMargin = mapBaseFrame.getWidth() - 200;
 //            c1LP.topMargin = mapBaseFrame.getHeight() - 200;
 //            aiCharacter.nowFacingAngle = new Random().nextInt(359);
 //            aiCharacter.setLayoutParams(c1LP);
-            aiCharacter.gameHandler=gameHandler;
-            aiCharacter.setTeamID(i-1);
+            aiCharacter.gameHandler = gameHandler;
+            aiCharacter.setTeamID(playerInfo.teamID);
 //            aiCharacter.setTeamID(i%2+1);
 //            ViewRange viewRange = new ViewRange(this, aiCharacter);
 //            AttackRange attackRange = new AttackRange(this, aiCharacter);
@@ -338,8 +346,8 @@ public class GameBaseAreaActivity extends Activity {
             Timer timerForAI = new Timer("AIPlayer1", true);
             timerForAI.scheduleAtFixedRate(ai, 1000, 30);
             timerForAIList.add(timerForAI);
-            if(i==2){
-                testingAI=ai;
+            if (i == 2) {
+                testingAI = ai;
             }
         }
 
@@ -353,12 +361,12 @@ public class GameBaseAreaActivity extends Activity {
         int widthCount = mapBaseFrame.mapWidth / 100;
         int heightCount = mapBaseFrame.mapHeight / 100;
         landformses = new Landform[heightCount][widthCount];
-        Random r=new Random();
+        Random r = new Random();
         for (int i = 0; i < landformses.length; i++) {
-                for (int j = 0; j < landformses[i].length; j++) {
-                    if (r.nextInt(10) >5 )
-                        landformses[i][j] = new TallGrassland(this);
-                }
+            for (int j = 0; j < landformses[i].length; j++) {
+                if (r.nextInt(10) > 5)
+                    landformses[i][j] = new TallGrassland(this);
+            }
         }
 //        for (int i = 0; i < landformses.length; i++) {
 //            if (Math.abs(i) % 3 == 0) {
@@ -369,7 +377,7 @@ public class GameBaseAreaActivity extends Activity {
 //            }
 //        }
 
-        allTrajectories=new ArrayList<Trajectory>();
+        allTrajectories = new ArrayList<Trajectory>();
 
         //添加地形
         GameMap map = new GameMap(this);
@@ -377,11 +385,17 @@ public class GameBaseAreaActivity extends Activity {
         map.landformses = landformses;
         map.addLandforms();
 
-        //添加我的角色
         allCharacters = new ArrayList<BaseCharacterView>();
-//        myCharacter = new NormalHunter(this, virtualWindow);
-        myCharacter = new NormalWolf(this, virtualWindow);
-        myCharacter.setTeamID(1);
+        //添加我的角色
+        if(playerInfos==null){
+            Log.i("","");
+        }
+        PlayerInfo myPlayerInfo = playerInfos.get(0);
+        if (myPlayerInfo.characterType == PlayerInfo.CHARACTER_TYPE_NORMAL_HUNTER)
+            myCharacter = new NormalHunter(this, virtualWindow);
+        else
+            myCharacter = new NormalWolf(this, virtualWindow);
+        myCharacter.setTeamID(myPlayerInfo.teamID);
 
         allCharacters.add(myCharacter);
         myCharacter.isMyCharacter = true;
@@ -402,7 +416,7 @@ public class GameBaseAreaActivity extends Activity {
             mySight.isHidden = true;
 
         myCharacter.setSight(mySight);
-        if(mySight.isHidden == false) {
+        if (mySight.isHidden == false) {
             mapBaseFrame.addView(mySight);
             mapBaseFrame.mySight = mySight;
         }
@@ -481,12 +495,15 @@ public class GameBaseAreaActivity extends Activity {
 //                new ViewRange(this, character);
 //                character.setLayoutParams(characterParams);
 //
-
-
-                mapBaseFrame.addView(character);
-                mapBaseFrame.addView(character.attackRange);
-                mapBaseFrame.addView(character.viewRange);
-                character.invalidate();
+            if(character.isMyCharacter) {
+                FrameLayout.LayoutParams params=(FrameLayout.LayoutParams) mapBaseFrame.getLayoutParams();
+                params.leftMargin=-(character.centerX-MyVirtualWindow.getWindowWidth(this)/2);
+                params.topMargin=-(character.centerY-MyVirtualWindow.getWindowHeight(this)/2);
+                mapBaseFrame.setLayoutParams(params);
+            }
+            mapBaseFrame.addView(character);
+            mapBaseFrame.addView(character.attackRange);
+            mapBaseFrame.addView(character.viewRange);
 //            }
         }
         mapBaseFrame.invalidate();
@@ -501,7 +518,8 @@ public class GameBaseAreaActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        isStop=false;
+        playerInfos = (ArrayList<PlayerInfo>) getIntent().getExtras().get("playerInfos");
+        isStop = false;
         ViewUtils.initWindowParams(this);
         DisplayMetrics dm = ViewUtils.getWindowsDisplayMetrics();
         setContentView(R.layout.activity_game_base_area);
@@ -600,7 +618,7 @@ public class GameBaseAreaActivity extends Activity {
 
         //scheduleAtFixedRate后一次Task不以前一个Task执行完毕的时间为起点延时执行
         timerForAllMoving.scheduleAtFixedRate(new GameMainTask(), 1000, 30);
-        timerForTrajectory.scheduleAtFixedRate(new RemoveTrajectoryTask(),1000,300);
+        timerForTrajectory.scheduleAtFixedRate(new RemoveTrajectoryTask(), 1000, 300);
 //        timerForWindowMoving.scheduleAtFixedRate(virtualWindow, 0, 20);
 
     }
@@ -633,14 +651,11 @@ public class GameBaseAreaActivity extends Activity {
     @Override
     protected void onStop() {
 
-        isStop=true;
+        isStop = true;
 
 
-        if(timerForAllMoving!=null)
+        if (timerForAllMoving != null)
             timerForAllMoving.cancel();
-
-
-
 
 
         for (Timer timer : timerForAIList) {
@@ -654,18 +669,15 @@ public class GameBaseAreaActivity extends Activity {
     @Override
     protected void onDestroy() {
 
-        isStop=true;
+        isStop = true;
 
 //        try {
 //            Thread.sleep(2000);
 //        } catch (InterruptedException e) {
 //            e.printStackTrace();
 //        }
-        if(timerForAllMoving!=null)
+        if (timerForAllMoving != null)
             timerForAllMoving.cancel();
-
-
-
 
 
         for (Timer timer : timerForAIList) {
@@ -683,11 +695,8 @@ public class GameBaseAreaActivity extends Activity {
      */
     @Override
     public void onBackPressed() {
-        isStop=true;
+        isStop = true;
         timerForAllMoving.cancel();
-
-
-
 
 
         for (Timer timer : timerForAIList) {
