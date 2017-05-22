@@ -109,9 +109,9 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public long deadTime;
     public boolean isForceToBeSawByMe = false;//注意！这属性只针对本机玩家视觉，对AI判行为无效
     public boolean judgeingAttack = false;
-    public HashSet<Integer> seeMeTeamIDs;
     public GameBaseAreaActivity.GameHandler gameHandler;
-    public HashSet<BaseCharacterView> theyDiscoverMe;
+    public volatile HashSet<Integer> seeMeTeamIDs;
+    public volatile HashSet<BaseCharacterView> theyDiscoverMe;
 
     public int getTeamID() {
         return teamID;
@@ -387,8 +387,8 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         if (offDistance < JRocker.padRadius * 3 / 4)
             nowMoveSpeed = nowSpeed / 2;
 
-        nowOffX = (int) (nowSpeed * nowOffX / offDistance);
-        nowOffY = (int) (nowSpeed * nowOffY / offDistance);
+        nowOffX = Math.round((float)(nowMoveSpeed * nowOffX / offDistance));
+        nowOffY = Math.round((float)(nowMoveSpeed * nowOffY / offDistance));
 
         //保证不超出父View边界
         try {
@@ -405,8 +405,6 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         nowBottom = nowTop + getHeight();
 
 
-
-
         //判定character位置修正是否在当前视窗内，若不在，根据sight和character位置修正视窗位置
 //        if (sight.isCharacterInWindow() == false) {
 //
@@ -416,22 +414,21 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
     }
 
-    public void reactAIMove() {
+    public void reactOtherPlayerMove() {
         int nowOffX = offX;
         int nowOffY = offY;
 
 
         //根据设定速度修正位移量
         double offDistance = Math.sqrt(nowOffX * nowOffX + nowOffY * nowOffY);
-        int nowMoveSpeed = nowSpeed;
-        if (offDistance > nowSpeed) {
-            nowOffX = (int) (nowSpeed * nowOffX / offDistance);
-            nowOffY = (int) (nowSpeed * nowOffY / offDistance);
+        float nowMoveSpeed = nowSpeed;
+        if (offDistance > nowMoveSpeed) {
+            nowOffX = Math.round((float)(nowMoveSpeed * nowOffX / offDistance));
+            nowOffY = Math.round((float)(nowMoveSpeed * nowOffY / offDistance));
         }
         //保证不超出父View边界
         try {
             nowOffX = ViewUtils.reviseOffX(this, (View) this.getParent(), nowOffX);
-
             nowOffY = ViewUtils.reviseOffY(this, (View) this.getParent(), nowOffY);
         } catch (Exception e) {
             e.printStackTrace();
@@ -564,7 +561,6 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         setMeasuredDimension(wSize, hSize);
 
 
-        Log.i(TAG, "onMeasure Run");
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
     }
 
@@ -769,9 +765,9 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             }
             centerX = nowLeft + getWidth() / 2;
             centerY = nowTop + getHeight() / 2;
-            if(isMyCharacter){
-                virtualWindow.targetLeft=centerX-MyVirtualWindow.getWindowWidth(getContext())/2;
-                virtualWindow.targetTop=centerY-MyVirtualWindow.getWindowHeight(getContext())/2;
+            if (isMyCharacter) {
+                virtualWindow.targetLeft = centerX - MyVirtualWindow.getWindowWidth(getContext()) / 2;
+                virtualWindow.targetTop = centerY - MyVirtualWindow.getWindowHeight(getContext()) / 2;
             }
 
         }
@@ -784,11 +780,44 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
     }
 
+    public void offsetLRTBParamsForOtherPlayer() {
+        if (isMyCharacter)
+            return;
+        if (isDead == true) {
+            deadReset();
+            return;
+        }
+
+
+        reactOtherPlayerMove();
+
+        mLayoutParams.leftMargin = nowLeft;
+        mLayoutParams.topMargin = nowTop;
+        centerX = nowLeft + getWidth() / 2;
+        centerY = nowTop + getHeight() / 2;
+        changeThisCharacterOnLandformses();
+        GameBaseAreaActivity.myCharacter.changeOtherCharacterState(this);
+        setLayoutParams(mLayoutParams);
+
+
+        attackRange.centerX = centerX;
+        attackRange.centerY = centerY;
+        attackRange.layoutParams.leftMargin = attackRange.centerX - attackRange.nowAttackRadius;
+        attackRange.layoutParams.topMargin = attackRange.centerY - attackRange.nowAttackRadius;
+        attackRange.setLayoutParams(attackRange.layoutParams);
+
+        viewRange.centerX = centerX;
+        viewRange.centerY = centerY;
+        viewRange.layoutParams.leftMargin = viewRange.centerX - viewRange.nowViewRadius;
+        viewRange.layoutParams.topMargin = viewRange.centerY - viewRange.nowViewRadius;
+        viewRange.setLayoutParams(viewRange.layoutParams);
+
+    }
+
 
     public void keepDirectionAndJump(int limitLeft, int limitTop, int limitRight, int limitBottom) {
         centerX = (nowLeft + nowRight) / 2;
         centerY = (nowTop + nowBottom) / 2;
-
 
 
         //注意添加Character本身宽度修正
@@ -798,17 +827,17 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         int realLimitBottom = limitBottom - getHeight() / 2;
 
 
-        int realRelateLimitLeft = realLimitLeft-centerX;
-        int realRelateLimitTop = realLimitTop-centerY;
-        int realRelateLimitRight = realLimitRight-centerX;
-        int realRelateLimitBottom = realLimitBottom-centerY;
+        int realRelateLimitLeft = realLimitLeft - centerX;
+        int realRelateLimitTop = realLimitTop - centerY;
+        int realRelateLimitRight = realLimitRight - centerX;
+        int realRelateLimitBottom = realLimitBottom - centerY;
 
         int resultRelateX = 0;
         int resultRelateY = 0;
 
         if (jumpToX > realLimitLeft && jumpToX < realLimitRight && jumpToY > realLimitTop && jumpToY < realLimitBottom) {
-            nowLeft = jumpToX - characterBodySize/2;
-            nowTop = jumpToY - characterBodySize/2;
+            nowLeft = jumpToX - characterBodySize / 2;
+            nowTop = jumpToY - characterBodySize / 2;
         } else {
             judgeingAttack = false;
 
@@ -902,9 +931,9 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         }
         nowRight = nowLeft + getWidth();
         nowBottom = nowTop + getHeight();
-        if(judgeingAttack==false){
-            jumpToX=-99999;
-            jumpToY=-99999;
+        if (judgeingAttack == false) {
+            jumpToX = -99999;
+            jumpToY = -99999;
         }
     }
 

@@ -27,12 +27,12 @@ public class NormalWolf extends BaseCharacterView {
     private final static int defaultMaxAttackCount = 3;
     private final static int reloadAttackNeedTime = 2000;
     public final static int defaultAngleChangSpeed = 2;
-    public final static int defaultAttackRadius = 300;
+    public final static int defaultAttackRadius = 200;
     public final static int defaultViewRadius = 400;
     public final static int defaultSpeed = 13;
     private int bolletWidth = 1;
     boolean isStop = false;
-
+    Thread attackThread;
     static MediaPlayer attackMediaPlayer;
     //下面一行控制bitmap是否自适应分辨率，不强制设flase可能出现图片分辨率和draw分辨率不一致
     BitmapFactory.Options option = new BitmapFactory.Options();
@@ -86,7 +86,7 @@ public class NormalWolf extends BaseCharacterView {
                 new Runnable() {
                     @Override
                     public void run() {
-                        while (isStop == false) {
+                        while (GameBaseAreaActivity.isStop==false&&isStop == false) {
                             if (attackCount == maxAttackCount)
                                 continue;
                             long nowTime = new Date().getTime();
@@ -123,8 +123,8 @@ public class NormalWolf extends BaseCharacterView {
         @Override
         public void run() {
             judgeingAttack = true;
-            while (judgeingAttack) {
-                synchronized (GameBaseAreaActivity.allCharacters) {
+            while (GameBaseAreaActivity.isStop==false&&judgeingAttack) {
+
                     int nowCenterX = (getLeft() + getRight()) / 2;
                     int nowCenterY = (getTop() + getBottom()) / 2;
                     int nowJumpToPointOffX = jumpToPoint.x - nowCenterX;
@@ -144,8 +144,10 @@ public class NormalWolf extends BaseCharacterView {
                     }
                     for (BaseCharacterView targetCharacter : GameBaseAreaActivity.allCharacters) {
 
+
                         if (attackCharacter == targetCharacter || targetCharacter.getTeamID() == attackCharacter.getTeamID())
                             continue;
+
                         double distance = MyMathsUtils.getDistance(new Point(centerX, centerY), new Point(targetCharacter.centerX, targetCharacter.centerY));
                         double realOffDistance = Math.sqrt(realOffX * realOffX + realOffY * realOffY);
                         if (distance > realOffDistance + characterBodySize / 2)
@@ -178,8 +180,9 @@ public class NormalWolf extends BaseCharacterView {
                             targetCharacter.deadTime = new Date().getTime();
                             attackCharacter.jumpToX = targetCharacter.centerX;
                             attackCharacter.jumpToY = targetCharacter.centerY;
-                            judgeingAttack = false;
                             attackSuccess = true;
+                            attackMediaPlayer = MediaPlayer.create(getContext(), R.raw.wolf_attack);
+                            attackMediaPlayer.start();
                             break;
                         }
 
@@ -187,10 +190,18 @@ public class NormalWolf extends BaseCharacterView {
                     if (attackSuccess == false) {
                         attackCharacter.jumpToX = nowCenterX + realOffX;
                         attackCharacter.jumpToY = nowCenterY + realOffY;
+                    }else{
+                        break;
                     }
 
+                try {
+                    Thread.sleep(30);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
+            judgeingAttack = false;
+            attackThread=null;
         }
     }
 
@@ -201,8 +212,10 @@ public class NormalWolf extends BaseCharacterView {
         if (judgeingAttack || attackCount <= 0  || isDead) {
             return;
         }
-        attackMediaPlayer = MediaPlayer.create(getContext(), R.raw.wolf_attack);
-        attackMediaPlayer.start();
+        if(attackThread!=null){
+            return;
+        }
+
         attackCount -= 1;
         double cosAlpha = Math.cos(Math.toRadians(nowFacingAngle));
         double endX = cosAlpha * nowAttackRadius;
@@ -214,7 +227,10 @@ public class NormalWolf extends BaseCharacterView {
         endY = endY + centerY;
         Point fromPoint = new Point(centerX, centerY);
         Point toPoint = new Point((int) endX, (int) endY);
-        new Thread(new AttackThread(this, toPoint)).start();
+
+        attackThread = new Thread(new AttackThread(this, toPoint));
+        attackThread.start();
+
 //        synchronized (GameBaseAreaActivity.allCharacters) {
 //            for (BaseCharacterView targetCharacter : GameBaseAreaActivity.allCharacters) {
 //

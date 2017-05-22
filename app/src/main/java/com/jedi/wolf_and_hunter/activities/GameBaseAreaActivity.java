@@ -2,6 +2,7 @@ package com.jedi.wolf_and_hunter.activities;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -59,7 +60,7 @@ public class GameBaseAreaActivity extends Activity {
     RightRocker rightRocker;
     AttackButton leftAtttackButton;
     AttackButton rightAtttackButton;
-    public static ArrayList<BaseCharacterView> allCharacters;
+    public static volatile ArrayList<BaseCharacterView> allCharacters;
     public static ArrayList<Trajectory> allTrajectories;
     public static MapBaseFrame mapBaseFrame;
     public static BaseCharacterView myCharacter;
@@ -177,7 +178,7 @@ public class GameBaseAreaActivity extends Activity {
         boolean isMyCharacterMoving = myCharacter.needMove;
         boolean needChange = false;
         synchronized (myCharacter) {
-            synchronized (mySight) {
+
                 myCharacter.hasUpdatedPosition = false;
                 virtualWindow.hasUpdatedWindowPosition = false;
                 //获得当前位置
@@ -199,32 +200,28 @@ public class GameBaseAreaActivity extends Activity {
                 } else {
                     if (controlMode == CONTROL_MODE_MASTER) {
                         if (myCharacter.needMove == true) {
-                            Log.i("GBA", "Moving Character Started");
                             myCharacter.masterModeOffsetLRTBParams();
                             needChange = true;
-                            Log.i("GBA", "Moving Character ended");
                         }
                         if (mySight != null && mySight.needMove == true) {
-                            Log.i("GBA", "Moving Sight Started");
                             mySight.masterModeOffsetLRTBParams(isMyCharacterMoving);
-                            Log.i("GBA", "Moving Sight ended");
                             needChange = true;
                         }
                     } else if (controlMode == CONTROL_MODE_NORMAL) {
+                        Log.i("Player1 offX", Integer.toString(myCharacter.offX));
+                        Log.i("Player1 nowLeft", Integer.toString(myCharacter.nowLeft));
                         if (myCharacter.needMove == true) {
-                            Log.i("GBA", "Moving Character Started");
                             myCharacter.normalModeOffsetLRTBParams();
                             needChange = true;
-                            Log.i("GBA", "Moving Character ended");
                         }
+                        Log.i("Player1 offX", Integer.toString(myCharacter.offX));
+                        Log.i("Player1 nowLeft", Integer.toString(myCharacter.nowLeft));
                         if (mySight != null && mySight.needMove == true) {
-                            Log.i("GBA", "Moving Sight Started");
                             mySight.normalModeOffsetLRTBParams();
-                            Log.i("GBA", "Moving Sight ended");
                             needChange = true;
-                        } else {
-                            mySight.virtualWindowPassiveFollow();
                         }
+                        mySight.virtualWindowPassiveFollow();
+
 
                     }
                 }
@@ -250,7 +247,6 @@ public class GameBaseAreaActivity extends Activity {
                     mySight.setLayoutParams(mySight.mLayoutParams);
 //                    virtualWindow.offsetWindow();
 
-                    Log.i("GBA", "Change  Started");
 
 
                     myCharacter.changeThisCharacterOnLandformses();
@@ -274,48 +270,58 @@ public class GameBaseAreaActivity extends Activity {
                     myCharacter.viewRange.setLayoutParams(myCharacter.viewRange.layoutParams);
 
 
-                    Log.i("GBA", "Change  ended");
                 }
+        }
+
+
                 for (BaseCharacterView c : allCharacters) {
                     if (c == myCharacter)
                         continue;
-                    if (c.isDead == true) {
-                        c.deadReset();
-                        continue;
+                    synchronized (c) {
+                        c.updateNowPosition();
+                        if (c.isDead == true) {
+                            c.deadReset();
+                            continue;
+                        }
+                        if (c.jumpToX > -99999 && c.jumpToY > -99999) {
+                            c.keepDirectionAndJump(0, 0, mapBaseFrame.getWidth(), mapBaseFrame.getHeight());
+                        }else {
+                            c.reactOtherPlayerMove();
+                        }
+                        c.offX = 0;
+                        c.offY = 0;
+                        if(c.getTeamID()==2){
+                            Log.i("Player2 nowLeft",Integer.toString(c.nowLeft));
+                        }
+                        c.mLayoutParams.leftMargin = c.nowLeft;
+                        c.mLayoutParams.topMargin = c.nowTop;
+                        c.centerX = c.nowLeft + c.getWidth() / 2;
+                        c.centerY = c.nowTop + c.getHeight() / 2;
+                        c.changeThisCharacterOnLandformses();
+                        myCharacter.changeOtherCharacterState(c);
+                        c.setLayoutParams(c.mLayoutParams);
+
+
+                        c.attackRange.centerX = c.centerX;
+                        c.attackRange.centerY = c.centerY;
+                        c.attackRange.layoutParams.leftMargin = c.attackRange.centerX - c.attackRange.nowAttackRadius;
+                        c.attackRange.layoutParams.topMargin = c.attackRange.centerY - c.attackRange.nowAttackRadius;
+                        c.attackRange.setLayoutParams(c.attackRange.layoutParams);
+
+                        c.viewRange.centerX = c.centerX;
+                        c.viewRange.centerY = c.centerY;
+                        c.viewRange.layoutParams.leftMargin = c.viewRange.centerX - c.viewRange.nowViewRadius;
+                        c.viewRange.layoutParams.topMargin = c.viewRange.centerY - c.viewRange.nowViewRadius;
+                        c.viewRange.setLayoutParams(c.viewRange.layoutParams);
                     }
-
-
-                    c.reactAIMove();
-                    c.offX = 0;
-                    c.offY = 0;
-                    c.mLayoutParams.leftMargin = c.nowLeft;
-                    c.mLayoutParams.topMargin = c.nowTop;
-                    c.centerX = c.nowLeft + c.getWidth() / 2;
-                    c.centerY = c.nowTop + c.getHeight() / 2;
-                    c.changeThisCharacterOnLandformses();
-                    myCharacter.changeOtherCharacterState(c);
-                    c.setLayoutParams(c.mLayoutParams);
-
-
-                    c.attackRange.centerX = c.centerX;
-                    c.attackRange.centerY = c.centerY;
-                    c.attackRange.layoutParams.leftMargin = c.attackRange.centerX - c.attackRange.nowAttackRadius;
-                    c.attackRange.layoutParams.topMargin = c.attackRange.centerY - c.attackRange.nowAttackRadius;
-                    c.attackRange.setLayoutParams(c.attackRange.layoutParams);
-
-                    c.viewRange.centerX = c.centerX;
-                    c.viewRange.centerY = c.centerY;
-                    c.viewRange.layoutParams.leftMargin = c.viewRange.centerX - c.viewRange.nowViewRadius;
-                    c.viewRange.layoutParams.topMargin = c.viewRange.centerY - c.viewRange.nowViewRadius;
-                    c.viewRange.setLayoutParams(c.viewRange.layoutParams);
                 }
 
                 virtualWindow.reflashWindowPosition();
                 mapBaseFrame.invalidate();
 
-            }
 
-        }
+
+
     }
 
     private void startAI() {
@@ -648,29 +654,13 @@ public class GameBaseAreaActivity extends Activity {
      * @see #onSaveInstanceState
      * @see #onDestroy
      */
-    @Override
-    protected void onStop() {
-
-        isStop = true;
-
-
-        if (timerForAllMoving != null)
-            timerForAllMoving.cancel();
-
-
-        for (Timer timer : timerForAIList) {
-            timer.cancel();
-        }
-
-        super.onDestroy();
-        super.onStop();
-    }
+//   tim
 
     @Override
     protected void onDestroy() {
 
         isStop = true;
-
+        timerForTrajectory.cancel();
 //        try {
 //            Thread.sleep(2000);
 //        } catch (InterruptedException e) {
@@ -698,7 +688,7 @@ public class GameBaseAreaActivity extends Activity {
         isStop = true;
         timerForAllMoving.cancel();
 
-
+        timerForTrajectory.cancel();
         for (Timer timer : timerForAIList) {
             timer.cancel();
         }

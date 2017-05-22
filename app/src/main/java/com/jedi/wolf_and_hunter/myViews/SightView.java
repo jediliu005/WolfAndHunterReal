@@ -400,15 +400,7 @@ public class SightView extends SurfaceView implements SurfaceHolder.Callback {
         else if (bindingCharacter.nowFacingAngle > 360)
             bindingCharacter.nowFacingAngle = bindingCharacter.nowFacingAngle - 360;
 
-        int windowCenterX;
-        int windowCenterY;
-        int centerDistance=windowWidth/5;
-        windowCenterX=(int)(Math.cos(Math.toRadians(bindingCharacter.nowFacingAngle))*centerDistance)+(bindingCharacter.nowLeft+bindingCharacter.nowRight)/2;
-        windowCenterY=(int)(Math.sin(Math.toRadians(bindingCharacter.nowFacingAngle))*centerDistance)+(bindingCharacter.nowTop+bindingCharacter.nowBottom)/2;;
-        this.virtualWindow.targetLeft=windowCenterX-windowWidth/2;
-        this.virtualWindow.targetRight=virtualWindow.left+windowWidth;
-        this.virtualWindow.targetTop=windowCenterY-windowHeight/2;
-        this.virtualWindow.targetBottom=virtualWindow.top+windowHeight;
+
 
         if(isHidden==false) {
             //这模式下sight隐藏，但跟随character
@@ -475,10 +467,15 @@ public class SightView extends SurfaceView implements SurfaceHolder.Callback {
 
 
     public void virtualWindowPassiveFollow(){
-        int nowCenterX=bindingCharacter.nowLeft+getWidth()/2;
-        int nowCenterY=bindingCharacter.nowTop+getHeight()/2;
-        virtualWindow.targetLeft=nowCenterX-MyVirtualWindow.getWindowWidth(getContext())/2;
-        virtualWindow.targetTop=nowCenterY-MyVirtualWindow.getWindowHeight(getContext())/2;
+        int windowCenterX;
+        int windowCenterY;
+        int centerDistance=windowWidth/5;
+        windowCenterX=(int)(Math.cos(Math.toRadians(bindingCharacter.nowFacingAngle))*centerDistance)+(bindingCharacter.nowLeft+bindingCharacter.nowRight)/2;
+        windowCenterY=(int)(Math.sin(Math.toRadians(bindingCharacter.nowFacingAngle))*centerDistance)+(bindingCharacter.nowTop+bindingCharacter.nowBottom)/2;;
+        this.virtualWindow.targetLeft=windowCenterX-windowWidth/2;
+        this.virtualWindow.targetRight=virtualWindow.left+windowWidth;
+        this.virtualWindow.targetTop=windowCenterY-windowHeight/2;
+        this.virtualWindow.targetBottom=virtualWindow.top+windowHeight;
     }
 
 
@@ -491,7 +488,6 @@ public class SightView extends SurfaceView implements SurfaceHolder.Callback {
         setMeasuredDimension(wSize, hSize);
 
 
-        Log.i(TAG, "onMeasure Run");
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
     }
 

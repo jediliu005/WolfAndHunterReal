@@ -110,11 +110,13 @@ public class NormalHunter extends BaseCharacterView {
         fireMediaPlayer=MediaPlayer.create(getContext(),R.raw.gun_fire);
         fireMediaPlayer.start();
         attackCount-=1;
-        synchronized (GameBaseAreaActivity.allCharacters) {
+
             for (BaseCharacterView targetCharacter : GameBaseAreaActivity.allCharacters) {
 
                     if (this == targetCharacter||targetCharacter.getTeamID()==this.getTeamID())
                         continue;
+
+                synchronized (targetCharacter) {
                     double distance = MyMathsUtils.getDistance(new Point(centerX, centerY), new Point(targetCharacter.centerX, targetCharacter.centerY));
                     if (distance > attackRange.nowAttackRadius)
                         continue;
@@ -139,15 +141,16 @@ public class NormalHunter extends BaseCharacterView {
                         pointToLineDistance = MyMathsUtils.getPointToLineDistance(new Point(relateX, relateY), k, 0);
 
                     }
-                if (pointToLineDistance <= bolletWidth / 2 + targetCharacterSize) {
-                    targetCharacter.isDead = true;
-                    this.killCount++;
-                    targetCharacter.dieCount++;
-                    targetCharacter.deadTime = new Date().getTime();
+                    if (pointToLineDistance <= bolletWidth / 2 + targetCharacterSize) {
+                        targetCharacter.isDead = true;
+                        this.killCount++;
+                        targetCharacter.dieCount++;
+                        targetCharacter.deadTime = new Date().getTime();
+                    }
                 }
 
             }
-        }
+
         double cosAlpha=Math.cos(Math.toRadians(nowFacingAngle));
 //        double cosAlpha=Math.cos(Math.toRadians(30));
         double endX=cosAlpha*nowAttackRadius;
