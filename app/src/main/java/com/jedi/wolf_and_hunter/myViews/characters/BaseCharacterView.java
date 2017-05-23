@@ -10,6 +10,7 @@ import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.graphics.PorterDuff;
+import android.media.MediaPlayer;
 import android.support.annotation.Px;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
@@ -45,6 +46,12 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public static final int HIDDEN_LEVEL_LOW_HIDDEN = 1;
     public static final int HIDDEN_LEVEL_HIGHT_HIDDEN = 2;
     public static final int HIDDEN_LEVEL_ABSOLUTE_HIDDEN = 3;
+    public static final int MOVINT_TYPE_STAY = 0;
+    public static final int MOVINT_TYPE_WALK = 1;
+    public static final int MOVINT_TYPE_RUN = 2;
+    public static final int CHARACTER_TYPE_UNDEFINED=0;
+    public static final int CHARACTER_TYPE_HUNTER=1;
+    public static final int CHARACTER_TYPE_WOLF=2;
     //以下为移动相关
     public int lastX;
     public int lastY;
@@ -56,6 +63,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public boolean needTurned = false;
     public int angleChangSpeed = 1;
     //以下为角色View基本共有属性
+    public int characterType=0;
     public boolean hasUpdatedPosition = false;
     public int centerX = -1, centerY = -1;
     public int nowLeft = -1;
@@ -74,10 +82,13 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public int killCount;
     public int dieCount;
     public final int defaultHiddenLevel = HIDDEN_LEVEL_NO_HIDDEN;
-    public int nowAttackRadius = 600;
-    public int nowViewRadius = 500;
-    public int nowForceViewRadius = 200;
-    public int nowSpeed = 10;
+    public volatile int nowAttackRadius = 600;
+    public volatile int nowViewRadius = 500;
+    public volatile int nowHearRadius = 500;
+    public volatile int nowForceViewRadius = 200;
+    public int nowWalkWaitTime = 600;
+    public int nowRunWaitTime = 300;
+    public volatile int nowSpeed = 10;
     public SightView sight;
     public AttackRange attackRange;
     public ViewRange viewRange;
@@ -97,7 +108,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public SurfaceHolder mHolder;
     public int arrowBitmapWidth;
     public int arrowBitmapHeight;
-    public FrameLayout.LayoutParams mLayoutParams;
+    //    public FrameLayout.LayoutParams mLayoutParams;
     int borderWidth;
     Paint normalPaint;
     Paint alphaPaint;
@@ -112,6 +123,12 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public GameBaseAreaActivity.GameHandler gameHandler;
     public volatile HashSet<Integer> seeMeTeamIDs;
     public volatile HashSet<BaseCharacterView> theyDiscoverMe;
+    public MediaPlayer moveMediaPlayer;
+    public MediaPlayer attackMediaPlayer;
+    public  MediaPlayer reloadMediaPlayer;
+    public Thread movingMediaThread;
+    public int runOrWalk = 0;
+    public boolean isStay;
 
     public int getTeamID() {
         return teamID;
@@ -266,7 +283,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         arrowBitmapWidth = arrowBitMap.getHeight();
 //        aroundSize = 2 * arrowBitmapWidth;
 
-        mLayoutParams = (FrameLayout.LayoutParams) this.getLayoutParams();
+        FrameLayout.LayoutParams mLayoutParams = (FrameLayout.LayoutParams) this.getLayoutParams();
         if (mLayoutParams == null)
             mLayoutParams = new FrameLayout.LayoutParams(characterBodySize, characterBodySize);
 //        mLayoutParams.height = characterBodySize + aroundSize;
@@ -309,6 +326,67 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         sight.bindingCharacter = this;
     }
 
+    public void startMovingMediaThread() {
+        if (movingMediaThread != null) {
+            if (movingMediaThread.getState() == Thread.State.TERMINATED)
+                movingMediaThread = null;
+            else
+                return;
+        }
+        movingMediaThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (GameBaseAreaActivity.isStop == false && needMove && isDead == false) {
+                    if(isStay) {
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        continue;
+                    }
+                    if (isMyCharacter == false) {
+                        BaseCharacterView myCharacter = GameBaseAreaActivity.myCharacter;
+                        int relateX = myCharacter.centerX - centerX;
+                        int relateY = myCharacter.centerY - centerY;
+                        double distance = Math.sqrt(relateX * relateX + relateY * relateY);
+                        if (distance > nowHearRadius) {
+                            return;
+                        }
+                        float leftVol = 0;
+                        float rightVol = 0;
+                        if (relateX > 0) {
+                            rightVol = (float) (nowHearRadius - distance) / nowHearRadius;
+                            leftVol = rightVol / 2;
+                        } else if (relateX < 0) {
+                            leftVol = (float) (nowHearRadius - distance) / nowHearRadius;
+                            rightVol = leftVol / 2;
+                        }
+                        if (leftVol > 1)
+                            leftVol = 1;
+                        if (rightVol > 1)
+                            rightVol = 1;
+                        moveMediaPlayer.setVolume(leftVol, rightVol);
+
+                    }
+                    if(isStay==false)
+                        moveMediaPlayer.start();
+                    try {
+                        if (runOrWalk == MOVINT_TYPE_WALK)
+                            Thread.sleep(nowWalkWaitTime);
+                        else
+                            Thread.sleep(nowRunWaitTime);
+                        moveMediaPlayer.seekTo(0);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                movingMediaThread = null;
+            }
+        });
+        movingMediaThread.start();
+    }
+
     public void updateNowPosition() {
         if (hasUpdatedPosition == true)
             return;
@@ -319,6 +397,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         hasUpdatedPosition = true;
     }
 
+    @Deprecated
     public void masterModeOffsetLRTBParams() {
         int nowOffX = offX;
         int nowOffY = offY;
@@ -384,11 +463,13 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         //根据设定速度修正位移量
         double offDistance = Math.sqrt(nowOffX * nowOffX + nowOffY * nowOffY);
         int nowMoveSpeed = nowSpeed;
-        if (offDistance < JRocker.padRadius * 3 / 4)
-            nowMoveSpeed = nowSpeed / 2;
-
-        nowOffX = Math.round((float)(nowMoveSpeed * nowOffX / offDistance));
-        nowOffY = Math.round((float)(nowMoveSpeed * nowOffY / offDistance));
+        runOrWalk = MOVINT_TYPE_RUN;
+        if (offDistance < JRocker.padRadius * 3 / 4) {
+            nowMoveSpeed = nowSpeed / 3;
+            runOrWalk = MOVINT_TYPE_WALK;
+        }
+        nowOffX = Math.round((float) (nowMoveSpeed * nowOffX / offDistance));
+        nowOffY = Math.round((float) (nowMoveSpeed * nowOffY / offDistance));
 
         //保证不超出父View边界
         try {
@@ -414,17 +495,94 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
     }
 
+    public void normalModeOffsetWolfLRTBParams() {
+        int nowOffX = offX;
+        int nowOffY = offY;
+        float realRelateAngle=0;
+        float targetFacingAngle = 0;
+        if (nowOffX == 0 && nowOffY == 0)
+            return;
+        targetFacingAngle = MyMathsUtils.getAngleBetweenXAxus(nowOffX, nowOffY);
+        float relateAngle = targetFacingAngle - nowFacingAngle;
+        if (Math.abs(relateAngle) > 180) {//处理旋转最佳方向
+            if (relateAngle > 0)
+                relateAngle = relateAngle - 360;
+
+            else
+                relateAngle = 360 - relateAngle;
+        }
+        if (Math.abs(relateAngle) > angleChangSpeed * 2)
+            realRelateAngle = Math.abs(relateAngle) / relateAngle * angleChangSpeed * 2;
+
+        targetFacingAngle = nowFacingAngle + realRelateAngle;
+        nowFacingAngle = targetFacingAngle;
+        if (nowFacingAngle < 0)
+            nowFacingAngle = nowFacingAngle + 360;
+        else if (nowFacingAngle > 360)
+            nowFacingAngle = nowFacingAngle - 360;
+
+        if (isStay==false) {
+
+            double offDistance = Math.sqrt(nowOffX * nowOffX + nowOffY * nowOffY);
+            int nowMoveSpeed = nowSpeed;
+
+            runOrWalk = MOVINT_TYPE_RUN;
+            if (offDistance < JRocker.padRadius * 3 / 4) {
+                nowMoveSpeed = nowSpeed / 3;
+                runOrWalk = MOVINT_TYPE_WALK;
+            }
+            if(Math.abs(relateAngle)>45)
+                nowMoveSpeed = nowMoveSpeed/10;
+            double cosNowFacingAngle=Math.cos(Math.toRadians(nowFacingAngle));
+            nowOffX=(int)Math.round(cosNowFacingAngle*offDistance);
+            nowOffY=(int)Math.round(Math.sqrt(offDistance*offDistance-nowOffX*nowOffX));
+            if(nowFacingAngle>180)
+                nowOffY=-nowOffY;
+            //根据设定速度修正位移量
+            nowOffX = Math.round((float) (nowMoveSpeed * nowOffX / offDistance));
+            nowOffY = Math.round((float) (nowMoveSpeed * nowOffY / offDistance));
+
+            //保证不超出父View边界
+            try {
+                nowOffX = ViewUtils.reviseOffX(this, (View) this.getParent(), nowOffX);
+
+                nowOffY = ViewUtils.reviseOffY(this, (View) this.getParent(), nowOffY);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+//        }
+            nowLeft = nowLeft + nowOffX;
+            nowTop = nowTop + nowOffY;
+            nowRight = nowLeft + getWidth();
+            nowBottom = nowTop + getHeight();
+        }
+
+        //判定character位置修正是否在当前视窗内，若不在，根据sight和character位置修正视窗位置
+//        if (sight.isCharacterInWindow() == false) {
+//
+//            sight.goWatchingCharacter();
+//
+//        }
+
+    }
+
     public void reactOtherPlayerMove() {
         int nowOffX = offX;
         int nowOffY = offY;
+        if (nowOffX != 0 || nowOffY != 0) {
+            needMove = true;
+        } else {
+            needMove = true;
+        }
 
 
         //根据设定速度修正位移量
         double offDistance = Math.sqrt(nowOffX * nowOffX + nowOffY * nowOffY);
         float nowMoveSpeed = nowSpeed;
         if (offDistance > nowMoveSpeed) {
-            nowOffX = Math.round((float)(nowMoveSpeed * nowOffX / offDistance));
-            nowOffY = Math.round((float)(nowMoveSpeed * nowOffY / offDistance));
+            nowOffX = Math.round((float) (nowMoveSpeed * nowOffX / offDistance));
+            nowOffY = Math.round((float) (nowMoveSpeed * nowOffY / offDistance));
         }
         //保证不超出父View边界
         try {
@@ -440,6 +598,75 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
     }
 
+    public void reactOtherPlayerWolfMove() {
+        int nowOffX = offX;
+        int nowOffY = offY;
+        if (nowOffX != 0 || nowOffY != 0) {
+            needMove = true;
+        } else {
+            needMove = false;
+        }
+
+
+
+
+
+        float realRelateAngle=0;
+        float targetFacingAngle = 0;
+        if (nowOffX == 0 && nowOffY == 0)
+            return;
+        targetFacingAngle = MyMathsUtils.getAngleBetweenXAxus(nowOffX, nowOffY);
+        float relateAngle = targetFacingAngle - nowFacingAngle;
+        if (Math.abs(relateAngle) > 180) {//处理旋转最佳方向
+            if (relateAngle > 0)
+                relateAngle = relateAngle - 360;
+
+            else
+                relateAngle = 360 - relateAngle;
+        }
+        if (Math.abs(relateAngle) > angleChangSpeed * 2)
+            realRelateAngle = Math.abs(relateAngle) / relateAngle * angleChangSpeed * 2;
+
+        targetFacingAngle = nowFacingAngle + realRelateAngle;
+        nowFacingAngle = targetFacingAngle;
+        if (nowFacingAngle < 0)
+            nowFacingAngle = nowFacingAngle + 360;
+        else if (nowFacingAngle > 360)
+            nowFacingAngle = nowFacingAngle - 360;
+
+        if (isStay==false) {
+
+            double offDistance = Math.sqrt(nowOffX * nowOffX + nowOffY * nowOffY);
+            int nowMoveSpeed = nowSpeed;
+
+
+            if(Math.abs(relateAngle)>45)
+                nowMoveSpeed = nowMoveSpeed/10;
+            double cosNowFacingAngle=Math.cos(Math.toRadians(nowFacingAngle));
+            nowOffX=(int)Math.round(cosNowFacingAngle*offDistance);
+            nowOffY=(int)Math.round(Math.sqrt(offDistance*offDistance-nowOffX*nowOffX));
+            if(nowFacingAngle>180)
+                nowOffY=-nowOffY;
+            //根据设定速度修正位移量
+            nowOffX = Math.round((float) (nowMoveSpeed * nowOffX / offDistance));
+            nowOffY = Math.round((float) (nowMoveSpeed * nowOffY / offDistance));
+
+            //保证不超出父View边界
+            try {
+                nowOffX = ViewUtils.reviseOffX(this, (View) this.getParent(), nowOffX);
+
+                nowOffY = ViewUtils.reviseOffY(this, (View) this.getParent(), nowOffY);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+//        }
+            nowLeft = nowLeft + nowOffX;
+            nowTop = nowTop + nowOffY;
+            nowRight = nowLeft + getWidth();
+            nowBottom = nowTop + getHeight();
+        }
+    }
 
     public void changeThisCharacterOnLandformses() {
 
@@ -790,7 +1017,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
 
         reactOtherPlayerMove();
-
+        FrameLayout.LayoutParams mLayoutParams = (FrameLayout.LayoutParams) getLayoutParams();
         mLayoutParams.leftMargin = nowLeft;
         mLayoutParams.topMargin = nowTop;
         centerX = nowLeft + getWidth() / 2;
@@ -808,8 +1035,8 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
         viewRange.centerX = centerX;
         viewRange.centerY = centerY;
-        viewRange.layoutParams.leftMargin = viewRange.centerX - viewRange.nowViewRadius;
-        viewRange.layoutParams.topMargin = viewRange.centerY - viewRange.nowViewRadius;
+        viewRange.layoutParams.leftMargin = viewRange.centerX - nowViewRadius;
+        viewRange.layoutParams.topMargin = viewRange.centerY - nowViewRadius;
         viewRange.setLayoutParams(viewRange.layoutParams);
 
     }
@@ -938,11 +1165,67 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     }
 
     public void judgeAttack() {
+        if(attackMediaPlayer==null)
+            return;
+        if (isMyCharacter == false) {
+            BaseCharacterView myCharacter = GameBaseAreaActivity.myCharacter;
+            int relateX = myCharacter.centerX - centerX;
+            int relateY = myCharacter.centerY - centerY;
+            double distance = Math.sqrt(relateX * relateX + relateY * relateY);
+            if (distance > nowHearRadius) {
+                return;
+            }
+            float leftVol = 0;
+            float rightVol = 0;
+            if (relateX > 0) {
+                rightVol = (float) (nowHearRadius - distance) / nowHearRadius;
+                leftVol = rightVol / 2;
+            } else if (relateX < 0) {
+                leftVol = (float) (nowHearRadius - distance) / nowHearRadius;
+                rightVol = leftVol / 2;
+            }
+            if (leftVol > 1)
+                leftVol = 1;
+            if (rightVol > 1)
+                rightVol = 1;
+            attackMediaPlayer.setVolume(leftVol, rightVol);
 
+        }
+
+
+        attackMediaPlayer.seekTo(0);
+        attackMediaPlayer.start();
     }
 
     public void reloadAttackCount() {
+        if(reloadMediaPlayer==null)
+            return;
+        if (isMyCharacter == false) {
+            BaseCharacterView myCharacter = GameBaseAreaActivity.myCharacter;
+            int relateX = myCharacter.centerX - centerX;
+            int relateY = myCharacter.centerY - centerY;
+            double distance = Math.sqrt(relateX * relateX + relateY * relateY);
+            if (distance > nowHearRadius) {
+                return;
+            }
+            float leftVol = 0;
+            float rightVol = 0;
+            if (relateX > 0) {
+                rightVol = (float) (nowHearRadius - distance) / nowHearRadius;
+                leftVol = rightVol / 2;
+            } else if (relateX < 0) {
+                leftVol = (float) (nowHearRadius - distance) / nowHearRadius;
+                rightVol = leftVol / 2;
+            }
+            if (leftVol > 1)
+                leftVol = 1;
+            if (rightVol > 1)
+                rightVol = 1;
+            attackMediaPlayer.setVolume(leftVol, rightVol);
 
+        }
+        reloadMediaPlayer.seekTo(0);
+        reloadMediaPlayer.start();
     }
 
     @Override

@@ -27,13 +27,17 @@ public class NormalHunter extends BaseCharacterView {
     private final static int defaultMaxAttackCount=2;
     private final static int reloadAttackNeedTime=3000;
     public  final static int defaultAttackRadius=700;
-    public  final static int defaultViewRadius=500;
-    public  final static int defaultSpeed=10;
+    public  final static int defaultViewRadius=600;
+    public  final static int defaultHearRadius=400;
+    public  final static int defaultForceViewRadius=200;
+    public  final static int defaultWalkWaitTime=800;
+    public  final static int defaultRunWaitTime=400;
+    public  final static int defaultSpeed=15;
     public  final static int defaultAngleChangSpeed=2;
     private int bolletWidth=1;
     boolean isReloading=false;
-    static MediaPlayer fireMediaPlayer;
-    static MediaPlayer reloadBolletMediaPlayer;
+
+
     //下面一行控制bitmap是否自适应分辨率，不强制设flase可能出现图片分辨率和draw分辨率不一致
     BitmapFactory.Options option=new BitmapFactory.Options();
     {option.inScaled=false;}
@@ -41,7 +45,7 @@ public class NormalHunter extends BaseCharacterView {
 
     public NormalHunter(Context context) {
         super(context);
-        initNormalHunter();
+        init();
     }
     /**
      * myCharacter最好用这个构造方法
@@ -51,24 +55,32 @@ public class NormalHunter extends BaseCharacterView {
     public NormalHunter(Context context, MyVirtualWindow virtualWindow) {
         super(context);
         this.virtualWindow=virtualWindow;
-        initNormalHunter();
+        init();
     }
 
     public NormalHunter(Context context, AttributeSet attrs) {
         super(context, attrs);
-        initNormalHunter();
+        init();
     }
 
-    public void initNormalHunter(){
+    public void init(){
+        characterType=CHARACTER_TYPE_HUNTER;
         Bitmap bitmap= BitmapFactory.decodeResource(getResources(), R.drawable.word,option);
         characterPic=Bitmap.createBitmap(bitmap,24,5,76,76,matrixForCP,true);
-        reloadBolletMediaPlayer=MediaPlayer.create(getContext(),R.raw.reload_bollet);
+        reloadMediaPlayer=MediaPlayer.create(getContext(),R.raw.reload_bollet);
+        attackMediaPlayer=MediaPlayer.create(getContext(),R.raw.gun_fire);
+        moveMediaPlayer=MediaPlayer.create(getContext(),R.raw.hunter_move);
         super.reloadAttackNeedTime=reloadAttackNeedTime;
         attackCount=defaultMaxAttackCount;
         maxAttackCount=defaultMaxAttackCount;
         nowAttackRadius=defaultAttackRadius;
         nowViewRadius=defaultViewRadius;
+        nowHearRadius=defaultHearRadius;
+        nowWalkWaitTime=defaultWalkWaitTime;
+        nowRunWaitTime=defaultRunWaitTime;
+        nowForceViewRadius=defaultForceViewRadius;
         nowSpeed=defaultSpeed;
+
         super.angleChangSpeed=defaultAngleChangSpeed;
         if(this.virtualWindow==null)
             this.virtualWindow=GameBaseAreaActivity.virtualWindow;
@@ -78,12 +90,17 @@ public class NormalHunter extends BaseCharacterView {
     public void reloadAttackCount(){
         if(isReloading==true)
             return;
+        super.reloadAttackCount();
         new Thread(
                 new Runnable() {
                     @Override
                     public void run() {
                         isReloading=true;
-                        reloadBolletMediaPlayer.start();
+                        nowSpeed=defaultSpeed*2/3;
+                        nowViewRadius=defaultViewRadius/2;
+                        nowForceViewRadius=defaultViewRadius/2;
+                        nowHearRadius=defaultHearRadius*2/3;
+
                         Date now=new Date();
                         reloadAttackStartTime=now.getTime();//这参数用于攻击按钮饼图显示
                         try {
@@ -91,8 +108,11 @@ public class NormalHunter extends BaseCharacterView {
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
+                        nowSpeed=defaultSpeed;
+                        nowViewRadius=defaultViewRadius;
+                        nowForceViewRadius=defaultForceViewRadius;
+                        nowHearRadius=defaultHearRadius;
                         attackCount=maxAttackCount;
-
                         reloadAttackStartTime=0;
                         isReloading=false;
                     }
@@ -107,8 +127,8 @@ public class NormalHunter extends BaseCharacterView {
             return;
         }
         super.judgeAttack();
-        fireMediaPlayer=MediaPlayer.create(getContext(),R.raw.gun_fire);
-        fireMediaPlayer.start();
+        attackMediaPlayer.seekTo(0);
+        attackMediaPlayer.start();
         attackCount-=1;
 
             for (BaseCharacterView targetCharacter : GameBaseAreaActivity.allCharacters) {

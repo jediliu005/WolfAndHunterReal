@@ -20,6 +20,7 @@ import android.view.View;
 import com.jedi.wolf_and_hunter.R;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
 import com.jedi.wolf_and_hunter.myObj.MyVirtualWindow;
+import com.jedi.wolf_and_hunter.myObj.PlayerInfo;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 import com.jedi.wolf_and_hunter.utils.ViewUtils;
@@ -33,7 +34,7 @@ import java.util.Date;
  */
 
 public class AttackButton extends View {
-    static Bitmap fireBitmap;
+    static Bitmap attackBitmap;
     public int buttonSize;
     public Paint normalPaint;
     public TextPaint textPaint;
@@ -41,6 +42,9 @@ public class AttackButton extends View {
     public int bitmapLeft;
     public int bitmapTop;
     private long lastTouchTime;
+    boolean isTouchingInside=true;
+    private int lastTouchX;
+    private int lastTouchY;
     public BaseCharacterView bindingCharacter;
     public AttackButton(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
@@ -57,13 +61,26 @@ public class AttackButton extends View {
         super(context);
         init();
     }
+    public void reCreateBitmap(){
+        if(GameBaseAreaActivity.myCharacter!=null) {
+            if (GameBaseAreaActivity.myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER){
+                attackBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.fire);
+                }else if (GameBaseAreaActivity.myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF){
+                attackBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.wolf_attack);
+            }
+            Matrix matrix = new Matrix();
+            matrix.postScale((float) (buttonSize * 0.8) / attackBitmap.getWidth(), (float) (buttonSize * 0.8) / attackBitmap.getHeight());
+            attackBitmap = Bitmap.createBitmap(attackBitmap, 0, 0, attackBitmap.getWidth(), attackBitmap.getHeight(), matrix, true);
+
+        }
+    }
 
 
     public void init(){
 
         int windowWidth=MyVirtualWindow.getWindowWidth(getContext());
         int windowHeight = MyVirtualWindow.getWindowHeight(getContext());
-        buttonSize=(int)(windowWidth / 15);
+        buttonSize=(int)(windowWidth / 8);
 
         normalPaint = new Paint();
 
@@ -73,19 +90,20 @@ public class AttackButton extends View {
         Paint.FontMetricsInt fontMetrics = normalPaint.getFontMetricsInt();
 
         textPaint=new TextPaint();
-        textPaint.setColor(Color.WHITE);
+        textPaint.setColor(Color.RED);
         textPaint.setTextSize(buttonSize/2);
         textPaint.setTextAlign(Paint.Align.CENTER);
         baselineY = (buttonSize - fontMetrics.bottom - fontMetrics.top) / 2;
 
-        if(fireBitmap==null) {
-            fireBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.fire);
+        if(attackBitmap==null) {
+
+            attackBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.fire);
             Matrix matrix = new Matrix();
-            matrix.postScale((float)(buttonSize*0.8)/ fireBitmap.getWidth(), (float)(buttonSize*0.8) / fireBitmap.getHeight());
-            fireBitmap = Bitmap.createBitmap(fireBitmap, 0, 0, fireBitmap.getWidth(), fireBitmap.getHeight(), matrix, true);
+            matrix.postScale((float)(buttonSize*0.8)/ attackBitmap.getWidth(), (float)(buttonSize*0.8) / attackBitmap.getHeight());
+            attackBitmap = Bitmap.createBitmap(attackBitmap, 0, 0, attackBitmap.getWidth(), attackBitmap.getHeight(), matrix, true);
         }
-        bitmapLeft=(buttonSize-fireBitmap.getWidth())/2;
-        bitmapTop=(buttonSize-fireBitmap.getHeight())/2;
+        bitmapLeft=(buttonSize-attackBitmap.getWidth())/2;
+        bitmapTop=(buttonSize-attackBitmap.getHeight())/2;
 
     }
 
@@ -98,29 +116,49 @@ public class AttackButton extends View {
         {
 
             case MotionEvent.ACTION_DOWN:
+                lastTouchX=x;
+                lastTouchY=y;
                 lastTouchTime=new Date().getTime();
+                if(GameBaseAreaActivity.myPlayerInfo.characterType==BaseCharacterView.CHARACTER_TYPE_WOLF) {
+                    bindingCharacter.isStay=true;
+                }
+                isTouchingInside=true;
 
-                break;
+                    break;
+
+
             case MotionEvent.ACTION_UP:
-
-                GameBaseAreaActivity.myCharacter.judgeAttack();
                 lastTouchTime=0;
+                if(GameBaseAreaActivity.myPlayerInfo.characterType==BaseCharacterView.CHARACTER_TYPE_WOLF) {
+                    bindingCharacter.isStay=false;
+                }
+                if(lastTouchX>0&&lastTouchX<getWidth()&&lastTouchY>0&&lastTouchY<getHeight())
+                    bindingCharacter.judgeAttack();
                 break;
 
             case MotionEvent.ACTION_MOVE:
+                lastTouchX=x;
+                lastTouchY=y;
                 if(new Date().getTime()-lastTouchTime>800){
-                    try {
-                        Method method=bindingCharacter.getClass().getMethod("reloadAttackCount",new Class[0]);
-                        method.invoke(bindingCharacter,new Object[0]);
-                        lastTouchTime=0;
-                    } catch (NoSuchMethodException e) {
-                        e.printStackTrace();
-                    } catch (InvocationTargetException e) {
-                        e.printStackTrace();
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
+//                    try {
+//
+//                        if(GameBaseAreaActivity.myPlayerInfo.characterType==PlayerInfo.CHARACTER_TYPE_NORMAL_HUNTER) {
+//                            Method method = bindingCharacter.getClass().getMethod("reloadAttackCount", new Class[0]);
+//                            method.invoke(bindingCharacter, new Object[0]);
+//                            lastTouchTime = 0;
+//                            bindingCharacter.reloadAttackCount();
+//                        }
+//                    } catch (NoSuchMethodException e) {
+//                        e.printStackTrace();
+//                    } catch (InvocationTargetException e) {
+//                        e.printStackTrace();
+//                    } catch (IllegalAccessException e) {
+//                        e.printStackTrace();
+//                    }
+                    if(GameBaseAreaActivity.myPlayerInfo.characterType==BaseCharacterView.CHARACTER_TYPE_HUNTER) {
+
+                        bindingCharacter.reloadAttackCount();
                     }
-                    bindingCharacter.reloadAttackCount();
                 }
 
         }
@@ -154,7 +192,7 @@ public class AttackButton extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        canvas.drawBitmap(fireBitmap,bitmapLeft,bitmapTop,null);
+        canvas.drawBitmap(attackBitmap,bitmapLeft,bitmapTop,null);
         if(bindingCharacter==null){
             bindingCharacter=GameBaseAreaActivity.myCharacter;
             invalidate();

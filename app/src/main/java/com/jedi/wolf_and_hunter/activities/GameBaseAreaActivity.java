@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Point;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -14,6 +16,7 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import com.jedi.wolf_and_hunter.ai.BaseAI;
+import com.jedi.wolf_and_hunter.ai.WolfAI;
 import com.jedi.wolf_and_hunter.myObj.MyVirtualWindow;
 import com.jedi.wolf_and_hunter.myObj.PlayerInfo;
 import com.jedi.wolf_and_hunter.myViews.AttackButton;
@@ -31,6 +34,7 @@ import com.jedi.wolf_and_hunter.myViews.characters.NormalWolf;
 import com.jedi.wolf_and_hunter.myViews.landform.Landform;
 import com.jedi.wolf_and_hunter.myViews.landform.TallGrassland;
 import com.jedi.wolf_and_hunter.R;
+import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 import com.jedi.wolf_and_hunter.utils.ViewUtils;
 
 import org.w3c.dom.Text;
@@ -48,7 +52,7 @@ public class GameBaseAreaActivity extends Activity {
     public TextView t4;
     public TextView t5;
     public TextView t6;
-    public TextView t7;
+    public TextView gameResult;
     public BaseAI testingAI;
 
 
@@ -58,8 +62,9 @@ public class GameBaseAreaActivity extends Activity {
     public static boolean isStop = false;
     LeftRocker leftRocker;
     RightRocker rightRocker;
-    AttackButton leftAtttackButton;
+    //    AttackButton leftAtttackButton;
     AttackButton rightAtttackButton;
+    public static PlayerInfo myPlayerInfo;
     public static volatile ArrayList<BaseCharacterView> allCharacters;
     public static ArrayList<Trajectory> allTrajectories;
     public static MapBaseFrame mapBaseFrame;
@@ -72,11 +77,40 @@ public class GameBaseAreaActivity extends Activity {
     ArrayList<Timer> timerForAIList = new ArrayList<Timer>();
     ArrayList<PlayerInfo> playerInfos;
     Landform[][] landformses;
+    Thread backGroundMusicThread;
     public static MyVirtualWindow virtualWindow;
+    private MediaPlayer backGround;
+    private int targetKillCount = 10;
+
 
     private class GameMainTask extends TimerTask {
         @Override
         public void run() {
+
+            if (backGroundMusicThread == null) {
+                backGroundMusicThread = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+
+                        while (isStop == false) {
+                            if (backGround.isPlaying() == false) {
+                                backGround.seekTo(0);
+                                backGround.start();
+                            }
+                            try {
+                                Thread.sleep(1000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        backGround.stop();
+
+                    }
+                });
+                backGroundMusicThread.setDaemon(true);
+                backGroundMusicThread.start();
+            }
+
             gameHandler.sendEmptyMessage(0);
         }
     }
@@ -117,7 +151,39 @@ public class GameBaseAreaActivity extends Activity {
                     }
                     break;
                 default:
+                    int team1KillCount = 0;
+                    int team2KillCount = 0;
+                    int team3KillCount = 0;
+                    int team4KillCount = 0;
+                    for (BaseCharacterView character : allCharacters) {
+                        if (character.getTeamID() == 1)
+                            team1KillCount += character.killCount;
+                        else if (character.getTeamID() == 2)
+                            team2KillCount += character.killCount;
+                        else if (character.getTeamID() == 3)
+                            team3KillCount += character.killCount;
+                        else if (character.getTeamID() == 4)
+                            team4KillCount += character.killCount;
+                    }
+                    if (team1KillCount >= targetKillCount) {
+                        gameResult.setText("1队胜");
+                        isStop = true;
+                    }
+                    if (team2KillCount >= targetKillCount) {
+                        gameResult.setText("2队胜");
+                        isStop = true;
+                    }
+                    if (team3KillCount >= targetKillCount) {
+                        gameResult.setText("3队胜");
+                        isStop = true;
+                    }
+                    if (team4KillCount >= targetKillCount) {
+                        gameResult.setText("4队胜");
+                        isStop = true;
 
+                    }
+                    if (isStop)
+                        return;
                     reflashCharacterState();
             }
 
@@ -179,161 +245,179 @@ public class GameBaseAreaActivity extends Activity {
         boolean needChange = false;
         synchronized (myCharacter) {
 
-                myCharacter.hasUpdatedPosition = false;
-                virtualWindow.hasUpdatedWindowPosition = false;
-                //获得当前位置
-                myCharacter.updateNowPosition();
-                if (mySight != null) {
-                    mySight.hasUpdatedPosition = false;
-                    mySight.updateNowPosition();
-                }
-                //获得视窗虚拟位置
+            myCharacter.hasUpdatedPosition = false;
+            virtualWindow.hasUpdatedWindowPosition = false;
+            //获得当前位置
+            myCharacter.updateNowPosition();
+            if (mySight != null) {
+                mySight.hasUpdatedPosition = false;
+                mySight.updateNowPosition();
+            }
+            //获得视窗虚拟位置
 //                virtualWindow.updateNowWindowPosition(mapBaseFrame);
 //                mySight.updateNowWindowPosition();
-                if (myCharacter.isDead == true) {
-                    myCharacter.deadReset();
-                    needChange = true;
+            if (myCharacter.isDead == true) {
+                myCharacter.deadReset();
+//                needChange = true;
 
-                } else if (myCharacter.jumpToX > -99999 && myCharacter.jumpToY > -99999) {
-                    myCharacter.keepDirectionAndJump(0, 0, mapBaseFrame.getWidth(), mapBaseFrame.getHeight());
-                    needChange = true;
-                } else {
-                    if (controlMode == CONTROL_MODE_MASTER) {
-                        if (myCharacter.needMove == true) {
-                            myCharacter.masterModeOffsetLRTBParams();
-                            needChange = true;
-                        }
-                        if (mySight != null && mySight.needMove == true) {
-                            mySight.masterModeOffsetLRTBParams(isMyCharacterMoving);
-                            needChange = true;
-                        }
-                    } else if (controlMode == CONTROL_MODE_NORMAL) {
-                        Log.i("Player1 offX", Integer.toString(myCharacter.offX));
-                        Log.i("Player1 nowLeft", Integer.toString(myCharacter.nowLeft));
-                        if (myCharacter.needMove == true) {
+            } else if (myCharacter.jumpToX > -99999 && myCharacter.jumpToY > -99999) {
+                myCharacter.keepDirectionAndJump(0, 0, mapBaseFrame.getWidth(), mapBaseFrame.getHeight());
+//                needChange = true;
+            } else {
+                if (controlMode == CONTROL_MODE_MASTER) {//CONTROL_MODE_MASTER这种操控方式已经过期，也许有用
+                    if (myCharacter.needMove == true) {
+                        myCharacter.masterModeOffsetLRTBParams();
+//                        needChange = true;
+                    }
+                    if (mySight != null && mySight.needMove == true) {
+                        mySight.masterModeOffsetLRTBParams(isMyCharacterMoving);
+//                        needChange = true;
+                    }
+                } else if (controlMode == CONTROL_MODE_NORMAL) {
+//                        Log.i("Player1 offX", Integer.toString(myCharacter.offX));
+//                        Log.i("Player1 nowLeft", Integer.toString(myCharacter.nowLeft));
+                    if (myCharacter.needMove == true) {
+                        if(myPlayerInfo.characterType==BaseCharacterView.CHARACTER_TYPE_HUNTER)
                             myCharacter.normalModeOffsetLRTBParams();
-                            needChange = true;
-                        }
-                        Log.i("Player1 offX", Integer.toString(myCharacter.offX));
-                        Log.i("Player1 nowLeft", Integer.toString(myCharacter.nowLeft));
-                        if (mySight != null && mySight.needMove == true) {
-                            mySight.normalModeOffsetLRTBParams();
-                            needChange = true;
-                        }
-                        mySight.virtualWindowPassiveFollow();
-
-
+                        else if(myPlayerInfo.characterType==BaseCharacterView.CHARACTER_TYPE_WOLF)
+                            myCharacter.normalModeOffsetWolfLRTBParams();
+//                        needChange = true;
                     }
+//                        Log.i("Player1 offX", Integer.toString(myCharacter.offX));
+//                        Log.i("Player1 nowLeft", Integer.toString(myCharacter.nowLeft));
+                    if (mySight != null && mySight.needMove == true) {
+                        mySight.normalModeOffsetLRTBParams();
+//                        needChange = true;
+                    }
+                    mySight.virtualWindowPassiveFollow();
+
+
                 }
-                if (needChange) {
+            }
+//            if (needChange) {
+            FrameLayout.LayoutParams mLayoutParams = (FrameLayout.LayoutParams) myCharacter.getLayoutParams();
+            mLayoutParams.leftMargin = myCharacter.nowLeft;
+            mLayoutParams.topMargin = myCharacter.nowTop;
+            myCharacter.setLayoutParams(mLayoutParams);
+            myCharacter.centerX = myCharacter.nowLeft + myCharacter.getWidth() / 2;
+            myCharacter.centerY = myCharacter.nowTop + myCharacter.getHeight() / 2;
+            if (controlMode == CONTROL_MODE_MASTER) {
+                mySight.mLayoutParams.leftMargin = mySight.nowLeft;
+                mySight.mLayoutParams.topMargin = mySight.nowTop;
+                mySight.centerX = mySight.nowLeft + mySight.getWidth() / 2;
+                mySight.centerY = mySight.nowTop + mySight.getHeight() / 2;
+            } else if (controlMode == CONTROL_MODE_NORMAL) {
+                mySight.mLayoutParams.leftMargin = myCharacter.centerX - mySight.getWidth() / 2;
+                mySight.mLayoutParams.topMargin = myCharacter.centerY - mySight.getHeight() / 2;
+                mySight.centerX = myCharacter.centerX;
+                mySight.centerY = myCharacter.centerY;
+            }
 
-                    myCharacter.mLayoutParams.leftMargin = myCharacter.nowLeft;
-                    myCharacter.mLayoutParams.topMargin = myCharacter.nowTop;
-                    myCharacter.setLayoutParams(myCharacter.mLayoutParams);
-                    myCharacter.centerX = myCharacter.nowLeft + myCharacter.getWidth() / 2;
-                    myCharacter.centerY = myCharacter.nowTop + myCharacter.getHeight() / 2;
-                    if (controlMode == CONTROL_MODE_MASTER) {
-                        mySight.mLayoutParams.leftMargin = mySight.nowLeft;
-                        mySight.mLayoutParams.topMargin = mySight.nowTop;
-                        mySight.centerX = mySight.nowLeft + mySight.getWidth() / 2;
-                        mySight.centerY = mySight.nowTop + mySight.getHeight() / 2;
-                    } else if (controlMode == CONTROL_MODE_NORMAL) {
-                        mySight.mLayoutParams.leftMargin = myCharacter.centerX - mySight.getWidth() / 2;
-                        mySight.mLayoutParams.topMargin = myCharacter.centerY - mySight.getHeight() / 2;
-                        mySight.centerX = myCharacter.centerX;
-                        mySight.centerY = myCharacter.centerY;
-                    }
-
-                    mySight.setLayoutParams(mySight.mLayoutParams);
+            mySight.setLayoutParams(mySight.mLayoutParams);
 //                    virtualWindow.offsetWindow();
 
 
+            myCharacter.changeThisCharacterOnLandformses();
+            //master模式下nowFacingAngle由sight和Character共同决定；需要在这里调用changeRotate()；
+            //而normal模式下nowFacingAngle在sight的normalModeOffsetLRTBParams()下已经计算获得。
+            if (controlMode == CONTROL_MODE_MASTER) {
+                myCharacter.changeRotate();
+            }
+            myCharacter.attackRange.centerX = myCharacter.centerX;
+            myCharacter.attackRange.centerY = myCharacter.centerY;
+            myCharacter.attackRange.layoutParams.leftMargin = myCharacter.attackRange.centerX - myCharacter.attackRange.nowAttackRadius;
+            myCharacter.attackRange.layoutParams.topMargin = myCharacter.attackRange.centerY - myCharacter.attackRange.nowAttackRadius;
+            myCharacter.attackRange.setLayoutParams(myCharacter.attackRange.layoutParams);
 
-                    myCharacter.changeThisCharacterOnLandformses();
-                    //master模式下nowFacingAngle由sight和Character共同决定；需要在这里调用changeRotate()；
-                    //而normal模式下nowFacingAngle在sight的normalModeOffsetLRTBParams()下已经计算获得。
-                    if (controlMode == CONTROL_MODE_MASTER) {
-                        myCharacter.changeRotate();
-                    }
+            myCharacter.viewRange.centerX = myCharacter.centerX;
+            myCharacter.viewRange.centerY = myCharacter.centerY;
+            myCharacter.viewRange.layoutParams.leftMargin = myCharacter.viewRange.centerX - myCharacter.nowViewRadius;
+            myCharacter.viewRange.layoutParams.topMargin = myCharacter.viewRange.centerY - myCharacter.nowViewRadius;
+            myCharacter.viewRange.setLayoutParams(myCharacter.viewRange.layoutParams);
+
+            myCharacter.viewRange.invalidate();
 
 
-                    myCharacter.attackRange.centerX = myCharacter.centerX;
-                    myCharacter.attackRange.centerY = myCharacter.centerY;
-                    myCharacter.attackRange.layoutParams.leftMargin = myCharacter.attackRange.centerX - myCharacter.attackRange.nowAttackRadius;
-                    myCharacter.attackRange.layoutParams.topMargin = myCharacter.attackRange.centerY - myCharacter.attackRange.nowAttackRadius;
-                    myCharacter.attackRange.setLayoutParams(myCharacter.attackRange.layoutParams);
+            myCharacter.startMovingMediaThread();
 
-                    myCharacter.viewRange.centerX = myCharacter.centerX;
-                    myCharacter.viewRange.centerY = myCharacter.centerY;
-                    myCharacter.viewRange.layoutParams.leftMargin = myCharacter.viewRange.centerX - myCharacter.viewRange.nowViewRadius;
-                    myCharacter.viewRange.layoutParams.topMargin = myCharacter.viewRange.centerY - myCharacter.viewRange.nowViewRadius;
-                    myCharacter.viewRange.setLayoutParams(myCharacter.viewRange.layoutParams);
-
-
-                }
+//            }
         }
 
 
-                for (BaseCharacterView c : allCharacters) {
-                    if (c == myCharacter)
-                        continue;
-                    synchronized (c) {
-                        c.updateNowPosition();
-                        if (c.isDead == true) {
-                            c.deadReset();
-                            continue;
-                        }
-                        if (c.jumpToX > -99999 && c.jumpToY > -99999) {
-                            c.keepDirectionAndJump(0, 0, mapBaseFrame.getWidth(), mapBaseFrame.getHeight());
-                        }else {
-                            c.reactOtherPlayerMove();
-                        }
-                        c.offX = 0;
-                        c.offY = 0;
-                        if(c.getTeamID()==2){
-                            Log.i("Player2 nowLeft",Integer.toString(c.nowLeft));
-                        }
-                        c.mLayoutParams.leftMargin = c.nowLeft;
-                        c.mLayoutParams.topMargin = c.nowTop;
-                        c.centerX = c.nowLeft + c.getWidth() / 2;
-                        c.centerY = c.nowTop + c.getHeight() / 2;
-                        c.changeThisCharacterOnLandformses();
-                        myCharacter.changeOtherCharacterState(c);
-                        c.setLayoutParams(c.mLayoutParams);
+        for (BaseCharacterView c : allCharacters) {
+            if (c == myCharacter)
+                continue;
+            synchronized (c) {
+                c.updateNowPosition();
+                if (c.isDead == true) {
+                    c.deadReset();
+                    c.invalidate();
+                    continue;
+                }
+                if (c.jumpToX > -99999 && c.jumpToY > -99999) {
+                    c.keepDirectionAndJump(0, 0, mapBaseFrame.getWidth(), mapBaseFrame.getHeight());
+                } else {
+                    if(c.characterType==BaseCharacterView.CHARACTER_TYPE_HUNTER)
+                        c.reactOtherPlayerMove();
+                    else if(c.characterType==BaseCharacterView.CHARACTER_TYPE_WOLF)
+                        c.reactOtherPlayerWolfMove();
+                }
+//                        if(c.getTeamID()==2){
+//                            Log.i("Player2 nowLeft",Integer.toString(c.nowLeft));
+//                        }
+                FrameLayout.LayoutParams mLayoutParams = (FrameLayout.LayoutParams) c.getLayoutParams();
+                mLayoutParams.leftMargin = c.nowLeft;
+                mLayoutParams.topMargin = c.nowTop;
+                c.centerX = c.nowLeft + c.getWidth() / 2;
+                c.centerY = c.nowTop + c.getHeight() / 2;
+                c.changeThisCharacterOnLandformses();
+                myCharacter.changeOtherCharacterState(c);
+                c.setLayoutParams(mLayoutParams);
 
 
-                        c.attackRange.centerX = c.centerX;
-                        c.attackRange.centerY = c.centerY;
-                        c.attackRange.layoutParams.leftMargin = c.attackRange.centerX - c.attackRange.nowAttackRadius;
-                        c.attackRange.layoutParams.topMargin = c.attackRange.centerY - c.attackRange.nowAttackRadius;
-                        c.attackRange.setLayoutParams(c.attackRange.layoutParams);
+                c.attackRange.centerX = c.centerX;
+                c.attackRange.centerY = c.centerY;
+                c.attackRange.layoutParams.leftMargin = c.attackRange.centerX - c.attackRange.nowAttackRadius;
+                c.attackRange.layoutParams.topMargin = c.attackRange.centerY - c.attackRange.nowAttackRadius;
+                c.attackRange.setLayoutParams(c.attackRange.layoutParams);
 
-                        c.viewRange.centerX = c.centerX;
-                        c.viewRange.centerY = c.centerY;
-                        c.viewRange.layoutParams.leftMargin = c.viewRange.centerX - c.viewRange.nowViewRadius;
-                        c.viewRange.layoutParams.topMargin = c.viewRange.centerY - c.viewRange.nowViewRadius;
-                        c.viewRange.setLayoutParams(c.viewRange.layoutParams);
-                    }
+                c.viewRange.centerX = c.centerX;
+                c.viewRange.centerY = c.centerY;
+                c.viewRange.layoutParams.leftMargin = c.viewRange.centerX - c.nowViewRadius;
+                c.viewRange.layoutParams.topMargin = c.viewRange.centerY - c.nowViewRadius;
+                c.viewRange.setLayoutParams(c.viewRange.layoutParams);
+                c.viewRange.invalidate();
+                c.hasUpdatedPosition = false;
+                int relateX = myCharacter.centerX - c.centerX;
+                int relateY = myCharacter.centerY - c.centerY;
+                double distance = Math.sqrt(relateX * relateX + relateY * relateY);
+                if (distance < myCharacter.nowHearRadius) {
+                    c.startMovingMediaThread();
                 }
 
-                virtualWindow.reflashWindowPosition();
-                mapBaseFrame.invalidate();
+            }
+        }
 
-
+        virtualWindow.reflashWindowPosition();
+        mapBaseFrame.invalidate();
 
 
     }
 
     private void startAI() {
         for (int i = 1; i < playerInfos.size(); i++) {
-            PlayerInfo playerInfo=playerInfos.get(i);
-            if(playerInfo.isAvailable==false)
+            PlayerInfo playerInfo = playerInfos.get(i);
+            BaseAI ai = null;
+            if (playerInfo.isAvailable == false)
                 continue;
-            BaseCharacterView aiCharacter=null;
-            if(playerInfo.characterType==PlayerInfo.CHARACTER_TYPE_NORMAL_HUNTER)
+            BaseCharacterView aiCharacter = null;
+            if (playerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER) {
                 aiCharacter = new NormalHunter(this, virtualWindow);
-            else
+                ai = new BaseAI(aiCharacter);
+            } else if(playerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF){
                 aiCharacter = new NormalWolf(this, virtualWindow);
+                ai = new WolfAI(aiCharacter);
+            }
 //            FrameLayout.LayoutParams c1LP = (FrameLayout.LayoutParams) aiCharacter.getLayoutParams();
 //            c1LP.leftMargin = mapBaseFrame.getWidth() - 200;
 //            c1LP.topMargin = mapBaseFrame.getHeight() - 200;
@@ -347,7 +431,10 @@ public class GameBaseAreaActivity extends Activity {
 //            mapBaseFrame.addView(viewRange);
 //            mapBaseFrame.addView(attackRange);
 //            mapBaseFrame.addView(aiCharacter);
-            BaseAI ai = new BaseAI(aiCharacter);
+
+
+
+            ai = new BaseAI(aiCharacter);
             allCharacters.add(aiCharacter);
             Timer timerForAI = new Timer("AIPlayer1", true);
             timerForAI.scheduleAtFixedRate(ai, 1000, 30);
@@ -393,11 +480,8 @@ public class GameBaseAreaActivity extends Activity {
 
         allCharacters = new ArrayList<BaseCharacterView>();
         //添加我的角色
-        if(playerInfos==null){
-            Log.i("","");
-        }
-        PlayerInfo myPlayerInfo = playerInfos.get(0);
-        if (myPlayerInfo.characterType == PlayerInfo.CHARACTER_TYPE_NORMAL_HUNTER)
+        myPlayerInfo = playerInfos.get(0);
+        if (myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
             myCharacter = new NormalHunter(this, virtualWindow);
         else
             myCharacter = new NormalWolf(this, virtualWindow);
@@ -427,40 +511,45 @@ public class GameBaseAreaActivity extends Activity {
             mapBaseFrame.mySight = mySight;
         }
 
+        rightAtttackButton = (AttackButton) this.findViewById(R.id.attack_button_right);
+        int buttonSize = rightAtttackButton.buttonSize;
+        rightAtttackButton.bindingCharacter = myCharacter;
+        FrameLayout.LayoutParams rabp = (FrameLayout.LayoutParams) rightAtttackButton.getLayoutParams();
+        if (rabp == null) {
+            rabp = new FrameLayout.LayoutParams(buttonSize, buttonSize);
+        }
         //添加摇杆
         leftRocker = (LeftRocker) this.findViewById(R.id.rocker_left);
         leftRocker.setBindingCharacter(myCharacter);
         mapBaseFrame.leftRocker = leftRocker;
         rightRocker = (RightRocker) this.findViewById(R.id.rocker_right);
-        rightRocker.setBindingCharacter(myCharacter);
-        mapBaseFrame.rightRocker = rightRocker;
+        if (myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER) {
+            rightAtttackButton.reCreateBitmap();
+            rightRocker.setBindingCharacter(myCharacter);
+            mapBaseFrame.rightRocker = rightRocker;
+
+//        leftAtttackButton = (AttackButton) this.findViewById(R.id.attack_button_left);
+//        leftAtttackButton.bindingCharacter = myCharacter;
+//        FrameLayout.LayoutParams labp = (FrameLayout.LayoutParams) leftAtttackButton.getLayoutParams();
+//        if (labp == null) {
+//            labp = new FrameLayout.LayoutParams(buttonSize, buttonSize);
+//        }
+//        labp.leftMargin = leftRocker.getRight() - buttonSize;
+//        labp.topMargin = leftRocker.getTop();
+//        leftAtttackButton.setLayoutParams(labp);
+
+
+            rabp.leftMargin = rightRocker.getRight()-rightAtttackButton.buttonSize-10;
+            rabp.topMargin = rightRocker.getTop()-rightAtttackButton.buttonSize-30;
+        } else if (myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF) {
+            rightAtttackButton.reCreateBitmap();
+            baseFrame.removeView(rightRocker);
+            rabp.leftMargin = MyVirtualWindow.getWindowWidth(this)-rightAtttackButton.buttonSize-50;
+            rabp.topMargin = MyVirtualWindow.getWindowHeight(this)-(leftRocker.getHeight()/2+rightAtttackButton.buttonSize/2);
+        }
+        rightAtttackButton.setLayoutParams(rabp);
         leftRocker.bringToFront();
         rightRocker.bringToFront();
-
-
-        leftAtttackButton = (AttackButton) this.findViewById(R.id.attack_button_left);
-        leftAtttackButton.bindingCharacter = myCharacter;
-        int buttonSize = leftAtttackButton.buttonSize;
-        FrameLayout.LayoutParams labp = (FrameLayout.LayoutParams) leftAtttackButton.getLayoutParams();
-        if (labp == null) {
-            labp = new FrameLayout.LayoutParams(buttonSize, buttonSize);
-        }
-        labp.leftMargin = leftRocker.getRight() - buttonSize;
-        labp.topMargin = leftRocker.getTop();
-        leftAtttackButton.setLayoutParams(labp);
-
-        rightAtttackButton = (AttackButton) this.findViewById(R.id.attack_button_right);
-        rightAtttackButton.bindingCharacter = myCharacter;
-        buttonSize = rightAtttackButton.buttonSize;
-        FrameLayout.LayoutParams rabp = (FrameLayout.LayoutParams) rightAtttackButton.getLayoutParams();
-        if (rabp == null) {
-            rabp = new FrameLayout.LayoutParams(buttonSize, buttonSize);
-        }
-        rabp.leftMargin = rightRocker.getLeft();
-        rabp.topMargin = rightRocker.getTop();
-        rightAtttackButton.setLayoutParams(rabp);
-
-        leftAtttackButton.bringToFront();
         rightAtttackButton.bringToFront();
 
 
@@ -501,10 +590,10 @@ public class GameBaseAreaActivity extends Activity {
 //                new ViewRange(this, character);
 //                character.setLayoutParams(characterParams);
 //
-            if(character.isMyCharacter) {
-                FrameLayout.LayoutParams params=(FrameLayout.LayoutParams) mapBaseFrame.getLayoutParams();
-                params.leftMargin=-(character.centerX-MyVirtualWindow.getWindowWidth(this)/2);
-                params.topMargin=-(character.centerY-MyVirtualWindow.getWindowHeight(this)/2);
+            if (character.isMyCharacter) {
+                FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) mapBaseFrame.getLayoutParams();
+                params.leftMargin = -(character.centerX - MyVirtualWindow.getWindowWidth(this) / 2);
+                params.topMargin = -(character.centerY - MyVirtualWindow.getWindowHeight(this) / 2);
                 mapBaseFrame.setLayoutParams(params);
             }
             mapBaseFrame.addView(character);
@@ -526,6 +615,7 @@ public class GameBaseAreaActivity extends Activity {
         super.onCreate(savedInstanceState);
         playerInfos = (ArrayList<PlayerInfo>) getIntent().getExtras().get("playerInfos");
         isStop = false;
+        backGround = MediaPlayer.create(this, R.raw.background);
         ViewUtils.initWindowParams(this);
         DisplayMetrics dm = ViewUtils.getWindowsDisplayMetrics();
         setContentView(R.layout.activity_game_base_area);
@@ -563,9 +653,9 @@ public class GameBaseAreaActivity extends Activity {
         t6 = new TextView(this);
         t6.setTextColor(Color.WHITE);
         t6.setTextSize(15);
-        t7 = new TextView(this);
-        t7.setTextColor(Color.WHITE);
-        t7.setTextSize(15);
+        gameResult = new TextView(this);
+        gameResult.setTextColor(Color.WHITE);
+        gameResult.setTextSize(100);
         FrameLayout.LayoutParams p1 = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         p1.leftMargin = 0;
         p1.topMargin = 50;
@@ -591,9 +681,9 @@ public class GameBaseAreaActivity extends Activity {
         p6.topMargin = 300;
         t6.setLayoutParams(p6);
         FrameLayout.LayoutParams p7 = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        p7.leftMargin = 0;
-        p7.topMargin = 350;
-        t7.setLayoutParams(p7);
+        p7.leftMargin = MyVirtualWindow.getWindowWidth(this) / 2 - 200;
+        p7.topMargin = MyVirtualWindow.getWindowHeight(this) / 2;
+        gameResult.setLayoutParams(p7);
 
         baseFrame.addView(t1);
         baseFrame.addView(t2);
@@ -601,7 +691,7 @@ public class GameBaseAreaActivity extends Activity {
         baseFrame.addView(t4);
         baseFrame.addView(t5);
         baseFrame.addView(t6);
-        baseFrame.addView(t7);
+        baseFrame.addView(gameResult);
 
 
         virtualWindow = new MyVirtualWindow(this, mapBaseFrame);
@@ -655,7 +745,6 @@ public class GameBaseAreaActivity extends Activity {
      * @see #onDestroy
      */
 //   tim
-
     @Override
     protected void onDestroy() {
 

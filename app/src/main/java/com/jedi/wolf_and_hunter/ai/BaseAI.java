@@ -38,7 +38,7 @@ public class BaseAI extends TimerTask {
     public static int mapHeight = 0;
     public BaseCharacterView bindingCharacter;
     public boolean hasDealTrackOnce = false;
-    private Trajectory trackTrajectory;
+    public Trajectory trackTrajectory;
 
     public BaseAI(BaseCharacterView character) {
         super();

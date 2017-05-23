@@ -19,7 +19,6 @@ import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
  */
 
 public class ViewRange extends View {
-    public int nowViewRadius;
     public int centerX, centerY;
     public int nowLeft;
     public int nowTop;
@@ -60,13 +59,13 @@ public class ViewRange extends View {
     private void init(){
 
         if(bindingCharacter!=null) {
-            nowViewRadius = bindingCharacter.nowViewRadius;
+
             centerX=bindingCharacter.centerX;
             centerY=bindingCharacter.centerY;
-            nowLeft=centerX-nowViewRadius;
-            nowRight=centerX+nowViewRadius;
-            nowTop=centerY-nowViewRadius;
-            nowBottom=centerY+nowViewRadius;
+            nowLeft=centerX-bindingCharacter.nowViewRadius;
+            nowRight=centerX+bindingCharacter.nowViewRadius;
+            nowTop=centerY-bindingCharacter.nowViewRadius;
+            nowBottom=centerY+bindingCharacter.nowViewRadius;
             borderPaint = new Paint();
 //            DashPathEffect pathEffect=new DashPathEffect(new float[]{10,10},0);
 //            borderPaint.setPathEffect(pathEffect);
@@ -84,8 +83,8 @@ public class ViewRange extends View {
         }
         if(this.getLayoutParams()==null){
             FrameLayout.LayoutParams layoutParams=new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT);
-            layoutParams.leftMargin=bindingCharacter.centerX-nowViewRadius;
-            layoutParams.topMargin=bindingCharacter.centerY-nowViewRadius;
+            layoutParams.leftMargin=bindingCharacter.centerX-bindingCharacter.nowViewRadius;
+            layoutParams.topMargin=bindingCharacter.centerY-bindingCharacter.nowViewRadius;
             this.setLayoutParams(layoutParams);
             this.layoutParams=layoutParams;
         }
@@ -95,9 +94,9 @@ public class ViewRange extends View {
         super.onDraw(canvas);
         float startAngle=bindingCharacter.nowFacingAngle-bindingCharacter.nowViewAngle/2;
         if(isHidden){
-            canvas.drawArc(new RectF(0,0,2*nowViewRadius,2*nowViewRadius),startAngle,bindingCharacter.nowViewAngle,true,transparentPaint);
+            canvas.drawArc(new RectF(0,0,2*bindingCharacter.nowViewRadius,2*bindingCharacter.nowViewRadius),startAngle,bindingCharacter.nowViewAngle,true,transparentPaint);
         }else{
-            canvas.drawArc(new RectF(0,0,2*nowViewRadius,2*nowViewRadius),startAngle,bindingCharacter.nowViewAngle,true,borderPaint);
+            canvas.drawArc(new RectF(0,0,2*bindingCharacter.nowViewRadius,2*bindingCharacter.nowViewRadius),startAngle,bindingCharacter.nowViewAngle,true,borderPaint);
         }
         invalidate();
 

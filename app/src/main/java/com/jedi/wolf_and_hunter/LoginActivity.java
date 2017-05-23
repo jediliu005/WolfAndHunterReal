@@ -15,6 +15,7 @@ import android.widget.TextView;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
 import com.jedi.wolf_and_hunter.activities.MapBaseActivity;
 import com.jedi.wolf_and_hunter.myObj.PlayerInfo;
+import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 
 import java.util.ArrayList;
 
@@ -94,11 +95,11 @@ public class LoginActivity extends Activity {
         TableRow row=(TableRow) view.getParent();
         int playerID=Integer.parseInt((String) view.getTag());
         PlayerInfo playerInfo=playerInfos.get(playerID-1);
-        if(playerInfo.characterType==PlayerInfo.CHARACTER_TYPE_NORMAL_HUNTER) {
-            playerInfo.characterType=PlayerInfo.CHARACTER_TYPE_NORMAL_WOLF;
+        if(playerInfo.characterType== BaseCharacterView.CHARACTER_TYPE_HUNTER) {
+            playerInfo.characterType=BaseCharacterView.CHARACTER_TYPE_WOLF;
             button.setText("狼");
         }else{
-            playerInfo.characterType=PlayerInfo.CHARACTER_TYPE_NORMAL_HUNTER;
+            playerInfo.characterType=BaseCharacterView.CHARACTER_TYPE_HUNTER;
             button.setText("猎人");
         }
 

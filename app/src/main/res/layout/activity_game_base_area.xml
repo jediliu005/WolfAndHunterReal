@@ -24,11 +24,7 @@
         android:id="@+id/rocker_right"
         android:layout_gravity="bottom|right"
         />
-    <com.jedi.wolf_and_hunter.myViews.AttackButton
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/attack_button_left"
-        />
+
     <com.jedi.wolf_and_hunter.myViews.AttackButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

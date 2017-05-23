@@ -1,5 +1,7 @@
 package com.jedi.wolf_and_hunter.myObj;
 
+import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
+
 import java.io.Serializable;
 
 /**
@@ -7,11 +9,10 @@ import java.io.Serializable;
  */
 
 public  class  PlayerInfo implements Serializable {
-    public static final int CHARACTER_TYPE_NORMAL_HUNTER=0;
-    public static final int CHARACTER_TYPE_NORMAL_WOLF=1;
+
     public boolean isAvailable=true;
     public int playerID;
-    public int characterType=CHARACTER_TYPE_NORMAL_HUNTER;
+    public int characterType= BaseCharacterView.CHARACTER_TYPE_HUNTER;
     public int teamID;
 
     public PlayerInfo(int playerID){
