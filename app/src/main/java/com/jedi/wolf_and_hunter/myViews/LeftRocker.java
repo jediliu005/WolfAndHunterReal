@@ -19,8 +19,7 @@ import java.util.Date;
  * Created by Administrator on 2017/3/29.
  */
 
-public class LeftRocker extends JRocker  {
-
+public class LeftRocker extends JRocker {
 
 
     public LeftRocker(Context context, AttributeSet attrs) {
@@ -29,20 +28,81 @@ public class LeftRocker extends JRocker  {
 //        actionButtonLeft=(padRadius+rockerRadius)*2-actionButtonsWidth;
 //        actionButtonTop=0;
 
-        FrameLayout.LayoutParams params=( FrameLayout.LayoutParams)getLayoutParams();
-        params.gravity= Gravity.TOP | Gravity.LEFT;
+        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) getLayoutParams();
+        params.gravity = Gravity.TOP | Gravity.LEFT;
         setLayoutParams(params);
     }
 
 
+/*
+下面这个onTouchEvent为推摇杆模式，由于手感问题，暂时废弃
+ */
+//    @Override
+//    public boolean onTouchEvent(MotionEvent event) {
+//        //获取到手指处的横坐标和纵坐标
+//        int x = (int) event.getX();
+//        int y = (int) event.getY();
+//        switch(event.getAction())
+//        {
+//
+//            case MotionEvent.ACTION_DOWN:
+//
+////                if(MyMathsUtils.isInRECT(actionButtonLeft,actionButtonTop
+////                        ,actionButtonLeft+actionButtonsWidth,actionButtonTop+actionButtonsWidth
+////                        ,new Point(x,y))){
+////                    readyToFire=true;
+////                }
+////                else
+//                    if(MyMathsUtils.isInCircle(rockerCircleCenter,rockerRadius,new Point(x,y))) {
+//                    isHoldingRocker = true;
+//                    startCenterX=x;
+//                    startCenterY=y;
+//                }
+//                break;
+//            case MotionEvent.ACTION_UP:
+////                if(readyToFire){
+////                    GameBaseAreaActivity.myCharacter.judgeAttack();
+////                    readyToFire=false;
+////                }
+//                isHoldingRocker=false;
+//                distance=0;
+//                rockerCircleCenter.set(padCircleCenter.x,padCircleCenter.y);
+//                synchronized (bindingCharacter) {
+//                    bindingCharacter.needMove = false;
+//                    bindingCharacter.offX = 0;
+//                    bindingCharacter.offY = 0;
+//                    startCenterX = padCircleCenter.x;
+//                    startCenterY = padCircleCenter.y;
+//                    invalidate();
+//                    break;
+//                }
+//            case MotionEvent.ACTION_MOVE:
+//                if(isHoldingRocker==false) {
+//                    break;
+//                }
+//                int relateX=x-startCenterX;
+//                int relateY=y-startCenterY;
+//                Point newPosition=new Point(padCircleCenter.x+relateX,padCircleCenter.y+relateY);
+//                rockerCircleCenter= new ViewUtils().revisePointInCircleViewMovement(padCircleCenter,padRadius,newPosition);
+//                distance= MyMathsUtils.getDistance(rockerCircleCenter,padCircleCenter);
+//                synchronized (bindingCharacter) {
+//                    bindingCharacter.offX = rockerCircleCenter.x - padCircleCenter.x;
+//                    bindingCharacter.needMove = true;
+//                    bindingCharacter.offY = rockerCircleCenter.y - padCircleCenter.y;
+//                    bindingCharacter.needMove = true;
+//                }
+//                invalidate();
+//
+//        }
+//
+//        return true;
+//    }
 
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        //获取到手指处的横坐标和纵坐标
+
+    public void reactUsingTouchPadMode(MotionEvent event) {
         int x = (int) event.getX();
         int y = (int) event.getY();
-        switch(event.getAction())
-        {
+        switch (event.getAction()) {
 
             case MotionEvent.ACTION_DOWN:
 
@@ -52,10 +112,8 @@ public class LeftRocker extends JRocker  {
 //                    readyToFire=true;
 //                }
 //                else
-                    if(MyMathsUtils.isInCircle(rockerCircleCenter,rockerRadius,new Point(x,y))) {
+                if (MyMathsUtils.isInCircle(rockerCircleCenter, rockerRadius, new Point(x, y))) {
                     isHoldingRocker = true;
-                    startCenterX=x;
-                    startCenterY=y;
                 }
                 break;
             case MotionEvent.ACTION_UP:
@@ -63,9 +121,64 @@ public class LeftRocker extends JRocker  {
 //                    GameBaseAreaActivity.myCharacter.judgeAttack();
 //                    readyToFire=false;
 //                }
-                isHoldingRocker=false;
-                distance=0;
-                rockerCircleCenter.set(padCircleCenter.x,padCircleCenter.y);
+                isHoldingRocker = false;
+                distance = 0;
+                rockerCircleCenter.set(padCircleCenter.x, padCircleCenter.y);
+                synchronized (bindingCharacter) {
+                    bindingCharacter.needMove = false;
+                    bindingCharacter.offX = 0;
+                    bindingCharacter.offY = 0;
+                    invalidate();
+                    break;
+                }
+            case MotionEvent.ACTION_MOVE:
+                if (isHoldingRocker == false) {
+                    break;
+                }
+                int relateX = x - padCircleCenter.x;
+                int relateY = y - padCircleCenter.y;
+                Point newPosition = new Point(padCircleCenter.x + relateX, padCircleCenter.y + relateY);
+                rockerCircleCenter = new ViewUtils().revisePointInCircleViewMovement(padCircleCenter, padRadius, newPosition);
+                distance = MyMathsUtils.getDistance(rockerCircleCenter, padCircleCenter);
+                synchronized (bindingCharacter) {
+                    bindingCharacter.offX = rockerCircleCenter.x - padCircleCenter.x;
+                    bindingCharacter.needMove = true;
+                    bindingCharacter.offY = rockerCircleCenter.y - padCircleCenter.y;
+                    bindingCharacter.needMove = true;
+                }
+                invalidate();
+
+        }
+    }
+
+    public void reactUsingRockerMode(MotionEvent event) {
+        //获取到手指处的横坐标和纵坐标
+        int x = (int) event.getX();
+        int y = (int) event.getY();
+        switch (event.getAction()) {
+
+            case MotionEvent.ACTION_DOWN:
+
+//                if(MyMathsUtils.isInRECT(actionButtonLeft,actionButtonTop
+//                        ,actionButtonLeft+actionButtonsWidth,actionButtonTop+actionButtonsWidth
+//                        ,new Point(x,y))){
+//                    readyToFire=true;
+//                }
+//                else
+                if (MyMathsUtils.isInCircle(rockerCircleCenter, rockerRadius, new Point(x, y))) {
+                    isHoldingRocker = true;
+                    startCenterX = x;
+                    startCenterY = y;
+                }
+                break;
+            case MotionEvent.ACTION_UP:
+//                if(readyToFire){
+//                    GameBaseAreaActivity.myCharacter.judgeAttack();
+//                    readyToFire=false;
+//                }
+                isHoldingRocker = false;
+                distance = 0;
+                rockerCircleCenter.set(padCircleCenter.x, padCircleCenter.y);
                 synchronized (bindingCharacter) {
                     bindingCharacter.needMove = false;
                     bindingCharacter.offX = 0;
@@ -76,14 +189,14 @@ public class LeftRocker extends JRocker  {
                     break;
                 }
             case MotionEvent.ACTION_MOVE:
-                if(isHoldingRocker==false) {
+                if (isHoldingRocker == false) {
                     break;
                 }
-                int relateX=x-startCenterX;
-                int relateY=y-startCenterY;
-                Point newPosition=new Point(padCircleCenter.x+relateX,padCircleCenter.y+relateY);
-                rockerCircleCenter= new ViewUtils().revisePointInCircleViewMovement(padCircleCenter,padRadius,newPosition);
-                distance= MyMathsUtils.getDistance(rockerCircleCenter,padCircleCenter);
+                int relateX = x - startCenterX;
+                int relateY = y - startCenterY;
+                Point newPosition = new Point(padCircleCenter.x + relateX, padCircleCenter.y + relateY);
+                rockerCircleCenter = new ViewUtils().revisePointInCircleViewMovement(padCircleCenter, padRadius, newPosition);
+                distance = MyMathsUtils.getDistance(rockerCircleCenter, padCircleCenter);
                 synchronized (bindingCharacter) {
                     bindingCharacter.offX = rockerCircleCenter.x - padCircleCenter.x;
                     bindingCharacter.needMove = true;
@@ -93,9 +206,17 @@ public class LeftRocker extends JRocker  {
                 invalidate();
 
         }
+    }
 
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        //reactUsingRockerMode(event);
+        reactUsingTouchPadMode(event);
         return true;
     }
+
+
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);

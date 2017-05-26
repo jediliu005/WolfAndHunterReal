@@ -16,6 +16,7 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import com.jedi.wolf_and_hunter.ai.BaseAI;
+import com.jedi.wolf_and_hunter.ai.HunterAI;
 import com.jedi.wolf_and_hunter.ai.WolfAI;
 import com.jedi.wolf_and_hunter.myObj.MyVirtualWindow;
 import com.jedi.wolf_and_hunter.myObj.PlayerInfo;
@@ -54,6 +55,8 @@ public class GameBaseAreaActivity extends Activity {
     public TextView t6;
     public TextView gameResult;
     public BaseAI testingAI;
+    public static int mapWidth;
+    public static int mapHeight;
 
 
     private final static int CONTROL_MODE_NORMAL = 0;
@@ -413,7 +416,7 @@ public class GameBaseAreaActivity extends Activity {
             BaseCharacterView aiCharacter = null;
             if (playerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER) {
                 aiCharacter = new NormalHunter(this, virtualWindow);
-                ai = new BaseAI(aiCharacter);
+                ai = new HunterAI(aiCharacter);
             } else if(playerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF){
                 aiCharacter = new NormalWolf(this, virtualWindow);
                 ai = new WolfAI(aiCharacter);
@@ -434,10 +437,9 @@ public class GameBaseAreaActivity extends Activity {
 
 
 
-            ai = new BaseAI(aiCharacter);
             allCharacters.add(aiCharacter);
             Timer timerForAI = new Timer("AIPlayer1", true);
-            timerForAI.scheduleAtFixedRate(ai, 1000, 30);
+            timerForAI.schedule(ai, 1000, 30);
             timerForAIList.add(timerForAI);
             if (i == 2) {
                 testingAI = ai;
@@ -457,8 +459,9 @@ public class GameBaseAreaActivity extends Activity {
         Random r = new Random();
         for (int i = 0; i < landformses.length; i++) {
             for (int j = 0; j < landformses[i].length; j++) {
-                if (r.nextInt(10) > 5)
+                if (r.nextInt(10) > 5) {
                     landformses[i][j] = new TallGrassland(this);
+                }
             }
         }
 //        for (int i = 0; i < landformses.length; i++) {
@@ -621,7 +624,8 @@ public class GameBaseAreaActivity extends Activity {
         setContentView(R.layout.activity_game_base_area);
         ViewUtils.initWindowParams(this);
         baseFrame = (FrameLayout) findViewById(R.id.baseFrame);
-        mapBaseFrame = new MapBaseFrame(this, (int) (dm.widthPixels * 1.5), (int) (dm.heightPixels * 1.5));
+//        mapBaseFrame = new MapBaseFrame(this, (int) (dm.widthPixels * 1.5), (int) (dm.heightPixels * 1.5));
+        mapBaseFrame = new MapBaseFrame(this, mapWidth, mapHeight);
 
 
 //        FrameLayout.LayoutParams mbfLP=(FrameLayout.LayoutParams) mapBaseFrame.getLayoutParams();
@@ -713,8 +717,10 @@ public class GameBaseAreaActivity extends Activity {
 
 
         //scheduleAtFixedRate后一次Task不以前一个Task执行完毕的时间为起点延时执行
+//        timerForAllMoving.scheduleAtFixedRate(new GameMainTask(), 1000, 30);
+//        timerForTrajectory.scheduleAtFixedRate(new RemoveTrajectoryTask(), 1000, 300);
         timerForAllMoving.scheduleAtFixedRate(new GameMainTask(), 1000, 30);
-        timerForTrajectory.scheduleAtFixedRate(new RemoveTrajectoryTask(), 1000, 300);
+        timerForTrajectory.schedule(new RemoveTrajectoryTask(), 1000, 300);
 //        timerForWindowMoving.scheduleAtFixedRate(virtualWindow, 0, 20);
 
     }

@@ -49,9 +49,9 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public static final int MOVINT_TYPE_STAY = 0;
     public static final int MOVINT_TYPE_WALK = 1;
     public static final int MOVINT_TYPE_RUN = 2;
-    public static final int CHARACTER_TYPE_UNDEFINED=0;
-    public static final int CHARACTER_TYPE_HUNTER=1;
-    public static final int CHARACTER_TYPE_WOLF=2;
+    public static final int CHARACTER_TYPE_UNDEFINED = 0;
+    public static final int CHARACTER_TYPE_HUNTER = 1;
+    public static final int CHARACTER_TYPE_WOLF = 2;
     //以下为移动相关
     public int lastX;
     public int lastY;
@@ -63,7 +63,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public boolean needTurned = false;
     public int angleChangSpeed = 1;
     //以下为角色View基本共有属性
-    public int characterType=0;
+    public int characterType = 0;
     public boolean hasUpdatedPosition = false;
     public int centerX = -1, centerY = -1;
     public int nowLeft = -1;
@@ -125,7 +125,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public volatile HashSet<BaseCharacterView> theyDiscoverMe;
     public MediaPlayer moveMediaPlayer;
     public MediaPlayer attackMediaPlayer;
-    public  MediaPlayer reloadMediaPlayer;
+    public MediaPlayer reloadMediaPlayer;
     public Thread movingMediaThread;
     public int runOrWalk = 0;
     public boolean isStay;
@@ -144,16 +144,16 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             nowFacingAngle = 45;
 
         } else if (teamID == 2) {
-            nowLeft = MyVirtualWindow.getWindowWidth(getContext()) - characterBodySize - 50;
+            nowLeft = GameBaseAreaActivity.mapWidth - characterBodySize - 50;
             nowTop = 50;
             nowFacingAngle = 135;
         } else if (teamID == 3) {
             nowLeft = 50;
-            nowTop = MyVirtualWindow.getWindowHeight(getContext()) - characterBodySize - 50;
+            nowTop = GameBaseAreaActivity.mapHeight - characterBodySize - 50;
             nowFacingAngle = 315;
         } else if (teamID == 4) {
-            nowLeft = MyVirtualWindow.getWindowWidth(getContext()) - characterBodySize - 50;
-            nowTop = MyVirtualWindow.getWindowHeight(getContext()) - characterBodySize - 50;
+            nowLeft = GameBaseAreaActivity.mapWidth - characterBodySize - 50;
+            nowTop = GameBaseAreaActivity.mapHeight - characterBodySize - 50;
             nowFacingAngle = 225;
         }
 
@@ -337,7 +337,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             @Override
             public void run() {
                 while (GameBaseAreaActivity.isStop == false && needMove && isDead == false) {
-                    if(isStay) {
+                    if (isStay) {
                         try {
                             Thread.sleep(500);
                         } catch (InterruptedException e) {
@@ -369,7 +369,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                         moveMediaPlayer.setVolume(leftVol, rightVol);
 
                     }
-                    if(isStay==false)
+                    if (isStay == false)
                         moveMediaPlayer.start();
                     try {
                         if (runOrWalk == MOVINT_TYPE_WALK)
@@ -498,7 +498,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public void normalModeOffsetWolfLRTBParams() {
         int nowOffX = offX;
         int nowOffY = offY;
-        float realRelateAngle=0;
+        float realRelateAngle = 0;
         float targetFacingAngle = 0;
         if (nowOffX == 0 && nowOffY == 0)
             return;
@@ -521,7 +521,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         else if (nowFacingAngle > 360)
             nowFacingAngle = nowFacingAngle - 360;
 
-        if (isStay==false) {
+        if (isStay == false) {
 
             double offDistance = Math.sqrt(nowOffX * nowOffX + nowOffY * nowOffY);
             int nowMoveSpeed = nowSpeed;
@@ -531,13 +531,13 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                 nowMoveSpeed = nowSpeed / 3;
                 runOrWalk = MOVINT_TYPE_WALK;
             }
-            if(Math.abs(relateAngle)>45)
-                nowMoveSpeed = nowMoveSpeed/10;
-            double cosNowFacingAngle=Math.cos(Math.toRadians(nowFacingAngle));
-            nowOffX=(int)Math.round(cosNowFacingAngle*offDistance);
-            nowOffY=(int)Math.round(Math.sqrt(offDistance*offDistance-nowOffX*nowOffX));
-            if(nowFacingAngle>180)
-                nowOffY=-nowOffY;
+            if (Math.abs(relateAngle) > 45)
+                nowMoveSpeed = nowMoveSpeed / 10;
+            double cosNowFacingAngle = Math.cos(Math.toRadians(nowFacingAngle));
+            nowOffX = (int) Math.round(cosNowFacingAngle * offDistance);
+            nowOffY = (int) Math.round(Math.sqrt(offDistance * offDistance - nowOffX * nowOffX));
+            if (nowFacingAngle > 180)
+                nowOffY = -nowOffY;
             //根据设定速度修正位移量
             nowOffX = Math.round((float) (nowMoveSpeed * nowOffX / offDistance));
             nowOffY = Math.round((float) (nowMoveSpeed * nowOffY / offDistance));
@@ -568,6 +568,8 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     }
 
     public void reactOtherPlayerMove() {
+        if(isStay)
+            return;
         int nowOffX = offX;
         int nowOffY = offY;
         if (nowOffX != 0 || nowOffY != 0) {
@@ -606,15 +608,10 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         } else {
             needMove = false;
         }
-
-
-
-
-
-        float realRelateAngle=0;
-        float targetFacingAngle = 0;
         if (nowOffX == 0 && nowOffY == 0)
             return;
+        float realRelateAngle = 0;
+        float targetFacingAngle = 0;
         targetFacingAngle = MyMathsUtils.getAngleBetweenXAxus(nowOffX, nowOffY);
         float relateAngle = targetFacingAngle - nowFacingAngle;
         if (Math.abs(relateAngle) > 180) {//处理旋转最佳方向
@@ -626,27 +623,27 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         }
         if (Math.abs(relateAngle) > angleChangSpeed * 2)
             realRelateAngle = Math.abs(relateAngle) / relateAngle * angleChangSpeed * 2;
-
-        targetFacingAngle = nowFacingAngle + realRelateAngle;
-        nowFacingAngle = targetFacingAngle;
+        else
+            realRelateAngle = relateAngle;
+        nowFacingAngle = nowFacingAngle + realRelateAngle;
         if (nowFacingAngle < 0)
             nowFacingAngle = nowFacingAngle + 360;
         else if (nowFacingAngle > 360)
             nowFacingAngle = nowFacingAngle - 360;
 
-        if (isStay==false) {
+        if (isStay == false) {
 
             double offDistance = Math.sqrt(nowOffX * nowOffX + nowOffY * nowOffY);
             int nowMoveSpeed = nowSpeed;
 
 
-            if(Math.abs(relateAngle)>45)
-                nowMoveSpeed = nowMoveSpeed/10;
-            double cosNowFacingAngle=Math.cos(Math.toRadians(nowFacingAngle));
-            nowOffX=(int)Math.round(cosNowFacingAngle*offDistance);
-            nowOffY=(int)Math.round(Math.sqrt(offDistance*offDistance-nowOffX*nowOffX));
-            if(nowFacingAngle>180)
-                nowOffY=-nowOffY;
+            if (Math.abs(relateAngle) > 45)
+                nowMoveSpeed = nowMoveSpeed / 10;
+            double cosNowFacingAngle = Math.cos(Math.toRadians(nowFacingAngle));
+            nowOffX = (int) Math.round(cosNowFacingAngle * offDistance);
+            nowOffY = (int) Math.round(Math.sqrt(offDistance * offDistance - nowOffX * nowOffX));
+            if (nowFacingAngle > 180)
+                nowOffY = -nowOffY;
             //根据设定速度修正位移量
             nowOffX = Math.round((float) (nowMoveSpeed * nowOffX / offDistance));
             nowOffY = Math.round((float) (nowMoveSpeed * nowOffY / offDistance));
@@ -990,6 +987,10 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                 nowTop = MyVirtualWindow.getWindowHeight(getContext()) - characterBodySize - 50;
                 nowFacingAngle = 225;
             }
+            FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) this.getLayoutParams();
+            layoutParams.leftMargin=nowLeft;
+            layoutParams.topMargin=nowTop;
+            this.setLayoutParams(layoutParams);
             centerX = nowLeft + getWidth() / 2;
             centerY = nowTop + getHeight() / 2;
             if (isMyCharacter) {
@@ -998,7 +999,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             }
 
         }
-        if (nowTime - deadTime > 2500) {
+        if (nowTime - deadTime > 3000) {
             isDead = false;
             deadTime = 0;
 
@@ -1165,7 +1166,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     }
 
     public void judgeAttack() {
-        if(attackMediaPlayer==null)
+        if (attackMediaPlayer == null)
             return;
         if (isMyCharacter == false) {
             BaseCharacterView myCharacter = GameBaseAreaActivity.myCharacter;
@@ -1198,7 +1199,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     }
 
     public void reloadAttackCount() {
-        if(reloadMediaPlayer==null)
+        if (reloadMediaPlayer == null)
             return;
         if (isMyCharacter == false) {
             BaseCharacterView myCharacter = GameBaseAreaActivity.myCharacter;

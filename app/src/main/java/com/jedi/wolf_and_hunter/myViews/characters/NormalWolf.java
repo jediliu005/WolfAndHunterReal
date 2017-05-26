@@ -28,6 +28,7 @@ public class NormalWolf extends BaseCharacterView {
     private final static int reloadAttackNeedTime = 2000;
     public final static int defaultAngleChangSpeed = 2;
     public final static int defaultAttackRadius = 200;
+//    public final static int defaultViewRadius = 200;
     public final static int defaultViewRadius = 500;
     public final static int defaultHearRadius = 600;
     public  final static int defaultForceViewRadius=300;

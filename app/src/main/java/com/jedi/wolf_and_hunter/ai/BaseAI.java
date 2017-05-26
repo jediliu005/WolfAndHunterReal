@@ -29,9 +29,8 @@ public class BaseAI extends TimerTask {
     public int targetLastX = -1;
     public int targetLastY = -1;
 
-    public float targetFacingAngle = -1;//视觉想要转到的目标角度
     public BaseCharacterView targetCharacter;
-    Thread facingThread;
+//    Thread facingThread;
     public float chanceAngle = 5;
     public int angleChangSpeed = 2;
     public static int mapWidth = 0;
@@ -50,72 +49,75 @@ public class BaseAI extends TimerTask {
     }
 
 
-    public void addFacingThread() {
-        if (facingThread == null) {
-            facingThread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    while (true) {
-                        if (bindingCharacter == null || bindingCharacter.isDead) {
-                            try {
-                                Thread.sleep(300);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                            continue;
-                        }
-                        synchronized (bindingCharacter) {
-                            if (GameBaseAreaActivity.isStop == true)
-                                break;
 
-
-
-
-//                        if(bindingCharacter.nowFacingAngle<0||bindingCharacter.nowFacingAngle>360)
-//                            Log.i("","");
-                            if (targetFacingAngle < 0 && intent == INTENT_HUNT) {//这一句判断是否需要重新取targetFacingAngle
-                                targetFacingAngle = new Random().nextInt(360);
-
-                            }
-
-                            float relateAngle = targetFacingAngle - bindingCharacter.nowFacingAngle;
-                            if (Math.abs(relateAngle) > 180) {//处理旋转最佳方向
-                                if (relateAngle > 0)
-                                    relateAngle = relateAngle - 360;
-
-                                else
-                                    relateAngle = 360 - relateAngle;
-                            }
-                            if (Math.abs(relateAngle) > angleChangSpeed)
-                                relateAngle = Math.abs(relateAngle) / relateAngle * angleChangSpeed;
-
-                            bindingCharacter.nowFacingAngle = bindingCharacter.nowFacingAngle + relateAngle;
-                            if (bindingCharacter.nowFacingAngle < 0)
-                                bindingCharacter.nowFacingAngle = bindingCharacter.nowFacingAngle + 360;
-                            else if (bindingCharacter.nowFacingAngle > 360)
-                                bindingCharacter.nowFacingAngle = bindingCharacter.nowFacingAngle - 360;
-                            if (targetFacingAngle == bindingCharacter.nowFacingAngle && (intent == INTENT_HUNT))
-                                targetFacingAngle = -1;
-                        }
-                        try {
-                            Thread.sleep(50);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-
-                    }
-                }
-            });
-            facingThread.setDaemon(true);
-            facingThread.start();
-        }
-    }
+//@Deprecated
+//    public void addFacingThread() {
+//        if (facingThread == null) {
+//            facingThread = new Thread(new Runnable() {
+//                @Override
+//                public void run() {
+//                    while (true) {
+//                        if (bindingCharacter == null || bindingCharacter.isDead) {
+//                            try {
+//                                Thread.sleep(300);
+//                            } catch (InterruptedException e) {
+//                                e.printStackTrace();
+//                            }
+//                            continue;
+//                        }
+//                        synchronized (bindingCharacter) {
+//                            if (GameBaseAreaActivity.isStop == true)
+//                                break;
+//
+//
+//
+//
+////                        if(bindingCharacter.nowFacingAngle<0||bindingCharacter.nowFacingAngle>360)
+////                            Log.i("","");
+//                            if (targetFacingAngle < 0 && intent == INTENT_HUNT) {//这一句判断是否需要重新取targetFacingAngle
+//                                targetFacingAngle = new Random().nextInt(360);
+//
+//                            }
+//
+//                            float relateAngle = targetFacingAngle - bindingCharacter.nowFacingAngle;
+//                            if (Math.abs(relateAngle) > 180) {//处理旋转最佳方向
+//                                if (relateAngle > 0)
+//                                    relateAngle = relateAngle - 360;
+//
+//                                else
+//                                    relateAngle = 360 - relateAngle;
+//                            }
+//                            if (Math.abs(relateAngle) > angleChangSpeed)
+//                                relateAngle = Math.abs(relateAngle) / relateAngle * angleChangSpeed;
+//
+//                            bindingCharacter.nowFacingAngle = bindingCharacter.nowFacingAngle + relateAngle;
+//                            if (bindingCharacter.nowFacingAngle < 0)
+//                                bindingCharacter.nowFacingAngle = bindingCharacter.nowFacingAngle + 360;
+//                            else if (bindingCharacter.nowFacingAngle > 360)
+//                                bindingCharacter.nowFacingAngle = bindingCharacter.nowFacingAngle - 360;
+//                            if (targetFacingAngle == bindingCharacter.nowFacingAngle && (intent == INTENT_HUNT))
+//                                targetFacingAngle = -1;
+//                        }
+//                        try {
+//                            Thread.sleep(50);
+//                        } catch (InterruptedException e) {
+//                            e.printStackTrace();
+//                        }
+//
+//                    }
+//                }
+//            });
+//            facingThread.setDaemon(true);
+//            facingThread.start();
+//        }
+//    }
 
     @Override
     public void run() {
-        addFacingThread();
+//        addFacingThread();
         if (GameBaseAreaActivity.isStop)
             return;
+//        addFacingThread();
         decideWhatToDo();
 
         if (bindingCharacter.attackCount == 0)
@@ -134,7 +136,7 @@ public class BaseAI extends TimerTask {
 
     }
 
-    public void decideWhatToDo() {
+    public synchronized void decideWhatToDo() {
 
 //        boolean isDiscover = false;
         boolean isDiscoverByMe = false;
@@ -248,77 +250,12 @@ public class BaseAI extends TimerTask {
 
     }
 
-    public void trackTrajectory() {
-        synchronized (bindingCharacter) {
-            if (trackTrajectory == null) {
-                reset();
-                return;
-            }
+    public  void trackTrajectory() {
 
-            int searchRelateX = trackTrajectory.fromPointRelateParent.x - bindingCharacter.centerX;
-            int searchRelateY = trackTrajectory.fromPointRelateParent.y - bindingCharacter.centerY;
-            float searchToAngle = MyMathsUtils.getAngleBetweenXAxus(searchRelateX, searchRelateY);
-            targetFacingAngle = searchToAngle;
-
-            int nowDistance = (int) MyMathsUtils.getDistance(trackTrajectory.fromPointRelateParent,
-                    new Point(bindingCharacter.centerX, bindingCharacter.centerY));
-            if (nowDistance > bindingCharacter.nowForceViewRadius) {
-                targetX = trackTrajectory.fromPointRelateParent.x;
-                targetY = trackTrajectory.fromPointRelateParent.y;
-
-            } else {
-                targetX = bindingCharacter.centerX;
-                targetY = bindingCharacter.centerY;
-            }
-
-
-            if (bindingCharacter.nowFacingAngle == targetFacingAngle && targetX == bindingCharacter.centerX & targetY == bindingCharacter.centerY) {
-                trackTrajectory = null;
-
-            } else {
-                bindingCharacter.offX = targetX - bindingCharacter.centerX;
-                bindingCharacter.offY = targetY - bindingCharacter.centerY;
-            }
-        }
     }
 
-    public void trackCharacter() {
-        synchronized (bindingCharacter) {
-            if (hasDealTrackOnce == false) {
-                if (targetCharacter == null || targetCharacter.isDead == true) {
-                    reset();
-                    return;
-                }
-                int searchRelateX = targetCharacter.centerX - bindingCharacter.centerX;
-                int searchRelateY = targetCharacter.centerY - bindingCharacter.centerY;
-                float searchToAngle = MyMathsUtils.getAngleBetweenXAxus(searchRelateX, searchRelateY);
-                targetFacingAngle = searchToAngle;
+    public  void trackCharacter() {
 
-                int nowDistance = (int) MyMathsUtils.getDistance(new Point(targetCharacter.centerX, targetCharacter.centerY)
-                        , new Point(bindingCharacter.centerX, bindingCharacter.centerY));
-                if (nowDistance > bindingCharacter.nowForceViewRadius) {
-                    targetX = targetLastX;
-                    targetY = targetLastY;
-
-                } else {
-                    targetX = bindingCharacter.centerX;
-                    targetY = bindingCharacter.centerY;
-                }
-                targetLastX = -1;
-                targetLastY = -1;
-                targetCharacter = null;
-            }
-            if (hasDealTrackOnce == false)
-                hasDealTrackOnce = true;
-
-            if (bindingCharacter.nowFacingAngle == targetFacingAngle && targetX == bindingCharacter.centerX & targetY == bindingCharacter.centerY) {
-                hasDealTrackOnce = false;
-
-            } else {
-                bindingCharacter.offX = targetX - bindingCharacter.centerX;
-                bindingCharacter.offY = targetY - bindingCharacter.centerY;
-            }
-        }
     }
 
     public void reset() {
@@ -327,123 +264,22 @@ public class BaseAI extends TimerTask {
         targetLastY = -1;
         targetX = -1;
         targetY = -1;
-        targetFacingAngle = -1;
         targetLastX = -1;
         targetLastY = -1;
         trackTrajectory = null;
         hasDealTrackOnce = false;
+        bindingCharacter.isStay=false;
     }
 
 
-    public void attack() {
-        boolean isChance = false;
-        synchronized (bindingCharacter) {
-            if (targetCharacter == null || targetCharacter.isDead == true) {
-                reset();
-                return;
-            }
-            targetLastX = targetCharacter.centerX;
-            targetLastY = targetCharacter.centerY;
-            int relateX = targetCharacter.centerX - bindingCharacter.centerX;
-            int relateY = targetCharacter.centerY - bindingCharacter.centerY;
-            double distance = Math.sqrt(relateX * relateX + relateY * relateY);
-            float angle = MyMathsUtils.getAngleBetweenXAxus(relateX, relateY);
-            targetFacingAngle = angle;
+    public  void attack() {
 
-            float relateAngle = targetFacingAngle - bindingCharacter.nowFacingAngle;
-            if (Math.abs(relateAngle) > 360 - chanceAngle) {
-                bindingCharacter.offX=0;
-                bindingCharacter.offY=0;
-                isChance = true;
-            } else {
-                float startAngle = relateAngle - chanceAngle;
-                float endAngle = relateAngle + chanceAngle;
-                if (Math.abs(relateAngle) < chanceAngle && bindingCharacter.nowAttackRadius > distance)
-                    isChance = true;
-                else if (bindingCharacter.nowAttackRadius < distance) {
-                    bindingCharacter.offX = relateX;
-                    bindingCharacter.offY = relateY;
-                }
-            }
-        }
-
-        if (isChance) {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            synchronized (bindingCharacter) {
-                if (bindingCharacter == null || bindingCharacter.isDead == true) {
-                    reset();
-                    return;
-                }
-                if(bindingCharacter.judgeingAttack==true)
-                    return;
-                bindingCharacter.judgeAttack();
-            }
-        }
     }
 
-    public void hunt() {
-        synchronized (bindingCharacter) {
-            if (bindingCharacter.centerX == targetX && bindingCharacter.centerY == targetY) {
-                targetX = -1;
-                targetY = -1;
-            }
-            if (targetX < 0 || targetY < 0) {
-                Random random = new Random();
-                targetX = random.nextInt(mapWidth - bindingCharacter.getWidth());
-                targetX += bindingCharacter.getWidth() / 2;
-                targetY = random.nextInt(mapHeight - bindingCharacter.getHeight());
-                targetY += bindingCharacter.getHeight() / 2;
-            }
+    public  void hunt() {
 
-            bindingCharacter.offX = targetX - bindingCharacter.centerX;
-            bindingCharacter.offY = targetY - bindingCharacter.centerY;
-
-        }
     }
 
-    public void escape() {
-//        synchronized (bindingCharacter) {
-        if (bindingCharacter.centerX <= 100) {
-            targetX = 500;
-
-
-        } else if (bindingCharacter.centerX >= 500) {
-            targetX = 100;
-        }
-        if (bindingCharacter.centerX < targetX) {
-            if (bindingCharacter.centerX + bindingCharacter.nowSpeed > targetX)
-                bindingCharacter.nowLeft = targetX - bindingCharacter.getWidth() / 2;
-            else
-                bindingCharacter.nowLeft = bindingCharacter.nowLeft + bindingCharacter.nowSpeed;
-        } else {
-            if (bindingCharacter.centerX - bindingCharacter.nowSpeed < targetX)
-                bindingCharacter.nowLeft = targetX - bindingCharacter.getWidth() / 2;
-            else
-                bindingCharacter.nowLeft = bindingCharacter.nowLeft - bindingCharacter.nowSpeed;
-        }
-        bindingCharacter.centerX = bindingCharacter.nowLeft + bindingCharacter.getWidth() / 2;
-        bindingCharacter.centerY = bindingCharacter.nowTop + bindingCharacter.getHeight() / 2;
-
-//        characterLayoutParams.leftMargin=bindingCharacter.nowLeft;
-//        characterLayoutParams.topMargin=bindingCharacter.nowTop;
-//        bindingCharacter.changeState();
-//        bindingCharacter.setLayoutParams(characterLayoutParams);
-
-//        bindingCharacter.attackRange.centerX=bindingCharacter.centerX;
-//        bindingCharacter.attackRange.centerY=bindingCharacter.centerY;
-//        bindingCharacter.attackRange.layoutParams.leftMargin=bindingCharacter.attackRange.centerX-bindingCharacter.attackRange.nowAttackRadius;
-//        bindingCharacter.attackRange.layoutParams.topMargin=bindingCharacter.attackRange.centerY-bindingCharacter.attackRange.nowAttackRadius;
-//        bindingCharacter.attackRange.setLayoutParams(bindingCharacter.attackRange.layoutParams);
-
-//        bindingCharacter.viewRange.centerX=bindingCharacter.centerX;
-//        bindingCharacter.viewRange.centerY=bindingCharacter.centerY;
-//        bindingCharacter.viewRange.layoutParams.leftMargin=bindingCharacter.viewRange.centerX-bindingCharacter.viewRange.nowViewRadius;
-//        bindingCharacter.viewRange.layoutParams.topMargin=bindingCharacter.viewRange.centerY-bindingCharacter.viewRange.nowViewRadius;
-//        bindingCharacter.viewRange.setLayoutParams(bindingCharacter.viewRange.layoutParams);
-//        }
+    public  void escape() {
     }
 }
