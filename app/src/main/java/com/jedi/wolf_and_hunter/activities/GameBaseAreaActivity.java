@@ -55,8 +55,8 @@ public class GameBaseAreaActivity extends Activity {
     public TextView t6;
     public TextView gameResult;
     public BaseAI testingAI;
-    public static int mapWidth;
-    public static int mapHeight;
+    public static int mapWidth=3000;
+    public static int mapHeight=3000;
 
 
     private final static int CONTROL_MODE_NORMAL = 0;

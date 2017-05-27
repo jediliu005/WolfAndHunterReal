@@ -33,7 +33,7 @@ public class NormalWolf extends BaseCharacterView {
     public final static int defaultHearRadius = 600;
     public  final static int defaultForceViewRadius=300;
     public final static int defaultWalkWaitTime = 500;
-    public final static int defaultRunWaitTime = 250;
+    public final static int defaultRunWaitTime = 200;
     public final static int defaultSpeed = 20;
     private int bolletWidth = 1;
     boolean isStop = false;
@@ -245,56 +245,7 @@ public class NormalWolf extends BaseCharacterView {
         attackThread = new Thread(new AttackThread(this, toPoint));
         attackThread.start();
 
-//        synchronized (GameBaseAreaActivity.allCharacters) {
-//            for (BaseCharacterView targetCharacter : GameBaseAreaActivity.allCharacters) {
-//
-//                    if (this == targetCharacter||targetCharacter.getTeamID()==this.getTeamID())
-//                        continue;
-//                    double distance = MyMathsUtils.getDistance(new Point(centerX, centerY), new Point(targetCharacter.centerX, targetCharacter.centerY));
-//                    if (distance > attackRange.nowAttackRadius)
-//                        continue;
-//
-//
-//                    int targetCharacterSize = targetCharacter.characterBodySize;
-//                    int relateX = targetCharacter.centerX - centerX;
-//                    int relateY = targetCharacter.centerY - centerY;
-//
-//                    float angleBetweenXAxus = MyMathsUtils.getAngleBetweenXAxus(relateX, relateY);
-//                    float relateAngle = Math.abs(angleBetweenXAxus - nowFacingAngle);
-//                    boolean isInFrontOfCharacter = true;
-//                    if (relateAngle > 90 && relateAngle < 270)
-//                        isInFrontOfCharacter = false;
-//                    if (isInFrontOfCharacter == false)
-//                        continue;
-//                    double pointToLineDistance = 0;
-//                    if (nowFacingAngle == 0 || nowFacingAngle == 180)
-//                        pointToLineDistance = relateY;
-//                    else if (nowFacingAngle == 90 || nowFacingAngle == 270)
-//                        pointToLineDistance = relateX;
-//                    else {
-//                        double k = Math.tan(Math.toRadians(nowFacingAngle));
-//                        pointToLineDistance = MyMathsUtils.getPointToLineDistance(new Point(relateX, relateY), k, 0);
-//
-//                    }
-//
-//                if (pointToLineDistance <= characterBodySize / 2 + targetCharacterSize) {
-//                    targetCharacter.isDead = true;
-//                    this.killCount++;
-//                    targetCharacter.dieCount++;
-//                    targetCharacter.deadTime = new Date().getTime();
-//                    this.jumpToX=targetCharacter.centerX;
-//                    this.jumpToY=targetCharacter.centerY;
-//                    break;
-//                }
-//
-//            }
-//
-////        }
-//
-//
-//        Trajectory trajectory=new Trajectory(getContext(),fromPoint,toPoint,this);
-//        Message msg=gameHandler.obtainMessage(GameBaseAreaActivity.GameHandler.ADD_TRAJECTORY,trajectory);
-//        gameHandler.sendMessage(msg);
+
 
     }
 

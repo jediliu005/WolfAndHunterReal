@@ -975,16 +975,16 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                 nowFacingAngle = 45;
 
             } else if (teamID == 2) {
-                nowLeft = MyVirtualWindow.getWindowWidth(getContext()) - characterBodySize - 50;
+                nowLeft = GameBaseAreaActivity.mapWidth - characterBodySize - 50;
                 nowTop = 50;
                 nowFacingAngle = 135;
             } else if (teamID == 3) {
                 nowLeft = 50;
-                nowTop = MyVirtualWindow.getWindowHeight(getContext()) - characterBodySize - 50;
+                nowTop = GameBaseAreaActivity.mapHeight - characterBodySize - 50;
                 nowFacingAngle = 315;
             } else if (teamID == 4) {
-                nowLeft = MyVirtualWindow.getWindowWidth(getContext()) - characterBodySize - 50;
-                nowTop = MyVirtualWindow.getWindowHeight(getContext()) - characterBodySize - 50;
+                nowLeft = GameBaseAreaActivity.mapWidth - characterBodySize - 50;
+                nowTop = GameBaseAreaActivity.mapHeight - characterBodySize - 50;
                 nowFacingAngle = 225;
             }
             FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) this.getLayoutParams();
@@ -1170,19 +1170,22 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             return;
         if (isMyCharacter == false) {
             BaseCharacterView myCharacter = GameBaseAreaActivity.myCharacter;
+            int myHearRadius=myCharacter.nowHearRadius;
+            if(this.characterType==CHARACTER_TYPE_HUNTER)
+                myHearRadius=3*myHearRadius;
             int relateX = myCharacter.centerX - centerX;
             int relateY = myCharacter.centerY - centerY;
             double distance = Math.sqrt(relateX * relateX + relateY * relateY);
-            if (distance > nowHearRadius) {
+            if (distance > myHearRadius) {
                 return;
             }
             float leftVol = 0;
             float rightVol = 0;
             if (relateX > 0) {
-                rightVol = (float) (nowHearRadius - distance) / nowHearRadius;
+                rightVol = (float) (myHearRadius - distance) / myHearRadius;
                 leftVol = rightVol / 2;
             } else if (relateX < 0) {
-                leftVol = (float) (nowHearRadius - distance) / nowHearRadius;
+                leftVol = (float) (myHearRadius - distance) / myHearRadius;
                 rightVol = leftVol / 2;
             }
             if (leftVol > 1)
@@ -1192,10 +1195,11 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             attackMediaPlayer.setVolume(leftVol, rightVol);
 
         }
-
-
         attackMediaPlayer.seekTo(0);
         attackMediaPlayer.start();
+
+
+
     }
 
     public void reloadAttackCount() {

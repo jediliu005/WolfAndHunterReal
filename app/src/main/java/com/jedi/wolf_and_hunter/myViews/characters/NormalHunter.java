@@ -31,7 +31,7 @@ public class NormalHunter extends BaseCharacterView {
     public  final static int defaultHearRadius=400;
     public  final static int defaultForceViewRadius=200;
     public  final static int defaultWalkWaitTime=800;
-    public  final static int defaultRunWaitTime=400;
+    public  final static int defaultRunWaitTime=300;
     public  final static int defaultSpeed=15;
     public  final static int defaultAngleChangSpeed=2;
     private int bolletWidth=1;
@@ -127,8 +127,7 @@ public class NormalHunter extends BaseCharacterView {
             return;
         }
         super.judgeAttack();
-        attackMediaPlayer.seekTo(0);
-        attackMediaPlayer.start();
+
         attackCount-=1;
 
             for (BaseCharacterView targetCharacter : GameBaseAreaActivity.allCharacters) {

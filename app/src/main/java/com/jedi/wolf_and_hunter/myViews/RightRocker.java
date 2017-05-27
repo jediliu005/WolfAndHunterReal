@@ -33,9 +33,7 @@ public class RightRocker extends JRocker  {
         params.gravity= Gravity.TOP | Gravity.RIGHT;
     }
 
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
+    public void reactUsingTouchPadMode(MotionEvent event) {
         //获取到手指处的横坐标和纵坐标
         int x = (int) event.getX();
         int y = (int) event.getY();
@@ -49,7 +47,62 @@ public class RightRocker extends JRocker  {
 //                    readyToFire=true;
 //                }
 //                else
-                    if(MyMathsUtils.isInCircle(rockerCircleCenter,rockerRadius,new Point(x,y))) {
+                if(MyMathsUtils.isInCircle(rockerCircleCenter,rockerRadius,new Point(x,y))) {
+                    isHoldingRocker = true;
+
+                }
+                break;
+            case MotionEvent.ACTION_UP:
+                isHoldingRocker=false;
+                distance=0;
+                rockerCircleCenter.set(padCircleCenter.x,padCircleCenter.y);
+                synchronized (bindingCharacter.getSight()) {
+                    bindingCharacter.getSight().needMove = false;
+                    bindingCharacter.getSight().offX = 0;
+                    bindingCharacter.getSight().offY = 0;
+                }
+
+                invalidate();
+                break;
+
+            case MotionEvent.ACTION_MOVE:
+                if(isHoldingRocker==false) {
+                    break;
+                }
+
+                int relateX=x-padCircleCenter.x;
+                int relateY=y-padCircleCenter.y;
+
+
+                Point newPosition=new Point(padCircleCenter.x+relateX,padCircleCenter.y+relateY);
+                rockerCircleCenter= new ViewUtils().revisePointInCircleViewMovement(padCircleCenter,padRadius,newPosition);
+                synchronized (bindingCharacter.getSight()) {
+                    bindingCharacter.getSight().offX = rockerCircleCenter.x - padCircleCenter.x;
+                    bindingCharacter.getSight().needMove = true;
+                    bindingCharacter.getSight().offY = rockerCircleCenter.y - padCircleCenter.y;
+                    bindingCharacter.getSight().needMove = true;
+                }
+                distance= MyMathsUtils.getDistance(rockerCircleCenter,padCircleCenter);
+                invalidate();
+        }
+    }
+
+
+    public void reactUsingRockerMode(MotionEvent event) {
+        //获取到手指处的横坐标和纵坐标
+        int x = (int) event.getX();
+        int y = (int) event.getY();
+        switch(event.getAction())
+        {
+            case MotionEvent.ACTION_DOWN:
+
+//                if(MyMathsUtils.isInRECT(actionButtonLeft,actionButtonTop
+//                        ,actionButtonLeft+actionButtonsWidth,actionButtonTop+actionButtonsWidth
+//                        ,new Point(x,y))){
+//                    readyToFire=true;
+//                }
+//                else
+                if(MyMathsUtils.isInCircle(rockerCircleCenter,rockerRadius,new Point(x,y))) {
                     isHoldingRocker = true;
                     startCenterX=x;
                     startCenterY=y;
@@ -93,6 +146,14 @@ public class RightRocker extends JRocker  {
                 distance= MyMathsUtils.getDistance(rockerCircleCenter,padCircleCenter);
                 invalidate();
         }
+
+
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        reactUsingTouchPadMode(event);
+//        reactUsingRockerMode(event);
 
         return true;
     }
