@@ -97,6 +97,8 @@ public class MyVirtualWindow {
         }
     }
     public synchronized void reflashWindowPosition() {
+        if(true)
+        return;
         updateNowWindowPosition(movingLayout);
         FrameLayout.LayoutParams movingLayoutParams = (FrameLayout.LayoutParams) movingLayout.getLayoutParams();
         int relateX = targetLeft - left;

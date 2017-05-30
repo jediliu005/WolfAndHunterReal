@@ -25,7 +25,7 @@ public class NormalWolf extends BaseCharacterView {
     private static final String TAG = "NormalHunter";
     private final static String characterName = "普通狼";
     private final static int defaultMaxAttackCount = 3;
-    private final static int reloadAttackNeedTime = 2000;
+    private final static int defauleReloadAttackNeedTime = 7000;
     public final static int defaultAngleChangSpeed = 2;
     public final static int defaultAttackRadius = 200;
 //    public final static int defaultViewRadius = 200;
@@ -35,7 +35,6 @@ public class NormalWolf extends BaseCharacterView {
     public final static int defaultWalkWaitTime = 500;
     public final static int defaultRunWaitTime = 200;
     public final static int defaultSpeed = 20;
-    private int bolletWidth = 1;
     boolean isStop = false;
     Thread attackThread;
     //下面一行控制bitmap是否自适应分辨率，不强制设flase可能出现图片分辨率和draw分辨率不一致
@@ -74,7 +73,7 @@ public class NormalWolf extends BaseCharacterView {
         Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.word, option);
         characterPic = Bitmap.createBitmap(bitmap, 100, 5, 76, 76, matrixForCP, true);
         attackMediaPlayer = MediaPlayer.create(getContext(), R.raw.wolf_attack);
-        super.reloadAttackNeedTime = reloadAttackNeedTime;
+        super.reloadAttackNeedTime = defauleReloadAttackNeedTime;
         attackCount = defaultMaxAttackCount;
         maxAttackCount = defaultMaxAttackCount;
         nowAttackRadius = defaultAttackRadius;
@@ -219,6 +218,12 @@ public class NormalWolf extends BaseCharacterView {
             judgeingAttack = false;
             attackThread = null;
         }
+    }
+
+    @Override
+    public void deadReset() {
+        super.deadReset();
+        attackCount=defaultMaxAttackCount;
     }
 
     @Override

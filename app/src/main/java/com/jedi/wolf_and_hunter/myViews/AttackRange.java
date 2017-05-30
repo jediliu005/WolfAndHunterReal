@@ -21,10 +21,10 @@ import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
 public class AttackRange extends View {
     public int nowAttackRadius;
     public int centerX, centerY;
-    public int nowLeft;
-    public int nowTop;
-    public int nowRight;
-    public int nowBottom;
+//    public int nowLeft;
+//    public int nowTop;
+//    public int nowRight;
+//    public int nowBottom;
     public boolean isHidden;
     public FrameLayout.LayoutParams layoutParams;
     BaseCharacterView bindingCharacter;
@@ -64,10 +64,10 @@ public class AttackRange extends View {
             nowAttackRadius = bindingCharacter.nowAttackRadius;
             centerX=bindingCharacter.centerX;
             centerY=bindingCharacter.centerY;
-            nowLeft=centerX-nowAttackRadius;
-            nowRight=centerX+nowAttackRadius;
-            nowTop=centerY-nowAttackRadius;
-            nowBottom=centerY+nowAttackRadius;
+//            nowLeft=centerX-nowAttackRadius;
+//            nowRight=centerX+nowAttackRadius;
+//            nowTop=centerY-nowAttackRadius;
+//            nowBottom=centerY+nowAttackRadius;
             DashPathEffect pathEffect=new DashPathEffect(new float[]{10,10},0);
             borderPaint = new Paint();
             borderPaint.setPathEffect(pathEffect);
@@ -89,6 +89,10 @@ public class AttackRange extends View {
             this.setLayoutParams(layoutParams);
             this.layoutParams=layoutParams;
         }
+    }
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        setMeasuredDimension(2*bindingCharacter.nowAttackRadius,2*bindingCharacter.nowAttackRadius);
     }
     @Override
     protected void onDraw(Canvas canvas) {

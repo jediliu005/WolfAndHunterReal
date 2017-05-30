@@ -90,20 +90,21 @@ public class WolfAI extends BaseAI {
 
             int nowDistance = (int) MyMathsUtils.getDistance(trackTrajectory.fromPointRelateParent,
                     new Point(bindingCharacter.centerX, bindingCharacter.centerY));
-            if (nowDistance > bindingCharacter.nowForceViewRadius) {
-                targetX = trackTrajectory.fromPointRelateParent.x;
-                targetY = trackTrajectory.fromPointRelateParent.y;
-
-            } else {
-                bindingCharacter.isStay=true;
-            }
 
 
-            if (bindingCharacter.nowFacingAngle == searchToAngle && nowDistance<bindingCharacter.nowForceViewRadius/2) {
+
+            if (bindingCharacter.nowFacingAngle == searchToAngle && nowDistance<=bindingCharacter.nowForceViewRadius/2) {
                 trackTrajectory = null;
                 reset();
 
             } else {
+                targetX = trackTrajectory.fromPointRelateParent.x;
+                targetY = trackTrajectory.fromPointRelateParent.y;
+                if (nowDistance <= bindingCharacter.nowForceViewRadius/2) {
+                    bindingCharacter.isStay=true;
+                }else{
+                    bindingCharacter.isStay=false;
+                }
                 bindingCharacter.offX = targetX - bindingCharacter.centerX;
                 bindingCharacter.offY = targetY - bindingCharacter.centerY;
             }

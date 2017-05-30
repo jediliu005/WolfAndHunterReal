@@ -19,14 +19,14 @@ import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
  */
 
 public class ViewRange extends View {
-    public int centerX, centerY;
-    public int nowLeft;
-    public int nowTop;
-    public int nowRight;
-    public int nowBottom;
-    public float nowViewAngle;
+    public volatile int centerX, centerY;
+//    public int nowLeft;
+//    public int nowTop;
+//    public int nowRight;
+//    public int nowBottom;
+//    public float nowViewAngle;
     public boolean isHidden;
-    public FrameLayout.LayoutParams layoutParams;
+//    public FrameLayout.LayoutParams layoutParams;
     BaseCharacterView bindingCharacter;
     Paint borderPaint;
     Paint transparentPaint;
@@ -62,10 +62,10 @@ public class ViewRange extends View {
 
             centerX=bindingCharacter.centerX;
             centerY=bindingCharacter.centerY;
-            nowLeft=centerX-bindingCharacter.nowViewRadius;
-            nowRight=centerX+bindingCharacter.nowViewRadius;
-            nowTop=centerY-bindingCharacter.nowViewRadius;
-            nowBottom=centerY+bindingCharacter.nowViewRadius;
+//            nowLeft=centerX-bindingCharacter.nowViewRadius;
+//            nowRight=centerX+bindingCharacter.nowViewRadius;
+//            nowTop=centerY-bindingCharacter.nowViewRadius;
+//            nowBottom=centerY+bindingCharacter.nowViewRadius;
             borderPaint = new Paint();
 //            DashPathEffect pathEffect=new DashPathEffect(new float[]{10,10},0);
 //            borderPaint.setPathEffect(pathEffect);
@@ -79,25 +79,34 @@ public class ViewRange extends View {
             transparentPaint.setAlpha(0);
             transparentPaint.setStyle(Paint.Style.FILL);
             transparentPaint.setStrokeWidth(5);
-            nowViewAngle=bindingCharacter.nowViewAngle;
+//            nowViewAngle=bindingCharacter.nowViewAngle;
         }
         if(this.getLayoutParams()==null){
             FrameLayout.LayoutParams layoutParams=new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT);
             layoutParams.leftMargin=bindingCharacter.centerX-bindingCharacter.nowViewRadius;
             layoutParams.topMargin=bindingCharacter.centerY-bindingCharacter.nowViewRadius;
             this.setLayoutParams(layoutParams);
-            this.layoutParams=layoutParams;
+//            this.layoutParams=layoutParams;
         }
     }
+
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        setMeasuredDimension(2*bindingCharacter.nowViewRadius,2*bindingCharacter.nowViewRadius);
+    }
+
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        canvas.drawARGB(50,50,50,50);
         float startAngle=bindingCharacter.nowFacingAngle-bindingCharacter.nowViewAngle/2;
         if(isHidden){
             canvas.drawArc(new RectF(0,0,2*bindingCharacter.nowViewRadius,2*bindingCharacter.nowViewRadius),startAngle,bindingCharacter.nowViewAngle,true,transparentPaint);
         }else{
             canvas.drawArc(new RectF(0,0,2*bindingCharacter.nowViewRadius,2*bindingCharacter.nowViewRadius),startAngle,bindingCharacter.nowViewAngle,true,borderPaint);
         }
+
         invalidate();
 
     }

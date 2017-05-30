@@ -56,7 +56,7 @@ public class HunterAI extends BaseAI {
                 bindingCharacter.nowFacingAngle = bindingCharacter.nowFacingAngle + 360;
             else if (bindingCharacter.nowFacingAngle > 360)
                 bindingCharacter.nowFacingAngle = bindingCharacter.nowFacingAngle - 360;
-            if (targetFacingAngle == bindingCharacter.nowFacingAngle && (intent == INTENT_HUNT))
+            if (targetFacingAngle == bindingCharacter.nowFacingAngle && intent == INTENT_HUNT)
                 targetFacingAngle = -1;
         }
 
@@ -288,8 +288,9 @@ public class HunterAI extends BaseAI {
             }
 
 
-            if (bindingCharacter.nowFacingAngle == targetFacingAngle && targetX == bindingCharacter.centerX & targetY == bindingCharacter.centerY) {
+            if (bindingCharacter.nowFacingAngle == targetFacingAngle && targetX == bindingCharacter.centerX && targetY == bindingCharacter.centerY) {
                 trackTrajectory = null;
+                reset();
 
             } else {
                 bindingCharacter.offX = targetX - bindingCharacter.centerX;

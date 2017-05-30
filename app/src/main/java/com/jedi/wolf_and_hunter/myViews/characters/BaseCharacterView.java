@@ -170,10 +170,10 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             if (viewRange != null) {
                 viewRange.centerX = this.centerX;
                 viewRange.centerY = this.centerY;
-                viewRange.nowLeft = centerX - nowViewRadius;
-                viewRange.nowRight = centerX + nowViewRadius;
-                viewRange.nowTop = centerY - nowViewRadius;
-                viewRange.nowBottom = centerY + nowViewRadius;
+//                viewRange.nowLeft = centerX - nowViewRadius;
+//                viewRange.nowRight = centerX + nowViewRadius;
+//                viewRange.nowTop = centerY - nowViewRadius;
+//                viewRange.nowBottom = centerY + nowViewRadius;
                 FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) viewRange.getLayoutParams();
                 layoutParams.leftMargin = centerX - nowViewRadius;
                 layoutParams.topMargin = centerY - nowViewRadius;
@@ -182,10 +182,10 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             if (attackRange != null) {
                 attackRange.centerX = this.centerX;
                 attackRange.centerY = this.centerY;
-                attackRange.nowLeft = centerX - nowAttackRadius;
-                attackRange.nowRight = centerX + nowAttackRadius;
-                attackRange.nowTop = centerY - nowAttackRadius;
-                attackRange.nowBottom = centerY + nowAttackRadius;
+//                attackRange.nowLeft = centerX - nowAttackRadius;
+//                attackRange.nowRight = centerX + nowAttackRadius;
+//                attackRange.nowTop = centerY - nowAttackRadius;
+//                attackRange.nowBottom = centerY + nowAttackRadius;
                 FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) attackRange.getLayoutParams();
                 layoutParams.leftMargin = centerX - nowAttackRadius;
                 layoutParams.topMargin = centerY - nowAttackRadius;
@@ -568,7 +568,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     }
 
     public void reactOtherPlayerMove() {
-        if(isStay)
+        if (isStay)
             return;
         int nowOffX = offX;
         int nowOffY = offY;
@@ -988,8 +988,8 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                 nowFacingAngle = 225;
             }
             FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) this.getLayoutParams();
-            layoutParams.leftMargin=nowLeft;
-            layoutParams.topMargin=nowTop;
+            layoutParams.leftMargin = nowLeft;
+            layoutParams.topMargin = nowTop;
             this.setLayoutParams(layoutParams);
             centerX = nowLeft + getWidth() / 2;
             centerY = nowTop + getHeight() / 2;
@@ -1008,39 +1008,39 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
     }
 
-    public void offsetLRTBParamsForOtherPlayer() {
-        if (isMyCharacter)
-            return;
-        if (isDead == true) {
-            deadReset();
-            return;
-        }
-
-
-        reactOtherPlayerMove();
-        FrameLayout.LayoutParams mLayoutParams = (FrameLayout.LayoutParams) getLayoutParams();
-        mLayoutParams.leftMargin = nowLeft;
-        mLayoutParams.topMargin = nowTop;
-        centerX = nowLeft + getWidth() / 2;
-        centerY = nowTop + getHeight() / 2;
-        changeThisCharacterOnLandformses();
-        GameBaseAreaActivity.myCharacter.changeOtherCharacterState(this);
-        setLayoutParams(mLayoutParams);
-
-
-        attackRange.centerX = centerX;
-        attackRange.centerY = centerY;
-        attackRange.layoutParams.leftMargin = attackRange.centerX - attackRange.nowAttackRadius;
-        attackRange.layoutParams.topMargin = attackRange.centerY - attackRange.nowAttackRadius;
-        attackRange.setLayoutParams(attackRange.layoutParams);
-
-        viewRange.centerX = centerX;
-        viewRange.centerY = centerY;
-        viewRange.layoutParams.leftMargin = viewRange.centerX - nowViewRadius;
-        viewRange.layoutParams.topMargin = viewRange.centerY - nowViewRadius;
-        viewRange.setLayoutParams(viewRange.layoutParams);
-
-    }
+//    public void offsetLRTBParamsForOtherPlayer() {
+//        if (isMyCharacter)
+//            return;
+//        if (isDead == true) {
+//            deadReset();
+//            return;
+//        }
+//
+//
+//        reactOtherPlayerMove();
+//        FrameLayout.LayoutParams mLayoutParams = (FrameLayout.LayoutParams) getLayoutParams();
+//        mLayoutParams.leftMargin = nowLeft;
+//        mLayoutParams.topMargin = nowTop;
+//        centerX = nowLeft + getWidth() / 2;
+//        centerY = nowTop + getHeight() / 2;
+//        changeThisCharacterOnLandformses();
+//        GameBaseAreaActivity.myCharacter.changeOtherCharacterState(this);
+//        setLayoutParams(mLayoutParams);
+//
+//
+//        attackRange.centerX = centerX;
+//        attackRange.centerY = centerY;
+//        attackRange.layoutParams.leftMargin = attackRange.centerX - attackRange.nowAttackRadius;
+//        attackRange.layoutParams.topMargin = attackRange.centerY - attackRange.nowAttackRadius;
+//        attackRange.setLayoutParams(attackRange.layoutParams);
+//
+//        viewRange.centerX = centerX;
+//        viewRange.centerY = centerY;
+//        viewRange.layoutParams.leftMargin = viewRange.centerX - nowViewRadius;
+//        viewRange.layoutParams.topMargin = viewRange.centerY - nowViewRadius;
+//        viewRange.setLayoutParams(viewRange.layoutParams);
+//
+//    }
 
 
     public void keepDirectionAndJump(int limitLeft, int limitTop, int limitRight, int limitBottom) {
@@ -1170,9 +1170,9 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             return;
         if (isMyCharacter == false) {
             BaseCharacterView myCharacter = GameBaseAreaActivity.myCharacter;
-            int myHearRadius=myCharacter.nowHearRadius;
-            if(this.characterType==CHARACTER_TYPE_HUNTER)
-                myHearRadius=3*myHearRadius;
+            int myHearRadius = myCharacter.nowHearRadius;
+            if (this.characterType == CHARACTER_TYPE_HUNTER)
+                myHearRadius = 3 * myHearRadius;
             int relateX = myCharacter.centerX - centerX;
             int relateY = myCharacter.centerY - centerY;
             double distance = Math.sqrt(relateX * relateX + relateY * relateY);
@@ -1199,10 +1199,10 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         attackMediaPlayer.start();
 
 
-
     }
 
     public void reloadAttackCount() {
+        reloadMediaPlayer.seekTo(0);
         if (reloadMediaPlayer == null)
             return;
         if (isMyCharacter == false) {
@@ -1229,7 +1229,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             attackMediaPlayer.setVolume(leftVol, rightVol);
 
         }
-        reloadMediaPlayer.seekTo(0);
+
         reloadMediaPlayer.start();
     }
 
@@ -1241,6 +1241,13 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         isStop = true;
+        if (moveMediaPlayer != null)
+            moveMediaPlayer.release();
+        if (attackMediaPlayer != null)
+            attackMediaPlayer.release();
+        if (reloadMediaPlayer != null)
+            reloadMediaPlayer.release();
+
     }
 }
 

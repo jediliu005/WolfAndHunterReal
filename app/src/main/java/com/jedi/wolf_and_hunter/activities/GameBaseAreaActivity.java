@@ -55,8 +55,8 @@ public class GameBaseAreaActivity extends Activity {
     public TextView t6;
     public TextView gameResult;
     public BaseAI testingAI;
-    public static int mapWidth=3000;
-    public static int mapHeight=3000;
+    public static int mapWidth=2000;
+    public static int mapHeight=2000;
 
 
     private final static int CONTROL_MODE_NORMAL = 0;
@@ -334,11 +334,14 @@ public class GameBaseAreaActivity extends Activity {
 
             myCharacter.viewRange.centerX = myCharacter.centerX;
             myCharacter.viewRange.centerY = myCharacter.centerY;
-            myCharacter.viewRange.layoutParams.leftMargin = myCharacter.viewRange.centerX - myCharacter.nowViewRadius;
-            myCharacter.viewRange.layoutParams.topMargin = myCharacter.viewRange.centerY - myCharacter.nowViewRadius;
-            myCharacter.viewRange.setLayoutParams(myCharacter.viewRange.layoutParams);
 
-            myCharacter.viewRange.invalidate();
+            FrameLayout.LayoutParams viewRangeLP=(FrameLayout.LayoutParams) myCharacter.viewRange.getLayoutParams();
+            viewRangeLP.leftMargin = myCharacter.viewRange.centerX - myCharacter.nowViewRadius;
+            viewRangeLP.topMargin = myCharacter.viewRange.centerY - myCharacter.nowViewRadius;
+
+            myCharacter.viewRange.setLayoutParams(viewRangeLP);
+
+//            myCharacter.viewRange.invalidate();
 
 
             myCharacter.startMovingMediaThread();
@@ -386,9 +389,10 @@ public class GameBaseAreaActivity extends Activity {
 
                 c.viewRange.centerX = c.centerX;
                 c.viewRange.centerY = c.centerY;
-                c.viewRange.layoutParams.leftMargin = c.viewRange.centerX - c.nowViewRadius;
-                c.viewRange.layoutParams.topMargin = c.viewRange.centerY - c.nowViewRadius;
-                c.viewRange.setLayoutParams(c.viewRange.layoutParams);
+                FrameLayout.LayoutParams viewRangeLP=(FrameLayout.LayoutParams) c.viewRange.getLayoutParams();
+                viewRangeLP.leftMargin = c.viewRange.centerX - c.nowViewRadius;
+                viewRangeLP.topMargin = c.viewRange.centerY - c.nowViewRadius;
+                c.viewRange.setLayoutParams(viewRangeLP);
                 c.viewRange.invalidate();
                 c.hasUpdatedPosition = false;
                 int relateX = myCharacter.centerX - c.centerX;
