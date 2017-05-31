@@ -11,16 +11,15 @@ import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.media.MediaPlayer;
-import android.support.annotation.Px;
 import android.util.AttributeSet;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
+import com.jedi.wolf_and_hunter.R;
+import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
 import com.jedi.wolf_and_hunter.myObj.MyVirtualWindow;
 import com.jedi.wolf_and_hunter.myViews.AttackRange;
 import com.jedi.wolf_and_hunter.myViews.GameMap;
@@ -28,8 +27,6 @@ import com.jedi.wolf_and_hunter.myViews.JRocker;
 import com.jedi.wolf_and_hunter.myViews.SightView;
 import com.jedi.wolf_and_hunter.myViews.ViewRange;
 import com.jedi.wolf_and_hunter.myViews.landform.Landform;
-import com.jedi.wolf_and_hunter.R;
-import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 import com.jedi.wolf_and_hunter.utils.ViewUtils;
 
@@ -61,8 +58,9 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public int jumpToY = -99999;
     public boolean needMove = false;
     public boolean needTurned = false;
-    public int angleChangSpeed = 1;
-    //以下为角色View基本共有属性
+    public int nowAngleChangSpeed = 1;
+
+    //以下为角色View基本位置与状态属性
     public int characterType = 0;
     public boolean hasUpdatedPosition = false;
     public int centerX = -1, centerY = -1;
@@ -92,11 +90,31 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public SightView sight;
     public AttackRange attackRange;
     public ViewRange viewRange;
+    private int teamID;
+    public int id;
+    public MyVirtualWindow virtualWindow;
+    public boolean isDead = false;
+    public long deadTime;
+    public boolean isForceToBeSawByMe = false;//注意！这属性只针对本机玩家视觉，对AI判行为无效
+    public volatile boolean judgeingAttack = false;
+    public volatile boolean isReloadingAttack = false;
+    public GameBaseAreaActivity.GameHandler gameHandler;
+    public volatile HashSet<Integer> seeMeTeamIDs;
+    public volatile HashSet<BaseCharacterView> theyDiscoverMe;
+
+    public Thread movingMediaThread;
+    public int runOrWalk = 0;
+    public boolean isStay;
+    public boolean isLocking;
+    public BaseCharacterView lockingCharacter;
     public int lastEffectX = -1;
     public int lastEffectY = -1;
     public Landform lastLandform;
-    private int teamID;
-    public int id;
+    //多媒体
+    public MediaPlayer moveMediaPlayer;
+    public MediaPlayer attackMediaPlayer;
+    public MediaPlayer reloadMediaPlayer;
+
     //以下为绘图杂项
     public Bitmap characterPic;
     public Matrix matrixForCP;
@@ -115,20 +133,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     Paint transparentPaint;
     Paint textNormalPaint;
     Paint textAlphaPaint;
-    public MyVirtualWindow virtualWindow;
-    public boolean isDead = false;
-    public long deadTime;
-    public boolean isForceToBeSawByMe = false;//注意！这属性只针对本机玩家视觉，对AI判行为无效
-    public boolean judgeingAttack = false;
-    public GameBaseAreaActivity.GameHandler gameHandler;
-    public volatile HashSet<Integer> seeMeTeamIDs;
-    public volatile HashSet<BaseCharacterView> theyDiscoverMe;
-    public MediaPlayer moveMediaPlayer;
-    public MediaPlayer attackMediaPlayer;
-    public MediaPlayer reloadMediaPlayer;
-    public Thread movingMediaThread;
-    public int runOrWalk = 0;
-    public boolean isStay;
+
 
     public int getTeamID() {
         return teamID;
@@ -333,13 +338,15 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             else
                 return;
         }
+        if(GameBaseAreaActivity.isStop == true || needMove==false || isDead == true)
+            return;
         movingMediaThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 while (GameBaseAreaActivity.isStop == false && needMove && isDead == false) {
                     if (isStay) {
                         try {
-                            Thread.sleep(500);
+                            Thread.sleep(200);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
@@ -369,7 +376,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                         moveMediaPlayer.setVolume(leftVol, rightVol);
 
                     }
-                    if (isStay == false)
+                    if (isStay == false&&needMove==true)
                         moveMediaPlayer.start();
                     try {
                         if (runOrWalk == MOVINT_TYPE_WALK)
@@ -511,8 +518,8 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             else
                 relateAngle = 360 - relateAngle;
         }
-        if (Math.abs(relateAngle) > angleChangSpeed * 2)
-            realRelateAngle = Math.abs(relateAngle) / relateAngle * angleChangSpeed * 2;
+        if (Math.abs(relateAngle) > nowAngleChangSpeed * 2)
+            realRelateAngle = Math.abs(relateAngle) / relateAngle * nowAngleChangSpeed * 2;
 
         targetFacingAngle = nowFacingAngle + realRelateAngle;
         nowFacingAngle = targetFacingAngle;
@@ -531,7 +538,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                 nowMoveSpeed = nowSpeed / 3;
                 runOrWalk = MOVINT_TYPE_WALK;
             }
-            if (Math.abs(relateAngle) > 45)
+            if (Math.abs(relateAngle) > 90)
                 nowMoveSpeed = nowMoveSpeed / 10;
             double cosNowFacingAngle = Math.cos(Math.toRadians(nowFacingAngle));
             nowOffX = (int) Math.round(cosNowFacingAngle * offDistance);
@@ -552,6 +559,8 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                 e.printStackTrace();
             }
 //        }
+            if(Math.abs(nowOffX)>nowSpeed||Math.abs(nowOffY)>nowSpeed)
+                Log.i("","");
             nowLeft = nowLeft + nowOffX;
             nowTop = nowTop + nowOffY;
             nowRight = nowLeft + getWidth();
@@ -567,7 +576,11 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
     }
 
-    public void reactOtherPlayerMove() {
+    public void initCharacterState(){
+
+    }
+
+    public void reactOtherPlayerHunterMove() {
         if (isStay)
             return;
         int nowOffX = offX;
@@ -575,7 +588,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         if (nowOffX != 0 || nowOffY != 0) {
             needMove = true;
         } else {
-            needMove = true;
+            needMove = false;
         }
 
 
@@ -621,8 +634,8 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             else
                 relateAngle = 360 - relateAngle;
         }
-        if (Math.abs(relateAngle) > angleChangSpeed * 2)
-            realRelateAngle = Math.abs(relateAngle) / relateAngle * angleChangSpeed * 2;
+        if (Math.abs(relateAngle) > nowAngleChangSpeed * 2)
+            realRelateAngle = Math.abs(relateAngle) / relateAngle * nowAngleChangSpeed * 2;
         else
             realRelateAngle = relateAngle;
         nowFacingAngle = nowFacingAngle + realRelateAngle;
@@ -1163,6 +1176,64 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             jumpToX = -99999;
             jumpToY = -99999;
         }
+    }
+
+    /**
+     * 这方法也是myCharacter专用
+     */
+    public void dealLocking() {
+        if (isLocking == false)
+            return;
+        if (isReloadingAttack) {
+            return;
+        }
+        int relateX = 0;
+        int relateY = 0;
+        float targetFacingAngle = 0;
+        if (lockingCharacter != null) {
+
+            if (lockingCharacter.isDead||lockingCharacter.isForceToBeSawByMe == false) {
+                lockingCharacter = null;
+                return;
+            } else {
+                relateX = lockingCharacter.centerX - this.centerX;
+                relateY = lockingCharacter.centerY - this.centerY;
+                targetFacingAngle = MyMathsUtils.getAngleBetweenXAxus(relateX, relateY);
+                float relateAngle = targetFacingAngle - this.nowFacingAngle;
+                if (Math.abs(relateAngle) > 180) {//处理旋转最佳方向
+                    if (relateAngle > 0)
+                        relateAngle = relateAngle - 360;
+
+                    else
+                        relateAngle = 360 - relateAngle;
+                }
+                if (Math.abs(relateAngle) > this.nowAngleChangSpeed)
+                    relateAngle = Math.abs(relateAngle) / relateAngle * this.nowAngleChangSpeed;
+
+                this.nowFacingAngle = this.nowFacingAngle + relateAngle;
+
+                if (this.nowFacingAngle < 0)
+                    this.nowFacingAngle = this.nowFacingAngle + 360;
+                else if (this.nowFacingAngle > 360)
+                    this.nowFacingAngle = this.nowFacingAngle - 360;
+            }
+            return;
+        } else {
+            for (BaseCharacterView character : GameBaseAreaActivity.allCharacters) {
+                if (character.teamID == this.teamID)
+                    continue;
+                if (character.isForceToBeSawByMe) {
+                    lockingCharacter = character;
+                    return;
+                }
+            }
+        }
+
+    }
+
+
+    public void switchLockingState(Boolean isLocking) {
+
     }
 
     public void judgeAttack() {

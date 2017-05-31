@@ -8,6 +8,7 @@ import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Message;
 import android.util.AttributeSet;
+import android.widget.FrameLayout;
 
 import com.jedi.wolf_and_hunter.R;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
@@ -28,14 +29,14 @@ public class NormalHunter extends BaseCharacterView {
     private final static int defauleReloadAttackNeedTime = 3000;
     public final static int defaultAttackRadius = 700;
     public final static int defaultViewRadius = 600;
+    public final static int defaultViewAngle = 90;
     public final static int defaultHearRadius = 400;
     public final static int defaultForceViewRadius = 200;
     public final static int defaultWalkWaitTime = 800;
     public final static int defaultRunWaitTime = 300;
-    public final static int defaultSpeed = 15;
+    public final static int defaultSpeed = 10;
     public final static int defaultAngleChangSpeed = 3;
-    private int bolletWidth = 1;
-    boolean isReloading = false;
+    private int bolletWidth = 0;
 
 
     //下面一行控制bitmap是否自适应分辨率，不强制设flase可能出现图片分辨率和draw分辨率不一致
@@ -81,33 +82,74 @@ public class NormalHunter extends BaseCharacterView {
         maxAttackCount = defaultMaxAttackCount;
         nowAttackRadius = defaultAttackRadius;
         nowViewRadius = defaultViewRadius;
+        nowViewAngle=defaultViewAngle;
         nowHearRadius = defaultHearRadius;
         nowWalkWaitTime = defaultWalkWaitTime;
         nowRunWaitTime = defaultRunWaitTime;
         nowForceViewRadius = defaultForceViewRadius;
         nowSpeed = defaultSpeed;
 
-        super.angleChangSpeed = defaultAngleChangSpeed;
+        FrameLayout.LayoutParams viewRangeLP= (FrameLayout.LayoutParams) viewRange.getLayoutParams();
+        viewRangeLP.width=2*defaultViewRadius;
+        viewRange.setLayoutParams(viewRangeLP);
+
+        FrameLayout.LayoutParams attackRangeLP= (FrameLayout.LayoutParams) attackRange.getLayoutParams();
+        attackRangeLP.width=2*defaultAttackRadius;
+        attackRange.setLayoutParams(attackRangeLP);
+
+        super.nowAngleChangSpeed = defaultAngleChangSpeed;
         if (this.virtualWindow == null)
             this.virtualWindow = GameBaseAreaActivity.virtualWindow;
+    }
+    @Override
+    public void initCharacterState() {
+        nowAttackRadius = defaultAttackRadius;
+        nowViewRadius = defaultViewRadius;
+        nowViewAngle = defaultViewAngle;
+        nowHearRadius = defaultHearRadius;
+        nowForceViewRadius=defaultForceViewRadius;
+        nowSpeed = defaultSpeed;
+        nowAngleChangSpeed = defaultAngleChangSpeed;
+    }
+
+    @Override
+    public void switchLockingState(Boolean isLocking) {
+        synchronized (this) {
+            super.switchLockingState(isLocking);
+            if (isLocking) {
+                this.nowViewRadius = (int) (1.25 * defaultViewRadius);
+                this.nowForceViewRadius = (int) (2 * defaultForceViewRadius);
+                this.nowViewAngle = (float) (0.5 * defaultViewAngle);
+                this.nowAngleChangSpeed = (int) (0.5 * defaultAngleChangSpeed);
+            } else {
+                this.nowViewRadius = defaultViewRadius;
+                this.nowForceViewRadius = defaultForceViewRadius;
+                this.nowViewAngle = defaultViewAngle;
+                this.nowAngleChangSpeed = defaultAngleChangSpeed;
+            }
+        }
     }
 
     @Override
     public void reloadAttackCount() {
-        if (isReloading == true)
+        if (isReloadingAttack == true)
             return;
         super.reloadAttackCount();
+        initCharacterState();
         new Thread(
                 new Runnable() {
                     @Override
                     public void run() {
                         synchronized (this) {
-                            isReloading = true;
-                            nowSpeed = defaultSpeed * 2 / 3;
-                            nowViewRadius = defaultViewRadius / 2;
-                            nowForceViewRadius = defaultViewRadius / 2;
-                            nowHearRadius = defaultHearRadius * 2 / 3;
+                            isReloadingAttack = true;
+                            lockingCharacter=null;
+                            isLocking=false;
+                            nowSpeed = defaultSpeed/2;
+                            nowViewRadius = defaultViewRadius/2;
+                            nowForceViewRadius = defaultForceViewRadius/2;
+                            nowHearRadius = defaultHearRadius/2;
                         }
+//
                         Date now = new Date();
                         reloadAttackStartTime = now.getTime();//这参数用于攻击按钮饼图显示
                         try {
@@ -115,14 +157,16 @@ public class NormalHunter extends BaseCharacterView {
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
+
+//
                         synchronized (this) {
                             nowSpeed = defaultSpeed;
-                            nowViewRadius = defaultViewRadius;
-                            nowForceViewRadius = defaultForceViewRadius;
-                            nowHearRadius = defaultHearRadius;
+                            nowViewRadius = defaultViewRadius ;
+                            nowForceViewRadius =defaultForceViewRadius;
+                            nowHearRadius = defaultHearRadius ;
                             attackCount = maxAttackCount;
                             reloadAttackStartTime = 0;
-                            isReloading = false;
+                            isReloadingAttack = false;
                         }
                     }
                 }
@@ -141,7 +185,7 @@ public class NormalHunter extends BaseCharacterView {
 
     @Override
     public void judgeAttack() {
-        if (attackCount <= 0 || isReloading || isDead) {
+        if (attackCount <= 0 || isReloadingAttack || isDead) {
             return;
         }
         super.judgeAttack();
@@ -158,7 +202,7 @@ public class NormalHunter extends BaseCharacterView {
             int targetCharacterCenterY = targetCharacter.centerY;
 
             double distance = MyMathsUtils.getDistance(new Point(centerX, centerY), new Point(targetCharacterCenterX, targetCharacterCenterY));
-            if (distance > attackRange.nowAttackRadius)
+            if (distance > nowAttackRadius)
                 continue;
 
 

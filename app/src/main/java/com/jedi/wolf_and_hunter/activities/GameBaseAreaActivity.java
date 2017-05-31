@@ -24,6 +24,7 @@ import com.jedi.wolf_and_hunter.myViews.AttackButton;
 import com.jedi.wolf_and_hunter.myViews.AttackRange;
 import com.jedi.wolf_and_hunter.myViews.GameMap;
 import com.jedi.wolf_and_hunter.myViews.LeftRocker;
+import com.jedi.wolf_and_hunter.myViews.LockingButton;
 import com.jedi.wolf_and_hunter.myViews.MapBaseFrame;
 import com.jedi.wolf_and_hunter.myViews.RightRocker;
 import com.jedi.wolf_and_hunter.myViews.SightView;
@@ -55,8 +56,8 @@ public class GameBaseAreaActivity extends Activity {
     public TextView t6;
     public TextView gameResult;
     public BaseAI testingAI;
-    public static int mapWidth=2000;
-    public static int mapHeight=2000;
+    public static int mapWidth = 2000;
+    public static int mapHeight = 2000;
 
 
     private final static int CONTROL_MODE_NORMAL = 0;
@@ -67,6 +68,7 @@ public class GameBaseAreaActivity extends Activity {
     RightRocker rightRocker;
     //    AttackButton leftAtttackButton;
     AttackButton rightAtttackButton;
+    LockingButton lockingButton;
     public static PlayerInfo myPlayerInfo;
     public static volatile ArrayList<BaseCharacterView> allCharacters;
     public static ArrayList<Trajectory> allTrajectories;
@@ -280,9 +282,9 @@ public class GameBaseAreaActivity extends Activity {
 //                        Log.i("Player1 offX", Integer.toString(myCharacter.offX));
 //                        Log.i("Player1 nowLeft", Integer.toString(myCharacter.nowLeft));
                     if (myCharacter.needMove == true) {
-                        if(myPlayerInfo.characterType==BaseCharacterView.CHARACTER_TYPE_HUNTER)
+                        if (myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
                             myCharacter.normalModeOffsetLRTBParams();
-                        else if(myPlayerInfo.characterType==BaseCharacterView.CHARACTER_TYPE_WOLF)
+                        else if (myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF)
                             myCharacter.normalModeOffsetWolfLRTBParams();
 //                        needChange = true;
                     }
@@ -291,8 +293,10 @@ public class GameBaseAreaActivity extends Activity {
                     if (mySight != null && mySight.needMove == true) {
                         mySight.normalModeOffsetLRTBParams();
 //                        needChange = true;
+                    }else if(myCharacter.isLocking){
+                        myCharacter.dealLocking();
                     }
-                    mySight.virtualWindowPassiveFollow();
+
 
 
                 }
@@ -328,22 +332,24 @@ public class GameBaseAreaActivity extends Activity {
             }
             myCharacter.attackRange.centerX = myCharacter.centerX;
             myCharacter.attackRange.centerY = myCharacter.centerY;
-            myCharacter.attackRange.layoutParams.leftMargin = myCharacter.attackRange.centerX - myCharacter.attackRange.nowAttackRadius;
-            myCharacter.attackRange.layoutParams.topMargin = myCharacter.attackRange.centerY - myCharacter.attackRange.nowAttackRadius;
+            myCharacter.attackRange.layoutParams.leftMargin = myCharacter.attackRange.centerX - myCharacter.nowAttackRadius;
+            myCharacter.attackRange.layoutParams.topMargin = myCharacter.attackRange.centerY - myCharacter.nowAttackRadius;
+
             myCharacter.attackRange.setLayoutParams(myCharacter.attackRange.layoutParams);
 
             myCharacter.viewRange.centerX = myCharacter.centerX;
             myCharacter.viewRange.centerY = myCharacter.centerY;
 
-            FrameLayout.LayoutParams viewRangeLP=(FrameLayout.LayoutParams) myCharacter.viewRange.getLayoutParams();
+            FrameLayout.LayoutParams viewRangeLP = (FrameLayout.LayoutParams) myCharacter.viewRange.getLayoutParams();
             viewRangeLP.leftMargin = myCharacter.viewRange.centerX - myCharacter.nowViewRadius;
             viewRangeLP.topMargin = myCharacter.viewRange.centerY - myCharacter.nowViewRadius;
-
+//            viewRangeLP.width=2*myCharacter.nowViewRadius;
+//            viewRangeLP.height=2*myCharacter.nowViewRadius;
             myCharacter.viewRange.setLayoutParams(viewRangeLP);
 
 //            myCharacter.viewRange.invalidate();
 
-
+            mySight.virtualWindowPassiveFollow();
             myCharacter.startMovingMediaThread();
 
 //            }
@@ -363,9 +369,9 @@ public class GameBaseAreaActivity extends Activity {
                 if (c.jumpToX > -99999 && c.jumpToY > -99999) {
                     c.keepDirectionAndJump(0, 0, mapBaseFrame.getWidth(), mapBaseFrame.getHeight());
                 } else {
-                    if(c.characterType==BaseCharacterView.CHARACTER_TYPE_HUNTER)
-                        c.reactOtherPlayerMove();
-                    else if(c.characterType==BaseCharacterView.CHARACTER_TYPE_WOLF)
+                    if (c.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
+                        c.reactOtherPlayerHunterMove();
+                    else if (c.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF)
                         c.reactOtherPlayerWolfMove();
                 }
 //                        if(c.getTeamID()==2){
@@ -383,13 +389,13 @@ public class GameBaseAreaActivity extends Activity {
 
                 c.attackRange.centerX = c.centerX;
                 c.attackRange.centerY = c.centerY;
-                c.attackRange.layoutParams.leftMargin = c.attackRange.centerX - c.attackRange.nowAttackRadius;
-                c.attackRange.layoutParams.topMargin = c.attackRange.centerY - c.attackRange.nowAttackRadius;
+                c.attackRange.layoutParams.leftMargin = c.attackRange.centerX - c.nowAttackRadius;
+                c.attackRange.layoutParams.topMargin = c.attackRange.centerY - c.nowAttackRadius;
                 c.attackRange.setLayoutParams(c.attackRange.layoutParams);
 
                 c.viewRange.centerX = c.centerX;
                 c.viewRange.centerY = c.centerY;
-                FrameLayout.LayoutParams viewRangeLP=(FrameLayout.LayoutParams) c.viewRange.getLayoutParams();
+                FrameLayout.LayoutParams viewRangeLP = (FrameLayout.LayoutParams) c.viewRange.getLayoutParams();
                 viewRangeLP.leftMargin = c.viewRange.centerX - c.nowViewRadius;
                 viewRangeLP.topMargin = c.viewRange.centerY - c.nowViewRadius;
                 c.viewRange.setLayoutParams(viewRangeLP);
@@ -421,24 +427,12 @@ public class GameBaseAreaActivity extends Activity {
             if (playerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER) {
                 aiCharacter = new NormalHunter(this, virtualWindow);
                 ai = new HunterAI(aiCharacter);
-            } else if(playerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF){
+            } else if (playerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF) {
                 aiCharacter = new NormalWolf(this, virtualWindow);
                 ai = new WolfAI(aiCharacter);
             }
-//            FrameLayout.LayoutParams c1LP = (FrameLayout.LayoutParams) aiCharacter.getLayoutParams();
-//            c1LP.leftMargin = mapBaseFrame.getWidth() - 200;
-//            c1LP.topMargin = mapBaseFrame.getHeight() - 200;
-//            aiCharacter.nowFacingAngle = new Random().nextInt(359);
-//            aiCharacter.setLayoutParams(c1LP);
             aiCharacter.gameHandler = gameHandler;
             aiCharacter.setTeamID(playerInfo.teamID);
-//            aiCharacter.setTeamID(i%2+1);
-//            ViewRange viewRange = new ViewRange(this, aiCharacter);
-//            AttackRange attackRange = new AttackRange(this, aiCharacter);
-//            mapBaseFrame.addView(viewRange);
-//            mapBaseFrame.addView(attackRange);
-//            mapBaseFrame.addView(aiCharacter);
-
 
 
             allCharacters.add(aiCharacter);
@@ -518,6 +512,13 @@ public class GameBaseAreaActivity extends Activity {
             mapBaseFrame.mySight = mySight;
         }
 
+
+
+
+
+
+
+
         rightAtttackButton = (AttackButton) this.findViewById(R.id.attack_button_right);
         int buttonSize = rightAtttackButton.buttonSize;
         rightAtttackButton.bindingCharacter = myCharacter;
@@ -546,19 +547,30 @@ public class GameBaseAreaActivity extends Activity {
 //        leftAtttackButton.setLayoutParams(labp);
 
 
-            rabp.leftMargin = rightRocker.getRight()-rightAtttackButton.buttonSize-10;
-            rabp.topMargin = rightRocker.getTop()-rightAtttackButton.buttonSize-30;
+            rabp.leftMargin = rightRocker.getRight() - rightAtttackButton.buttonSize - 10;
+            rabp.topMargin = rightRocker.getTop() - rightAtttackButton.buttonSize +30;
         } else if (myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF) {
             rightAtttackButton.reCreateBitmap();
             baseFrame.removeView(rightRocker);
-            rabp.leftMargin = MyVirtualWindow.getWindowWidth(this)-rightAtttackButton.buttonSize-50;
-            rabp.topMargin = MyVirtualWindow.getWindowHeight(this)-(leftRocker.getHeight()/2+rightAtttackButton.buttonSize/2);
+            rabp.leftMargin = MyVirtualWindow.getWindowWidth(this) - rightAtttackButton.buttonSize - 50;
+            rabp.topMargin = MyVirtualWindow.getWindowHeight(this) - (leftRocker.getHeight() / 2 + rightAtttackButton.buttonSize / 2);
         }
         rightAtttackButton.setLayoutParams(rabp);
         leftRocker.bringToFront();
         rightRocker.bringToFront();
         rightAtttackButton.bringToFront();
 
+        lockingButton = (LockingButton) findViewById(R.id.locking_button);
+        int lockingButtonSize = lockingButton.buttonSize;
+        lockingButton.bindingCharacter = myCharacter;
+        FrameLayout.LayoutParams lblp = (FrameLayout.LayoutParams) lockingButton.getLayoutParams();
+        if (lblp == null) {
+            lblp = new FrameLayout.LayoutParams(lockingButtonSize, lockingButtonSize);
+        }
+        lblp.leftMargin=rabp.leftMargin-lockingButtonSize;
+        lblp.topMargin=rabp.topMargin;
+        lockingButton.setLayoutParams(lblp);
+        lockingButton.bringToFront();
 
         startAI();
 

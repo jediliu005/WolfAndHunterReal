@@ -390,8 +390,8 @@ public class SightView extends SurfaceView implements SurfaceHolder.Callback {
             else
                 relateAngle = 360 - relateAngle;
         }
-        if (Math.abs(relateAngle) > bindingCharacter.angleChangSpeed)
-            relateAngle = Math.abs(relateAngle) / relateAngle * bindingCharacter.angleChangSpeed;
+        if (Math.abs(relateAngle) > bindingCharacter.nowAngleChangSpeed)
+            relateAngle = Math.abs(relateAngle) / relateAngle * bindingCharacter.nowAngleChangSpeed;
 
         targetFacingAngle = bindingCharacter.nowFacingAngle + relateAngle;
         bindingCharacter.nowFacingAngle=targetFacingAngle;
@@ -470,8 +470,8 @@ public class SightView extends SurfaceView implements SurfaceHolder.Callback {
         int windowCenterX;
         int windowCenterY;
         int centerDistance=windowWidth/5;
-        windowCenterX=(int)(Math.cos(Math.toRadians(bindingCharacter.nowFacingAngle))*centerDistance)+(bindingCharacter.nowLeft+bindingCharacter.nowRight)/2;
-        windowCenterY=(int)(Math.sin(Math.toRadians(bindingCharacter.nowFacingAngle))*centerDistance)+(bindingCharacter.nowTop+bindingCharacter.nowBottom)/2;;
+        windowCenterX=(int)(Math.cos(Math.toRadians(bindingCharacter.nowFacingAngle))*centerDistance)+centerX;
+        windowCenterY=(int)(Math.sin(Math.toRadians(bindingCharacter.nowFacingAngle))*centerDistance)+centerY;;
         this.virtualWindow.targetLeft=windowCenterX-windowWidth/2;
         this.virtualWindow.targetRight=virtualWindow.left+windowWidth;
         this.virtualWindow.targetTop=windowCenterY-windowHeight/2;

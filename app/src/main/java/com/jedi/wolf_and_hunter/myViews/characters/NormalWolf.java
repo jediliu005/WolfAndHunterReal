@@ -30,11 +30,12 @@ public class NormalWolf extends BaseCharacterView {
     public final static int defaultAttackRadius = 200;
 //    public final static int defaultViewRadius = 200;
     public final static int defaultViewRadius = 500;
+    public final static int defaultViewAngle = 90;
     public final static int defaultHearRadius = 600;
     public  final static int defaultForceViewRadius=300;
     public final static int defaultWalkWaitTime = 500;
     public final static int defaultRunWaitTime = 200;
-    public final static int defaultSpeed = 20;
+    public final static int defaultSpeed = 15;
     boolean isStop = false;
     Thread attackThread;
     //下面一行控制bitmap是否自适应分辨率，不强制设flase可能出现图片分辨率和draw分辨率不一致
@@ -78,16 +79,28 @@ public class NormalWolf extends BaseCharacterView {
         maxAttackCount = defaultMaxAttackCount;
         nowAttackRadius = defaultAttackRadius;
         nowViewRadius = defaultViewRadius;
+        nowViewAngle = defaultViewAngle;
         nowHearRadius = defaultHearRadius;
         nowForceViewRadius=defaultForceViewRadius;
+        nowSpeed = defaultSpeed;
+        nowAngleChangSpeed = defaultAngleChangSpeed;
         nowWalkWaitTime=defaultWalkWaitTime;
         nowRunWaitTime=defaultRunWaitTime;
-        nowSpeed = defaultSpeed;
         moveMediaPlayer = MediaPlayer.create(getContext(), R.raw.wolf_move);
-        super.angleChangSpeed = defaultAngleChangSpeed;
         if (this.virtualWindow == null)
             this.virtualWindow = GameBaseAreaActivity.virtualWindow;
         reloadAttackCount();
+    }
+
+    @Override
+    public void initCharacterState() {
+        nowAttackRadius = defaultAttackRadius;
+        nowViewRadius = defaultViewRadius;
+        nowViewAngle = defaultViewAngle;
+        nowHearRadius = defaultHearRadius;
+        nowForceViewRadius=defaultForceViewRadius;
+        nowSpeed = defaultSpeed;
+        nowAngleChangSpeed = defaultAngleChangSpeed;
     }
 
     @Override

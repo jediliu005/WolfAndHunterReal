@@ -22,7 +22,7 @@ public class MyVirtualWindow {
     public int top;
     public int right;
     public int bottom;
-    public int windowMoveSpeed=50;
+
     public int targetLeft;
     public int targetTop;
     public int targetRight;
@@ -97,12 +97,18 @@ public class MyVirtualWindow {
         }
     }
     public synchronized void reflashWindowPosition() {
-        if(true)
-        return;
+//        if(true)
+//        return;
+        int windowMoveSpeed=GameBaseAreaActivity.myCharacter.nowSpeed;
+
         updateNowWindowPosition(movingLayout);
         FrameLayout.LayoutParams movingLayoutParams = (FrameLayout.LayoutParams) movingLayout.getLayoutParams();
         int relateX = targetLeft - left;
         int relateY = targetTop - top;
+        if(Math.abs(relateX)>500||Math.abs(relateY)>500)
+            windowMoveSpeed=3*windowMoveSpeed;
+//        else if(Math.abs(relateX)<100||Math.abs(relateY)<100)
+//            windowMoveSpeed=windowMoveSpeed*3/5;
         if (Math.abs(relateX) > windowMoveSpeed)
             movingLayoutParams.leftMargin = -(left + windowMoveSpeed * Math.abs(relateX) / relateX);
         else

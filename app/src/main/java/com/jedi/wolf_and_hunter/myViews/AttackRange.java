@@ -19,7 +19,7 @@ import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
  */
 
 public class AttackRange extends View {
-    public int nowAttackRadius;
+//    public int nowAttackRadius;
     public int centerX, centerY;
 //    public int nowLeft;
 //    public int nowTop;
@@ -61,7 +61,7 @@ public class AttackRange extends View {
     private void init(){
 
         if(bindingCharacter!=null) {
-            nowAttackRadius = bindingCharacter.nowAttackRadius;
+//            nowAttackRadius = bindingCharacter.nowAttackRadius;
             centerX=bindingCharacter.centerX;
             centerY=bindingCharacter.centerY;
 //            nowLeft=centerX-nowAttackRadius;
@@ -84,8 +84,8 @@ public class AttackRange extends View {
         }
         if(this.getLayoutParams()==null){
             FrameLayout.LayoutParams layoutParams=new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT);
-            layoutParams.leftMargin=bindingCharacter.centerX-nowAttackRadius;
-            layoutParams.topMargin=bindingCharacter.centerY-nowAttackRadius;
+            layoutParams.leftMargin=bindingCharacter.centerX-bindingCharacter.nowAttackRadius;
+            layoutParams.topMargin=bindingCharacter.centerY-bindingCharacter.nowAttackRadius;
             this.setLayoutParams(layoutParams);
             this.layoutParams=layoutParams;
         }
@@ -97,7 +97,7 @@ public class AttackRange extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-
+        int nowAttackRadius=bindingCharacter.nowAttackRadius;
 
         double cosAlpha=Math.cos(Math.toRadians(bindingCharacter.nowFacingAngle));
         double endX=cosAlpha*nowAttackRadius;
@@ -107,9 +107,9 @@ public class AttackRange extends View {
             endY=-endY;
         endX=endX+nowAttackRadius;
         endY=endY+nowAttackRadius;
-        if(isHidden){
-            canvas.drawCircle(nowAttackRadius,nowAttackRadius,nowAttackRadius,transparentPaint);
-            canvas.drawLine(nowAttackRadius,nowAttackRadius,(int)endX,(int)endY,transparentPaint);
+        if(isHidden||bindingCharacter.isReloadingAttack){
+//            canvas.drawCircle(nowAttackRadius,nowAttackRadius,nowAttackRadius,transparentPaint);
+//            canvas.drawLine(nowAttackRadius,nowAttackRadius,(int)endX,(int)endY,transparentPaint);
         }else{
             canvas.drawCircle(nowAttackRadius,nowAttackRadius,nowAttackRadius,borderPaint);
             canvas.drawLine(nowAttackRadius,nowAttackRadius,(int)endX,(int)endY,borderPaint);

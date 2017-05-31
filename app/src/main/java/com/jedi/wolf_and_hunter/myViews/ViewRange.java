@@ -3,6 +3,7 @@ package com.jedi.wolf_and_hunter.myViews;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.support.annotation.Nullable;
@@ -99,15 +100,17 @@ public class ViewRange extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        canvas.drawARGB(50,50,50,50);
+//        canvas.drawARGB(50,50,50,50);
         float startAngle=bindingCharacter.nowFacingAngle-bindingCharacter.nowViewAngle/2;
+        //因为draw和layout不是一次完成的，直接用nowViewRadius会造成先画好再layout的闪动问题，这里迁就layout
+        int drawRadius= this.getRight()-bindingCharacter.centerX;
+
         if(isHidden){
-            canvas.drawArc(new RectF(0,0,2*bindingCharacter.nowViewRadius,2*bindingCharacter.nowViewRadius),startAngle,bindingCharacter.nowViewAngle,true,transparentPaint);
+            canvas.drawArc(new RectF(0,0,2*drawRadius,2*drawRadius),startAngle,bindingCharacter.nowViewAngle,true,transparentPaint);
         }else{
-            canvas.drawArc(new RectF(0,0,2*bindingCharacter.nowViewRadius,2*bindingCharacter.nowViewRadius),startAngle,bindingCharacter.nowViewAngle,true,borderPaint);
+            canvas.drawArc(new RectF(0,0,2*drawRadius,2*drawRadius),startAngle,bindingCharacter.nowViewAngle,true,borderPaint);
         }
 
-        invalidate();
 
     }
 }
