@@ -92,30 +92,34 @@ public class GameBaseAreaActivity extends Activity {
     private class GameMainTask extends TimerTask {
         @Override
         public void run() {
-
-            if (backGroundMusicThread == null) {
-                backGroundMusicThread = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-
-                        while (isStop == false) {
-                            if (backGround.isPlaying() == false) {
-                                backGround.seekTo(0);
-                                backGround.start();
-                            }
-                            try {
-                                Thread.sleep(1000);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                        backGround.stop();
-
-                    }
-                });
-                backGroundMusicThread.setDaemon(true);
-                backGroundMusicThread.start();
+            if (backGround.isPlaying() == false) {
+                backGround.setLooping(true);
+                backGround.seekTo(0);
+                backGround.start();
             }
+//            if (backGroundMusicThread == null) {
+//                backGroundMusicThread = new Thread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//
+//                        while (isStop == false) {
+//                            if (backGround.isPlaying() == false) {
+//                                backGround.seekTo(0);
+//                                backGround.start();
+//                            }
+//                            try {
+//                                Thread.sleep(1000);
+//                            } catch (InterruptedException e) {
+//                                e.printStackTrace();
+//                            }
+//                        }
+//                        backGround.stop();
+//
+//                    }
+//                });
+//                backGroundMusicThread.setDaemon(true);
+//                backGroundMusicThread.start();
+//            }
 
             gameHandler.sendEmptyMessage(0);
         }
@@ -266,7 +270,7 @@ public class GameBaseAreaActivity extends Activity {
                 myCharacter.deadReset();
 //                needChange = true;
 
-            } else if (myCharacter.jumpToX > -99999 && myCharacter.jumpToY > -99999) {
+            } else if (myCharacter.judgeingAttack) {
                 myCharacter.keepDirectionAndJump(0, 0, mapBaseFrame.getWidth(), mapBaseFrame.getHeight());
 //                needChange = true;
             } else {
@@ -358,6 +362,7 @@ public class GameBaseAreaActivity extends Activity {
 
 
         for (BaseCharacterView c : allCharacters) {
+
             if (c == myCharacter)
                 continue;
             synchronized (c) {
@@ -773,6 +778,7 @@ public class GameBaseAreaActivity extends Activity {
 
         isStop = true;
         timerForTrajectory.cancel();
+        backGround.release();
 //        try {
 //            Thread.sleep(2000);
 //        } catch (InterruptedException e) {
@@ -804,6 +810,7 @@ public class GameBaseAreaActivity extends Activity {
         for (Timer timer : timerForAIList) {
             timer.cancel();
         }
+        backGround.release();
         super.onBackPressed();
 
     }

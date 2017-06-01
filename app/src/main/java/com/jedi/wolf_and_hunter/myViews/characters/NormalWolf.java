@@ -25,9 +25,9 @@ public class NormalWolf extends BaseCharacterView {
     private static final String TAG = "NormalHunter";
     private final static String characterName = "普通狼";
     private final static int defaultMaxAttackCount = 3;
-    private final static int defauleReloadAttackSpeed = 80;
+    private final static int defauleReloadAttackSpeed = 50;
     public final static int defaultAngleChangSpeed = 2;
-    public final static int defaultAttackRadius = 200;
+    public final static int defaultAttackRadius = 300;
 //    public final static int defaultViewRadius = 200;
     public final static int defaultViewRadius = 500;
     public final static int defaultViewAngle = 90;
@@ -74,6 +74,7 @@ public class NormalWolf extends BaseCharacterView {
         Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.word, option);
         characterPic = Bitmap.createBitmap(bitmap, 100, 5, 76, 76, matrixForCP, true);
         attackMediaPlayer = MediaPlayer.create(getContext(), R.raw.wolf_attack);
+        smellMediaPlayer = MediaPlayer.create(getContext(), R.raw.smell);
         super.nowReloadAttackSpeed = defauleReloadAttackSpeed;
         attackCount = defaultMaxAttackCount;
         maxAttackCount = defaultMaxAttackCount;
@@ -164,7 +165,7 @@ public class NormalWolf extends BaseCharacterView {
                 int nowJumpToPointOffX = jumpToPoint.x - nowCenterX;
                 int nowJumpToPointOffY = jumpToPoint.y - nowCenterY;
                 double nowJumpToPointDistance = Math.sqrt(nowJumpToPointOffX * nowJumpToPointOffX + nowJumpToPointOffY * nowJumpToPointOffY);
-                int jumpSpeed = 3 * nowSpeed;
+                int jumpSpeed = 6 * nowSpeed;
                 boolean attackSuccess = false;
                 int realOffX = 0;
                 int realOffY = 0;
@@ -246,14 +247,14 @@ public class NormalWolf extends BaseCharacterView {
     }
 
     @Override
-    public void judgeAttack() {
+    public void attack() {
         if (judgeingAttack || attackCount <= 0 || isDead) {
             return;
         }
         if (attackThread != null&&attackThread.getState()!= Thread.State.TERMINATED) {
             return;
         }
-        super.judgeAttack();
+        super.attack();
         attackCount -= 1;
         double cosAlpha = Math.cos(Math.toRadians(nowFacingAngle));
         double endX = cosAlpha * nowAttackRadius;

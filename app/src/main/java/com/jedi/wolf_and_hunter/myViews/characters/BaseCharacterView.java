@@ -76,7 +76,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public volatile int attackCount;
     public int maxAttackCount;
     public static final int reloadAttackTotalCount=1000;
-    public static final int reloadAttackSleepTime=200;
+    public static final int reloadAttackSleepTime=100;
     public volatile int nowReloadingCount=0;
     public volatile int nowReloadAttackSpeed;
     public int killCount;
@@ -116,6 +116,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public MediaPlayer moveMediaPlayer;
     public MediaPlayer attackMediaPlayer;
     public MediaPlayer reloadMediaPlayer;
+    public MediaPlayer smellMediaPlayer;
 
     //以下为绘图杂项
     public Bitmap characterPic;
@@ -355,6 +356,8 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                         }
                         continue;
                     }
+                    float leftVol = 1;
+                    float rightVol = 1;
                     if (isMyCharacter == false) {
                         BaseCharacterView myCharacter = GameBaseAreaActivity.myCharacter;
                         int relateX = myCharacter.centerX - centerX;
@@ -363,8 +366,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                         if (distance > nowHearRadius) {
                             return;
                         }
-                        float leftVol = 0;
-                        float rightVol = 0;
+
                         if (relateX > 0) {
                             rightVol = (float) (nowHearRadius - distance) / nowHearRadius;
                             leftVol = rightVol / 2;
@@ -372,13 +374,19 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                             leftVol = (float) (nowHearRadius - distance) / nowHearRadius;
                             rightVol = leftVol / 2;
                         }
+
                         if (leftVol > 1)
                             leftVol = 1;
                         if (rightVol > 1)
                             rightVol = 1;
-                        moveMediaPlayer.setVolume(leftVol, rightVol);
+
 
                     }
+                    if (runOrWalk == MOVINT_TYPE_WALK) {
+                        leftVol = leftVol / 3;
+                        rightVol = rightVol / 3;
+                    }
+                    moveMediaPlayer.setVolume(leftVol, rightVol);
                     if (isStay == false&&needMove==true)
                         moveMediaPlayer.start();
                     try {
@@ -542,7 +550,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                 nowMoveSpeed = nowSpeed / 3;
                 runOrWalk = MOVINT_TYPE_WALK;
             }
-            if (Math.abs(relateAngle) > 90)
+            if (Math.abs(relateAngle) > 45)
                 nowMoveSpeed = nowMoveSpeed / 10;
             double cosNowFacingAngle = Math.cos(Math.toRadians(nowFacingAngle));
             nowOffX = (int) Math.round(cosNowFacingAngle * offDistance);
@@ -610,6 +618,8 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         } catch (Exception e) {
             e.printStackTrace();
         }
+        if(true)
+            return;
         nowLeft = nowLeft + nowOffX;
         nowTop = nowTop + nowOffY;
         nowRight = nowLeft + getWidth();
@@ -1061,6 +1071,8 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
 
     public void keepDirectionAndJump(int limitLeft, int limitTop, int limitRight, int limitBottom) {
+        if(jumpToX == -99999&&jumpToY == -99999)
+            return;
         centerX = (nowLeft + nowRight) / 2;
         centerY = (nowTop + nowBottom) / 2;
 
@@ -1240,7 +1252,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
     }
 
-    public void judgeAttack() {
+    public void attack() {
         if (attackMediaPlayer == null)
             return;
         if (isMyCharacter == false) {
@@ -1306,6 +1318,10 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         }
 
         reloadMediaPlayer.start();
+    }
+
+    public void smell(){
+
     }
 
     @Override

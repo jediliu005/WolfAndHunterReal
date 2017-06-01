@@ -391,7 +391,7 @@ public class HunterAI extends BaseAI {
                 }
                 if(bindingCharacter.judgeingAttack==true)
                     return;
-                bindingCharacter.judgeAttack();
+                bindingCharacter.attack();
                 bindingCharacter.isStay=false;
             }
 

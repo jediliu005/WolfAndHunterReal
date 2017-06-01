@@ -26,7 +26,7 @@ public class NormalHunter extends BaseCharacterView {
     private static final String TAG = "NormalHunter";
     private final static String characterName = "普通猎人";
     private final static int defaultMaxAttackCount = 2;
-    private final static int defauleReloadAttackSpeed = 50;
+    private final static int defauleReloadAttackSpeed = 25;
     public final static int defaultAttackRadius = 700;
     public final static int defaultViewRadius = 600;
     public final static int defaultViewAngle = 90;
@@ -185,11 +185,11 @@ public class NormalHunter extends BaseCharacterView {
 
 
     @Override
-    public void judgeAttack() {
+    public void attack() {
         if (attackCount <= 0 || isReloadingAttack || isDead) {
             return;
         }
-        super.judgeAttack();
+        super.attack();
 
         attackCount -= 1;
 

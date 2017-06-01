@@ -140,13 +140,13 @@ public class BaseAI extends TimerTask {
 
 //        boolean isDiscover = false;
         boolean isDiscoverByMe = false;
-        boolean isInViewRange = false;
+        boolean isInViewRange;
         intent = INTENT_HUNT;
         if (bindingCharacter.isDead) {
             reset();
         }
         for (BaseCharacterView character : GameBaseAreaActivity.allCharacters) {
-
+            isInViewRange = false;
             if (bindingCharacter == null) {
                 return;
             }
@@ -241,11 +241,7 @@ public class BaseAI extends TimerTask {
         }
 
 
-        if (targetCharacter != null && targetCharacter.isDead == true) {
-            targetCharacter = null;
-            intent = INTENT_HUNT;
-            hasDealTrackOnce = false;
-        }
+
 
 
     }

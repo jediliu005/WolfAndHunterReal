@@ -7,12 +7,10 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.Point;
 import android.graphics.RectF;
 import android.support.annotation.Nullable;
 import android.text.TextPaint;
 import android.util.AttributeSet;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -20,20 +18,15 @@ import android.view.View;
 import com.jedi.wolf_and_hunter.R;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
 import com.jedi.wolf_and_hunter.myObj.MyVirtualWindow;
-import com.jedi.wolf_and_hunter.myObj.PlayerInfo;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
-import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
-import com.jedi.wolf_and_hunter.utils.ViewUtils;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Date;
 
 /**
  * Created by Administrator on 2017/5/10.
  */
 
-public class AttackButton extends View {
+public class SmellButton extends View {
     static Bitmap attackBitmap;
     public int buttonSize;
     public Paint normalPaint;
@@ -48,7 +41,7 @@ public class AttackButton extends View {
     private int lastTouchY;
     public BaseCharacterView bindingCharacter;
 
-    public AttackButton(Context context, @Nullable AttributeSet attrs) {
+    public SmellButton(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         init();
     }
@@ -59,7 +52,7 @@ public class AttackButton extends View {
      * @param context The Context the view is running in, through which it can
      *                access the current theme, resources, etc.
      */
-    public AttackButton(Context context) {
+    public SmellButton(Context context) {
         super(context);
         init();
     }

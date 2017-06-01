@@ -234,7 +234,7 @@ public class WolfAI extends BaseAI {
                 if (bindingCharacter.judgeingAttack == true)
                     return;
 
-                bindingCharacter.judgeAttack();
+                bindingCharacter.attack();
             }
         }
     }
