@@ -26,7 +26,7 @@ public class NormalHunter extends BaseCharacterView {
     private static final String TAG = "NormalHunter";
     private final static String characterName = "普通猎人";
     private final static int defaultMaxAttackCount = 2;
-    private final static int defauleReloadAttackNeedTime = 3000;
+    private final static int defauleReloadAttackSpeed = 50;
     public final static int defaultAttackRadius = 700;
     public final static int defaultViewRadius = 600;
     public final static int defaultViewAngle = 90;
@@ -77,7 +77,7 @@ public class NormalHunter extends BaseCharacterView {
         reloadMediaPlayer = MediaPlayer.create(getContext(), R.raw.reload_bollet);
         attackMediaPlayer = MediaPlayer.create(getContext(), R.raw.gun_fire);
         moveMediaPlayer = MediaPlayer.create(getContext(), R.raw.hunter_move);
-        super.reloadAttackNeedTime = defauleReloadAttackNeedTime;
+        super.nowReloadAttackSpeed = defauleReloadAttackSpeed;
         attackCount = defaultMaxAttackCount;
         maxAttackCount = defaultMaxAttackCount;
         nowAttackRadius = defaultAttackRadius;
@@ -149,15 +149,16 @@ public class NormalHunter extends BaseCharacterView {
                             nowForceViewRadius = defaultForceViewRadius/2;
                             nowHearRadius = defaultHearRadius/2;
                         }
-//
-                        Date now = new Date();
-                        reloadAttackStartTime = now.getTime();//这参数用于攻击按钮饼图显示
-                        try {
-                            Thread.sleep(reloadAttackNeedTime);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+                        while(nowReloadingCount<reloadAttackTotalCount) {
+                            nowReloadingCount+=nowReloadAttackSpeed;
+                            if(nowReloadingCount>reloadAttackTotalCount)
+                                nowReloadingCount=reloadAttackTotalCount;
+                            try {
+                                Thread.sleep(reloadAttackSleepTime);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
                         }
-
 //
                         synchronized (this) {
                             nowSpeed = defaultSpeed;
@@ -165,7 +166,7 @@ public class NormalHunter extends BaseCharacterView {
                             nowForceViewRadius =defaultForceViewRadius;
                             nowHearRadius = defaultHearRadius ;
                             attackCount = maxAttackCount;
-                            reloadAttackStartTime = 0;
+                            nowReloadingCount = 0;
                             isReloadingAttack = false;
                         }
                     }

@@ -75,8 +75,10 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public int nowHiddenLevel = 0;
     public volatile int attackCount;
     public int maxAttackCount;
-    public volatile long reloadAttackStartTime;
-    public int reloadAttackNeedTime;
+    public static final int reloadAttackTotalCount=1000;
+    public static final int reloadAttackSleepTime=200;
+    public volatile int nowReloadingCount=0;
+    public volatile int nowReloadAttackSpeed;
     public int killCount;
     public int dieCount;
     public final int defaultHiddenLevel = HIDDEN_LEVEL_NO_HIDDEN;
@@ -220,6 +222,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
     //sight仅对玩家操控角色有意义，不在这里统一创建
     private void init() {
+        nowReloadingCount=0;
         theyDiscoverMe = new HashSet<BaseCharacterView>();
         seeMeTeamIDs = new HashSet<Integer>();
         windowWidth = MyVirtualWindow.getWindowWidth(getContext());
@@ -518,6 +521,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             else
                 relateAngle = 360 - relateAngle;
         }
+        realRelateAngle=relateAngle;
         if (Math.abs(relateAngle) > nowAngleChangSpeed * 2)
             realRelateAngle = Math.abs(relateAngle) / relateAngle * nowAngleChangSpeed * 2;
 

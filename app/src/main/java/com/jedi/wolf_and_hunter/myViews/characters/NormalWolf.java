@@ -25,7 +25,7 @@ public class NormalWolf extends BaseCharacterView {
     private static final String TAG = "NormalHunter";
     private final static String characterName = "普通狼";
     private final static int defaultMaxAttackCount = 3;
-    private final static int defauleReloadAttackNeedTime = 7000;
+    private final static int defauleReloadAttackSpeed = 80;
     public final static int defaultAngleChangSpeed = 2;
     public final static int defaultAttackRadius = 200;
 //    public final static int defaultViewRadius = 200;
@@ -74,7 +74,7 @@ public class NormalWolf extends BaseCharacterView {
         Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.word, option);
         characterPic = Bitmap.createBitmap(bitmap, 100, 5, 76, 76, matrixForCP, true);
         attackMediaPlayer = MediaPlayer.create(getContext(), R.raw.wolf_attack);
-        super.reloadAttackNeedTime = defauleReloadAttackNeedTime;
+        super.nowReloadAttackSpeed = defauleReloadAttackSpeed;
         attackCount = defaultMaxAttackCount;
         maxAttackCount = defaultMaxAttackCount;
         nowAttackRadius = defaultAttackRadius;
@@ -113,20 +113,26 @@ public class NormalWolf extends BaseCharacterView {
                             if (attackCount == maxAttackCount) {
                                 if(nowSpeed!=defaultSpeed)
                                     nowSpeed=defaultSpeed;
+                                try {
+                                    Thread.sleep(reloadAttackSleepTime);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
                                 continue;
+
                             }else {
                                 nowSpeed =(int)((0.3+ 0.7*attackCount/maxAttackCount)*defaultSpeed);
                             }
-                            long nowTime = new Date().getTime();
-                            if (reloadAttackStartTime == 0) {
-                                reloadAttackStartTime = nowTime;//这参数用于攻击按钮饼图显示
-                                continue;
-                            } else if (nowTime - reloadAttackStartTime >= reloadAttackNeedTime) {
+                            if(nowReloadingCount<reloadAttackTotalCount)
+                                nowReloadingCount+=nowReloadAttackSpeed;
+                            if(nowReloadingCount>reloadAttackTotalCount)
+                                nowReloadingCount=reloadAttackTotalCount;
+                            if(nowReloadingCount==reloadAttackTotalCount) {
+                                nowReloadingCount = 0;
                                 attackCount++;
-                                reloadAttackStartTime = 0;
                             }
                             try {
-                                Thread.sleep(200);
+                                Thread.sleep(reloadAttackSleepTime);
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }

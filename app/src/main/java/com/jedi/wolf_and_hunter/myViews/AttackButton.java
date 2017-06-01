@@ -148,23 +148,7 @@ public class AttackButton extends View {
                 lastTouchX = x;
                 lastTouchY = y;
                 if (new Date().getTime() - lastTouchTime > 800) {
-//                    try {
-//
-//                        if(GameBaseAreaActivity.myPlayerInfo.characterType==PlayerInfo.CHARACTER_TYPE_NORMAL_HUNTER) {
-//                            Method method = bindingCharacter.getClass().getMethod("reloadAttackCount", new Class[0]);
-//                            method.invoke(bindingCharacter, new Object[0]);
-//                            lastTouchTime = 0;
-//                            bindingCharacter.reloadAttackCount();
-//                        }
-//                    } catch (NoSuchMethodException e) {
-//                        e.printStackTrace();
-//                    } catch (InvocationTargetException e) {
-//                        e.printStackTrace();
-//                    } catch (IllegalAccessException e) {
-//                        e.printStackTrace();
-//                    }
-                    if (GameBaseAreaActivity.myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER) {
-
+                    if (bindingCharacter.attackCount<bindingCharacter.maxAttackCount&&GameBaseAreaActivity.myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER) {
                         bindingCharacter.reloadAttackCount();
                     }
                 }
@@ -208,9 +192,8 @@ public class AttackButton extends View {
             return;
         }
 
-        if (bindingCharacter.attackCount < bindingCharacter.maxAttackCount && bindingCharacter.reloadAttackStartTime != 0) {
-            long startTime = bindingCharacter.reloadAttackStartTime;
-            float percent = (float) (new Date().getTime() - startTime) / bindingCharacter.reloadAttackNeedTime;
+        if (bindingCharacter.attackCount < bindingCharacter.maxAttackCount && bindingCharacter.nowReloadingCount != 0) {
+            float percent = (float)bindingCharacter.nowReloadingCount/BaseCharacterView.reloadAttackTotalCount;
             float sweepAngle = 360 * percent;
             if (sweepAngle > 360)
                 sweepAngle = 359;

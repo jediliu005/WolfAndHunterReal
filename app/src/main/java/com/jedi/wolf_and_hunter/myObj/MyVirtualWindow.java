@@ -106,7 +106,14 @@ public class MyVirtualWindow {
         int relateX = targetLeft - left;
         int relateY = targetTop - top;
         if(Math.abs(relateX)>500||Math.abs(relateY)>500)
+            windowMoveSpeed=5*windowMoveSpeed;
+
+        else if(Math.abs(relateX)>400||Math.abs(relateY)>400)
+            windowMoveSpeed=4*windowMoveSpeed;
+        else if(Math.abs(relateX)>300||Math.abs(relateY)>300)
             windowMoveSpeed=3*windowMoveSpeed;
+        else if(Math.abs(relateX)>200||Math.abs(relateY)>200)
+            windowMoveSpeed=2*windowMoveSpeed;
 //        else if(Math.abs(relateX)<100||Math.abs(relateY)<100)
 //            windowMoveSpeed=windowMoveSpeed*3/5;
         if (Math.abs(relateX) > windowMoveSpeed)

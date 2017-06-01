@@ -40,16 +40,22 @@ public class RightRocker extends JRocker  {
         switch(event.getAction())
         {
             case MotionEvent.ACTION_DOWN:
-
-//                if(MyMathsUtils.isInRECT(actionButtonLeft,actionButtonTop
-//                        ,actionButtonLeft+actionButtonsWidth,actionButtonTop+actionButtonsWidth
-//                        ,new Point(x,y))){
-//                    readyToFire=true;
-//                }
-//                else
                 if(MyMathsUtils.isInCircle(rockerCircleCenter,rockerRadius,new Point(x,y))) {
                     isHoldingRocker = true;
+                    int relateX=x-padCircleCenter.x;
+                    int relateY=y-padCircleCenter.y;
 
+
+                    Point newPosition=new Point(padCircleCenter.x+relateX,padCircleCenter.y+relateY);
+                    rockerCircleCenter= new ViewUtils().revisePointInCircleViewMovement(padCircleCenter,padRadius,newPosition);
+                    synchronized (bindingCharacter.getSight()) {
+                        bindingCharacter.getSight().offX = rockerCircleCenter.x - padCircleCenter.x;
+                        bindingCharacter.getSight().needMove = true;
+                        bindingCharacter.getSight().offY = rockerCircleCenter.y - padCircleCenter.y;
+                        bindingCharacter.getSight().needMove = true;
+                    }
+                    distance= MyMathsUtils.getDistance(rockerCircleCenter,padCircleCenter);
+                    invalidate();
                 }
                 break;
             case MotionEvent.ACTION_UP:
@@ -96,12 +102,6 @@ public class RightRocker extends JRocker  {
         {
             case MotionEvent.ACTION_DOWN:
 
-//                if(MyMathsUtils.isInRECT(actionButtonLeft,actionButtonTop
-//                        ,actionButtonLeft+actionButtonsWidth,actionButtonTop+actionButtonsWidth
-//                        ,new Point(x,y))){
-//                    readyToFire=true;
-//                }
-//                else
                 if(MyMathsUtils.isInCircle(rockerCircleCenter,rockerRadius,new Point(x,y))) {
                     isHoldingRocker = true;
                     startCenterX=x;
@@ -109,10 +109,6 @@ public class RightRocker extends JRocker  {
                 }
                 break;
             case MotionEvent.ACTION_UP:
-//                if(readyToFire){
-//                    GameBaseAreaActivity.myCharacter.judgeAttack();
-//                    readyToFire=false;
-//                }
                 isHoldingRocker=false;
                 distance=0;
                 rockerCircleCenter.set(padCircleCenter.x,padCircleCenter.y);

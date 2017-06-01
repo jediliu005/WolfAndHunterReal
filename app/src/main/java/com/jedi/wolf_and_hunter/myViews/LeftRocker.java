@@ -112,8 +112,20 @@ public class LeftRocker extends JRocker {
 //                    readyToFire=true;
 //                }
 //                else
-                if (MyMathsUtils.isInCircle(rockerCircleCenter, rockerRadius, new Point(x, y))) {
+                if (MyMathsUtils.isInCircle(rockerCircleCenter, rockerRadius+padRadius, new Point(x, y))) {
                     isHoldingRocker = true;
+                    int relateX = x - padCircleCenter.x;
+                    int relateY = y - padCircleCenter.y;
+                    Point newPosition = new Point(padCircleCenter.x + relateX, padCircleCenter.y + relateY);
+                    rockerCircleCenter = new ViewUtils().revisePointInCircleViewMovement(padCircleCenter, padRadius, newPosition);
+                    distance = MyMathsUtils.getDistance(rockerCircleCenter, padCircleCenter);
+                    synchronized (bindingCharacter) {
+                        bindingCharacter.offX = rockerCircleCenter.x - padCircleCenter.x;
+                        bindingCharacter.needMove = true;
+                        bindingCharacter.offY = rockerCircleCenter.y - padCircleCenter.y;
+                        bindingCharacter.needMove = true;
+                        invalidate();
+                    }
                 }
                 break;
             case MotionEvent.ACTION_UP:
