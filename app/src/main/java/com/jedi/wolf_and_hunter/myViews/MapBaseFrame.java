@@ -126,6 +126,8 @@ public class MapBaseFrame extends FrameLayout {
                 offY = 0;
                 break;
             case MotionEvent.ACTION_MOVE:
+                if(leftRocker==null||rightRocker==null)
+                    break;
                 if (leftRocker.isHoldingRocker == false && (rightRocker==null||rightRocker.isHoldingRocker == false)) {
                     int[] movementArr = new int[4];
                     //计算移动的距离

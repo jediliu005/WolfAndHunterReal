@@ -1,6 +1,7 @@
 package com.jedi.wolf_and_hunter.myViews;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.DashPathEffect;
@@ -19,15 +20,11 @@ import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
  */
 
 public class SmellView extends View {
-//    public int nowAttackRadius;
     public int centerX, centerY;
-//    public int nowLeft;
-//    public int nowTop;
-//    public int nowRight;
-//    public int nowBottom;
     public boolean isHidden;
     public FrameLayout.LayoutParams layoutParams;
     BaseCharacterView bindingCharacter;
+    Bitmap smellArrowBitMap;
     Paint borderPaint;
     Paint transparentPaint;
     public SmellView(Context context) {
@@ -39,7 +36,6 @@ public class SmellView extends View {
     public SmellView(Context context, BaseCharacterView character) {
         super(context);
         bindingCharacter=character;
-
         init();
     }
 
@@ -59,13 +55,8 @@ public class SmellView extends View {
     private void init(){
 
         if(bindingCharacter!=null) {
-//            nowAttackRadius = bindingCharacter.nowAttackRadius;
             centerX=bindingCharacter.centerX;
             centerY=bindingCharacter.centerY;
-//            nowLeft=centerX-nowAttackRadius;
-//            nowRight=centerX+nowAttackRadius;
-//            nowTop=centerY-nowAttackRadius;
-//            nowBottom=centerY+nowAttackRadius;
             DashPathEffect pathEffect=new DashPathEffect(new float[]{10,10},0);
             borderPaint = new Paint();
             borderPaint.setPathEffect(pathEffect);

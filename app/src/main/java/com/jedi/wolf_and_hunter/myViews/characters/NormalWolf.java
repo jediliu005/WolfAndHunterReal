@@ -3,6 +3,7 @@ package com.jedi.wolf_and_hunter.myViews.characters;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.graphics.Point;
 import android.media.MediaPlayer;
 import android.os.Message;
@@ -73,8 +74,11 @@ public class NormalWolf extends BaseCharacterView {
 
     public void init() {
         characterType=CHARACTER_TYPE_WOLF;
-        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.word, option);
-        characterPic = Bitmap.createBitmap(bitmap, 100, 5, 76, 76, matrixForCP, true);
+        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.normal_wolf, option);
+        matrixForCP = new Matrix();
+        matrixForCP.postScale((float)characterBodySize / bitmap.getWidth()*(float)0.8 , (float)  characterBodySize /bitmap.getHeight()*(float)0.8 );
+        characterPic = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrixForCP, true);
+
         attackMediaPlayer = MediaPlayer.create(getContext(), R.raw.wolf_attack);
         smellMediaPlayer = MediaPlayer.create(getContext(), R.raw.smell);
         super.nowReloadAttackSpeed = defauleReloadAttackSpeed;

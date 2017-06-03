@@ -159,20 +159,30 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             nowLeft = 50;
             nowTop = 50;
             nowFacingAngle = 45;
+            normalPaint.setColor(Color.RED);
+            alphaPaint.setColor(Color.RED);
+
 
         } else if (teamID == 2) {
             nowLeft = GameBaseAreaActivity.mapWidth - characterBodySize - 50;
             nowTop = 50;
             nowFacingAngle = 135;
+            normalPaint.setColor(Color.LTGRAY);
+            alphaPaint.setColor(Color.LTGRAY);
         } else if (teamID == 3) {
             nowLeft = 50;
             nowTop = GameBaseAreaActivity.mapHeight - characterBodySize - 50;
             nowFacingAngle = 315;
+            normalPaint.setColor(Color.YELLOW);
+            alphaPaint.setColor(Color.YELLOW);
         } else if (teamID == 4) {
             nowLeft = GameBaseAreaActivity.mapWidth - characterBodySize - 50;
             nowTop = GameBaseAreaActivity.mapHeight - characterBodySize - 50;
             nowFacingAngle = 225;
+            normalPaint.setColor(Color.BLUE);
+            alphaPaint.setColor(Color.BLUE);
         }
+        alphaPaint.setAlpha(80);
 
         if (nowLeft > 0 && nowTop > 0 && nowFacingAngle > 0) {
             FrameLayout.LayoutParams characterParams = (FrameLayout.LayoutParams) getLayoutParams();
@@ -246,10 +256,8 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
         borderWidth = 5;
         normalPaint = new Paint();
-        normalPaint.setColor(Color.BLACK);
-        normalPaint.setStyle(Paint.Style.STROKE);
+        normalPaint.setStyle(Paint.Style.FILL_AND_STROKE);
         normalPaint.setStrokeWidth(borderWidth);
-        normalPaint.setTextAlign(Paint.Align.CENTER);
         normalPaint.setAntiAlias(true);
 
         textNormalPaint = new Paint();
@@ -271,12 +279,11 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
 
         alphaPaint = new Paint();
-        alphaPaint.setColor(Color.BLACK);
-        alphaPaint.setStyle(Paint.Style.STROKE);
+        alphaPaint.setStyle(Paint.Style.FILL_AND_STROKE);
         alphaPaint.setTextAlign(Paint.Align.CENTER);
         alphaPaint.setTextSize(characterBodySize);
         alphaPaint.setStrokeWidth(borderWidth);
-        alphaPaint.setAlpha(50);
+        alphaPaint.setAlpha(80);
         alphaPaint.setAntiAlias(true);
 
         textAlphaPaint = new Paint();
@@ -288,8 +295,6 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         textAlphaPaint.setAlpha(50);
         textAlphaPaint.setAntiAlias(true);
 
-        matrixForCP = new Matrix();
-        matrixForCP.postScale((float) (0.7 * characterBodySize / 76), (float) (0.7 * characterBodySize / 76));
 
         arrowBitMap = BitmapFactory.decodeResource(getResources(), R.drawable.arrow);
         matrixForArrow = new Matrix();
@@ -946,34 +951,34 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                     //这对象是myCharacter或队友情况下
                     if (isMyCharacter || teamID == GameBaseAreaActivity.myCharacter.teamID) {
                         if (nowHiddenLevel == HIDDEN_LEVEL_NO_HIDDEN) {
-                            canvas.drawBitmap(characterPic, (int) (characterBodySize * 0.15), (int) (characterBodySize * 0.15), normalPaint);
+                            canvas.drawCircle(characterBodySize / 2, characterBodySize / 2, characterBodySize / 2 - borderWidth, normalPaint);
+                            canvas.drawBitmap(characterPic, (int) (characterBodySize * 0.1), (int) (characterBodySize * 0.1), normalPaint);
                             canvas.rotate(nowFacingAngle, characterBodySize / 2, characterBodySize / 2);
 //                        canvas.drawRect(0, 0, characterBodySize, characterBodySize, normalPaint);
-                            canvas.drawCircle(characterBodySize / 2, characterBodySize / 2, characterBodySize / 2 - borderWidth, normalPaint);
                             canvas.drawBitmap(arrowBitMap, characterBodySize - arrowBitmapWidth, (characterBodySize - arrowBitmapHeight) / 2, normalPaint);
 
                         } else if (nowHiddenLevel > HIDDEN_LEVEL_NO_HIDDEN) {
-                            canvas.drawBitmap(characterPic, (int) (characterBodySize * 0.15), (int) (characterBodySize * 0.15), alphaPaint);
+                            canvas.drawCircle(characterBodySize / 2, characterBodySize / 2, characterBodySize / 2 - borderWidth, alphaPaint);
+                            canvas.drawBitmap(characterPic, (int) (characterBodySize * 0.1) , (int) (characterBodySize * 0.1) , alphaPaint);
                             canvas.rotate(nowFacingAngle, characterBodySize / 2, characterBodySize / 2);
 //                        canvas.drawRect(0, 0, characterBodySize, characterBodySize, alphaPaint);
-                            canvas.drawCircle(characterBodySize / 2, characterBodySize / 2, characterBodySize / 2 - borderWidth, alphaPaint);
                             canvas.drawBitmap(arrowBitMap, characterBodySize - arrowBitmapWidth, (characterBodySize - arrowBitmapHeight) / 2, alphaPaint);
 
                         }
                     } else {//不是队友
                         if (isForceToBeSawByMe) {
-                            canvas.drawBitmap(characterPic, (int) (characterBodySize * 0.15), (int) (characterBodySize * 0.15), normalPaint);
+                            canvas.drawCircle(characterBodySize / 2, characterBodySize / 2, characterBodySize / 2 - borderWidth, normalPaint);
+                            canvas.drawBitmap(characterPic, (int) (characterBodySize * 0.1), (int) (characterBodySize * 0.1), normalPaint);
                             canvas.rotate(nowFacingAngle, characterBodySize / 2, characterBodySize / 2);
 //                        canvas.drawRect(0, 0, characterBodySize, characterBodySize, normalPaint);
-                            canvas.drawCircle(characterBodySize / 2, characterBodySize / 2, characterBodySize / 2 - borderWidth, normalPaint);
                             canvas.drawBitmap(arrowBitMap, characterBodySize - arrowBitmapWidth, (characterBodySize - arrowBitmapHeight) / 2, normalPaint);
                             viewRange.isHidden = false;
                             attackRange.isHidden = true;
 
                         } else {
-                            canvas.drawBitmap(characterPic, (int) (characterBodySize * 0.15), (int) (characterBodySize * 0.15), transparentPaint);
-                            canvas.rotate(nowFacingAngle, characterBodySize / 2, characterBodySize / 2);
                             canvas.drawCircle(characterBodySize / 2, characterBodySize / 2, characterBodySize / 2 - borderWidth, transparentPaint);
+                            canvas.drawBitmap(characterPic, (int) (characterBodySize * 0.1), (int) (characterBodySize * 0.1), transparentPaint);
+                            canvas.rotate(nowFacingAngle, characterBodySize / 2, characterBodySize / 2);
                             canvas.drawBitmap(arrowBitMap, characterBodySize - arrowBitmapWidth, (characterBodySize - arrowBitmapHeight) / 2, transparentPaint);
                             viewRange.isHidden = true;
                             attackRange.isHidden = true;
