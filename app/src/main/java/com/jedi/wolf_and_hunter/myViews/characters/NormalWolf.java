@@ -33,6 +33,8 @@ public class NormalWolf extends BaseCharacterView {
     public final static int defaultViewAngle = 90;
     public final static int defaultHearRadius = 600;
     public  final static int defaultForceViewRadius=300;
+    public  final static int defaultSmellRadius=1000;
+    public  final static int defaultSmellSpeed=30;
     public final static int defaultWalkWaitTime = 500;
     public final static int defaultRunWaitTime = 200;
     public final static int defaultSpeed = 15;
@@ -87,6 +89,8 @@ public class NormalWolf extends BaseCharacterView {
         nowAngleChangSpeed = defaultAngleChangSpeed;
         nowWalkWaitTime=defaultWalkWaitTime;
         nowRunWaitTime=defaultRunWaitTime;
+        nowSmellRadius=defaultSmellRadius;
+        nowSmellSpeed=defaultSmellSpeed;
         moveMediaPlayer = MediaPlayer.create(getContext(), R.raw.wolf_move);
         if (this.virtualWindow == null)
             this.virtualWindow = GameBaseAreaActivity.virtualWindow;
@@ -124,12 +128,12 @@ public class NormalWolf extends BaseCharacterView {
                             }else {
                                 nowSpeed =(int)((0.3+ 0.7*attackCount/maxAttackCount)*defaultSpeed);
                             }
-                            if(nowReloadingCount<reloadAttackTotalCount)
-                                nowReloadingCount+=nowReloadAttackSpeed;
-                            if(nowReloadingCount>reloadAttackTotalCount)
-                                nowReloadingCount=reloadAttackTotalCount;
-                            if(nowReloadingCount==reloadAttackTotalCount) {
-                                nowReloadingCount = 0;
+                            if(nowReloadingAttackCount<reloadAttackTotalCount)
+                                nowReloadingAttackCount+=nowReloadAttackSpeed;
+                            if(nowReloadingAttackCount>reloadAttackTotalCount)
+                                nowReloadingAttackCount=reloadAttackTotalCount;
+                            if(nowReloadingAttackCount==reloadAttackTotalCount) {
+                                nowReloadingAttackCount = 0;
                                 attackCount++;
                             }
                             try {
@@ -268,6 +272,7 @@ public class NormalWolf extends BaseCharacterView {
         Point toPoint = new Point((int) endX, (int) endY);
 
         attackThread = new Thread(new AttackThread(this, toPoint));
+        attackThread.setDaemon(true);
         attackThread.start();
 
 

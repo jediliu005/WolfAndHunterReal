@@ -192,8 +192,8 @@ public class AttackButton extends View {
             return;
         }
 
-        if (bindingCharacter.attackCount < bindingCharacter.maxAttackCount && bindingCharacter.nowReloadingCount != 0) {
-            float percent = (float)bindingCharacter.nowReloadingCount/BaseCharacterView.reloadAttackTotalCount;
+        if (bindingCharacter.attackCount < bindingCharacter.maxAttackCount && bindingCharacter.nowReloadingAttackCount != 0) {
+            float percent = (float)bindingCharacter.nowReloadingAttackCount/BaseCharacterView.reloadAttackTotalCount;
             float sweepAngle = 360 * percent;
             if (sweepAngle > 360)
                 sweepAngle = 359;

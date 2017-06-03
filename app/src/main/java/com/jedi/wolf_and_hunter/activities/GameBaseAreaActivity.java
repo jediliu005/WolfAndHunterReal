@@ -64,7 +64,7 @@ public class GameBaseAreaActivity extends Activity {
     private final static int CONTROL_MODE_NORMAL = 0;
     private final static int CONTROL_MODE_MASTER = 1;
     int controlMode = CONTROL_MODE_NORMAL;
-    public static boolean isStop = false;
+    public static volatile boolean isStop = false;
     LeftRocker leftRocker;
     RightRocker rightRocker;
     //    AttackButton leftAtttackButton;

@@ -56,8 +56,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public int offY;
     public int jumpToX = -99999;
     public int jumpToY = -99999;
-    public boolean needMove = false;
-    public boolean needTurned = false;
+    public volatile boolean needMove = false;
     public int nowAngleChangSpeed = 1;
 
     //以下为角色View基本位置与状态属性
@@ -75,9 +74,14 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public int nowHiddenLevel = 0;
     public volatile int attackCount;
     public int maxAttackCount;
+    public volatile int nowSmellCount;
+    public volatile int nowSmellSpeed;
+    public static final int smellTotalCount=1000;
+    public static final int smellSleepTime=100;
+    public long lastSmellTime;
     public static final int reloadAttackTotalCount=1000;
     public static final int reloadAttackSleepTime=100;
-    public volatile int nowReloadingCount=0;
+    public volatile int nowReloadingAttackCount=0;
     public volatile int nowReloadAttackSpeed;
     public int killCount;
     public int dieCount;
@@ -86,6 +90,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public volatile int nowViewRadius = 500;
     public volatile int nowHearRadius = 500;
     public volatile int nowForceViewRadius = 200;
+    public volatile int nowSmellRadius = 1000;
     public int nowWalkWaitTime = 600;
     public int nowRunWaitTime = 300;
     public volatile int nowSpeed = 10;
@@ -95,19 +100,21 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     private int teamID;
     public int id;
     public MyVirtualWindow virtualWindow;
-    public boolean isDead = false;
+    public volatile boolean isDead = false;
     public long deadTime;
-    public boolean isForceToBeSawByMe = false;//注意！这属性只针对本机玩家视觉，对AI判行为无效
+    public volatile boolean isForceToBeSawByMe = false;//注意！这属性只针对本机玩家视觉，对AI判行为无效
     public volatile boolean judgeingAttack = false;
     public volatile boolean isReloadingAttack = false;
     public GameBaseAreaActivity.GameHandler gameHandler;
     public volatile HashSet<Integer> seeMeTeamIDs;
     public volatile HashSet<BaseCharacterView> theyDiscoverMe;
+    public volatile HashSet<Point> lastSmellEnemiesPosition;
 
     public Thread movingMediaThread;
     public int runOrWalk = 0;
-    public boolean isStay;
-    public boolean isLocking;
+    public volatile boolean isStay;
+    public volatile boolean isLocking;
+    public volatile boolean isSmelling;
     public BaseCharacterView lockingCharacter;
     public int lastEffectX = -1;
     public int lastEffectY = -1;
@@ -123,7 +130,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public Matrix matrixForCP;
     int windowWidth;
     int windowHeight;
-    public boolean isStop = false;
+    public volatile boolean isStop = false;
     public Bitmap arrowBitMap;
     public Matrix matrixForArrow;
     public SurfaceHolder mHolder;
@@ -137,6 +144,8 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     Paint textNormalPaint;
     Paint textAlphaPaint;
 
+
+    Thread smellThread;
 
     public int getTeamID() {
         return teamID;
@@ -223,7 +232,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
     //sight仅对玩家操控角色有意义，不在这里统一创建
     private void init() {
-        nowReloadingCount=0;
+        nowReloadingAttackCount=0;
         theyDiscoverMe = new HashSet<BaseCharacterView>();
         seeMeTeamIDs = new HashSet<Integer>();
         windowWidth = MyVirtualWindow.getWindowWidth(getContext());
@@ -402,6 +411,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                 movingMediaThread = null;
             }
         });
+        movingMediaThread.setDaemon(true);
         movingMediaThread.start();
     }
 
@@ -896,6 +906,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 //        gameHandler.sendEmptyMessage(GameBaseAreaActivity.GameHandler.ADD_ATTACT_RANGE);
 //        gameHandler.sendEmptyMessage(GameBaseAreaActivity.GameHandler.ADD_VIEW_RANGE);
         Thread drawThread = new Thread(new CharacterDraw());
+        drawThread.setDaemon(true);
         drawThread.start();
     }
 
@@ -1320,8 +1331,61 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         reloadMediaPlayer.start();
     }
 
-    public void smell(){
 
+
+    public void smell(boolean isMoving){
+        lastSmellTime=0;
+        if(smellThread!=null){
+            if(isSmelling){
+                isSmelling=false;
+                try {
+                    smellThread.join();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                smellThread=null;
+                return;
+            }
+        }
+
+        smellThread=new smellThread(this);
+        smellThread.setDaemon(true);
+        smellThread.start();
+    }
+
+    class smellThread extends Thread{
+        BaseCharacterView bindingCharacter;
+        smellThread(BaseCharacterView bindingCharacter){
+            this.bindingCharacter=bindingCharacter;
+        }
+        @Override
+        public void run() {
+            while(GameBaseAreaActivity.isStop==false&&isSmelling){
+                nowSmellCount+=nowSmellSpeed;
+                if(nowSmellCount>smellTotalCount)
+                    nowSmellCount=smellTotalCount;
+                if(nowSmellCount==smellTotalCount){
+                    Point thisCharacterPosition=new Point(bindingCharacter.centerX,bindingCharacter.centerY);
+                    for(BaseCharacterView character:GameBaseAreaActivity.allCharacters){
+                        if(character.teamID==bindingCharacter.teamID)
+                            continue;
+                        Point enemyPosition=new Point(character.centerX,character.centerY);
+                        double distance=MyMathsUtils.getDistance(enemyPosition,thisCharacterPosition);
+                        if(distance<=nowSmellRadius){
+                            lastSmellEnemiesPosition.add(enemyPosition);
+                        }
+                    }
+                    lastSmellTime=new Date().getTime();
+                    nowSmellCount=0;
+                    isSmelling=false;
+                }
+                try {
+                    Thread.sleep(smellSleepTime);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     @Override

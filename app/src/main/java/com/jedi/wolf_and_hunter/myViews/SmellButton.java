@@ -3,15 +3,15 @@ package com.jedi.wolf_and_hunter.myViews;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.BitmapShader;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.RectF;
+import android.graphics.Shader;
 import android.support.annotation.Nullable;
 import android.text.TextPaint;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -27,7 +27,7 @@ import java.util.Date;
  */
 
 public class SmellButton extends View {
-    static Bitmap attackBitmap;
+    static Bitmap smellBitmap;
     public int buttonSize;
     public Paint normalPaint;
     public TextPaint redTextPaint;
@@ -57,19 +57,6 @@ public class SmellButton extends View {
         init();
     }
 
-    public void reCreateBitmap() {
-        if (GameBaseAreaActivity.myCharacter != null) {
-            if (GameBaseAreaActivity.myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER) {
-                attackBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.fire);
-            } else if (GameBaseAreaActivity.myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF) {
-                attackBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.wolf_attack);
-            }
-            Matrix matrix = new Matrix();
-            matrix.postScale((float) (buttonSize * 0.8) / attackBitmap.getWidth(), (float) (buttonSize * 0.8) / attackBitmap.getHeight());
-            attackBitmap = Bitmap.createBitmap(attackBitmap, 0, 0, attackBitmap.getWidth(), attackBitmap.getHeight(), matrix, true);
-
-        }
-    }
 
 
     public void init() {
@@ -97,15 +84,18 @@ public class SmellButton extends View {
         Paint.FontMetricsInt fontMetrics = redTextPaint.getFontMetricsInt();
         baselineY = (buttonSize - fontMetrics.bottom - fontMetrics.top) / 2;
 
-        if (attackBitmap == null) {
 
-            attackBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.fire);
+
+
+        if (smellBitmap == null) {
+            smellBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.nose);
+
             Matrix matrix = new Matrix();
-            matrix.postScale((float) (buttonSize * 0.8) / attackBitmap.getWidth(), (float) (buttonSize * 0.8) / attackBitmap.getHeight());
-            attackBitmap = Bitmap.createBitmap(attackBitmap, 0, 0, attackBitmap.getWidth(), attackBitmap.getHeight(), matrix, true);
+            matrix.postScale((float) (buttonSize * 0.8) / smellBitmap.getWidth(), (float) (buttonSize * 0.8) / smellBitmap.getHeight());
+            smellBitmap = Bitmap.createBitmap(smellBitmap, 0, 0, smellBitmap.getWidth(), smellBitmap.getHeight(), matrix, true);
         }
-        bitmapLeft = (buttonSize - attackBitmap.getWidth()) / 2;
-        bitmapTop = (buttonSize - attackBitmap.getHeight()) / 2;
+        bitmapLeft = (buttonSize - smellBitmap.getWidth()) / 2;
+        bitmapTop = (buttonSize - smellBitmap.getHeight()) / 2;
 
     }
 
@@ -178,26 +168,8 @@ public class SmellButton extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        canvas.drawBitmap(attackBitmap, bitmapLeft, bitmapTop, null);
-        if (bindingCharacter == null) {
-            bindingCharacter = GameBaseAreaActivity.myCharacter;
-            invalidate();
-            return;
+        if(smellBitmap!=null) {
+            canvas.drawBitmap(smellBitmap, bitmapLeft, bitmapTop, null);
         }
-
-        if (bindingCharacter.attackCount < bindingCharacter.maxAttackCount && bindingCharacter.nowReloadingCount != 0) {
-            float percent = (float)bindingCharacter.nowReloadingCount/BaseCharacterView.reloadAttackTotalCount;
-            float sweepAngle = 360 * percent;
-            if (sweepAngle > 360)
-                sweepAngle = 359;
-            if (sweepAngle > 0)
-                Log.i("", "");
-            canvas.drawArc(new RectF(0, 0, buttonSize, buttonSize), 0, sweepAngle, true, normalPaint);
-        }
-        if (bindingCharacter.attackCount == 0)
-            canvas.drawText(new Integer(bindingCharacter.attackCount).toString(), buttonSize / 2, baselineY, redTextPaint);
-        else
-            canvas.drawText(new Integer(bindingCharacter.attackCount).toString(), buttonSize / 2, baselineY, blackTextPaint);
-        invalidate();
     }
 }

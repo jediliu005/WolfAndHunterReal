@@ -149,10 +149,10 @@ public class NormalHunter extends BaseCharacterView {
                             nowForceViewRadius = defaultForceViewRadius/2;
                             nowHearRadius = defaultHearRadius/2;
                         }
-                        while(nowReloadingCount<reloadAttackTotalCount) {
-                            nowReloadingCount+=nowReloadAttackSpeed;
-                            if(nowReloadingCount>reloadAttackTotalCount)
-                                nowReloadingCount=reloadAttackTotalCount;
+                        while(nowReloadingAttackCount<reloadAttackTotalCount) {
+                            nowReloadingAttackCount+=nowReloadAttackSpeed;
+                            if(nowReloadingAttackCount>reloadAttackTotalCount)
+                                nowReloadingAttackCount=reloadAttackTotalCount;
                             try {
                                 Thread.sleep(reloadAttackSleepTime);
                             } catch (InterruptedException e) {
@@ -166,7 +166,7 @@ public class NormalHunter extends BaseCharacterView {
                             nowForceViewRadius =defaultForceViewRadius;
                             nowHearRadius = defaultHearRadius ;
                             attackCount = maxAttackCount;
-                            nowReloadingCount = 0;
+                            nowReloadingAttackCount = 0;
                             isReloadingAttack = false;
                         }
                     }
