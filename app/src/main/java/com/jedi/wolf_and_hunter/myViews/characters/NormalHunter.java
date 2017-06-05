@@ -121,14 +121,17 @@ public class NormalHunter extends BaseCharacterView {
         synchronized (this) {
             super.switchLockingState(isLocking);
             if (isLocking) {
+
                 this.nowViewRadius = (int) (1.25 * defaultViewRadius);
                 this.nowForceViewRadius = (int) (2 * defaultForceViewRadius);
                 this.nowViewAngle = (float) (0.5 * defaultViewAngle);
+                this.nowSpeed= (int) (0.5 * defaultSpeed);
                 this.nowAngleChangSpeed = (int) (0.5 * defaultAngleChangSpeed);
             } else {
                 this.nowViewRadius = defaultViewRadius;
                 this.nowForceViewRadius = defaultForceViewRadius;
                 this.nowViewAngle = defaultViewAngle;
+                this.nowSpeed= defaultSpeed;
                 this.nowAngleChangSpeed = defaultAngleChangSpeed;
             }
         }
