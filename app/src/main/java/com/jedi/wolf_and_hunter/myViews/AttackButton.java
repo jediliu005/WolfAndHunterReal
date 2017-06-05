@@ -37,15 +37,16 @@ public class AttackButton extends View {
     static Bitmap attackBitmap;
     public int buttonSize;
     public Paint normalPaint;
+    public Paint alphaPaint;
     public TextPaint redTextPaint;
     public TextPaint blackTextPaint;
     public int baselineY;
     public int bitmapLeft;
     public int bitmapTop;
     private long lastTouchTime;
-    boolean isTouchingInside = true;
     private int lastTouchX;
     private int lastTouchY;
+    private boolean isHolding;
     public BaseCharacterView bindingCharacter;
 
     public AttackButton(Context context, @Nullable AttributeSet attrs) {
@@ -91,6 +92,10 @@ public class AttackButton extends View {
         normalPaint.setStyle(Paint.Style.FILL);
         normalPaint.setAntiAlias(true);
 
+        alphaPaint = new Paint();
+        alphaPaint.setAlpha(50);
+        alphaPaint.setStyle(Paint.Style.FILL);
+        alphaPaint.setAntiAlias(true);
 
         redTextPaint = new TextPaint();
         redTextPaint.setColor(Color.RED);
@@ -121,34 +126,38 @@ public class AttackButton extends View {
         //获取到手指处的横坐标和纵坐标
         int x = (int) event.getX();
         int y = (int) event.getY();
+        lastTouchX = x;
+        lastTouchY = y;
+        if (lastTouchX > 0 && lastTouchX < getWidth() && lastTouchY > 0 && lastTouchY < getHeight())
+            isHolding = true;
+        else
+            isHolding = false;
         switch (event.getAction()) {
 
             case MotionEvent.ACTION_DOWN:
-                lastTouchX = x;
-                lastTouchY = y;
+
                 lastTouchTime = new Date().getTime();
-                if (GameBaseAreaActivity.myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF) {
+                if (GameBaseAreaActivity.myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF) {
                     bindingCharacter.isStay = true;
                 }
-                isTouchingInside = true;
-
+                isHolding = true;
                 break;
 
 
             case MotionEvent.ACTION_UP:
                 lastTouchTime = 0;
-                if (GameBaseAreaActivity.myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF) {
+                if (GameBaseAreaActivity.myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF) {
                     bindingCharacter.isStay = false;
                 }
-                if (lastTouchX > 0 && lastTouchX < getWidth() && lastTouchY > 0 && lastTouchY < getHeight())
+                if (isHolding)
                     bindingCharacter.attack();
+                isHolding=false;
                 break;
 
             case MotionEvent.ACTION_MOVE:
-                lastTouchX = x;
-                lastTouchY = y;
+
                 if (new Date().getTime() - lastTouchTime > 800) {
-                    if (bindingCharacter.attackCount<bindingCharacter.maxAttackCount&&GameBaseAreaActivity.myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER) {
+                    if (bindingCharacter.attackCount < bindingCharacter.maxAttackCount && GameBaseAreaActivity.myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER) {
                         bindingCharacter.reloadAttackCount();
                     }
                 }
@@ -185,15 +194,19 @@ public class AttackButton extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        canvas.drawBitmap(attackBitmap, bitmapLeft, bitmapTop, null);
+        if(isHolding) {
+            canvas.drawBitmap(attackBitmap, bitmapLeft, bitmapTop, alphaPaint);
+        }else{
+            canvas.drawBitmap(attackBitmap, bitmapLeft, bitmapTop, normalPaint);
+        }
         if (bindingCharacter == null) {
             bindingCharacter = GameBaseAreaActivity.myCharacter;
             invalidate();
             return;
         }
 
-        if (bindingCharacter.attackCount < bindingCharacter.maxAttackCount && bindingCharacter.nowReloadingAttackCount != 0) {
-            float percent = (float)bindingCharacter.nowReloadingAttackCount/BaseCharacterView.reloadAttackTotalCount;
+        if (bindingCharacter.nowReloadingAttackCount != 0) {
+            float percent = (float) bindingCharacter.nowReloadingAttackCount / BaseCharacterView.reloadAttackTotalCount;
             float sweepAngle = 360 * percent;
             if (sweepAngle > 360)
                 sweepAngle = 359;

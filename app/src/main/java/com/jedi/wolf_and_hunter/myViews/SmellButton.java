@@ -8,10 +8,12 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.RectF;
 import android.graphics.Shader;
 import android.support.annotation.Nullable;
 import android.text.TextPaint;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -30,15 +32,12 @@ public class SmellButton extends View {
     static Bitmap smellBitmap;
     public int buttonSize;
     public Paint normalPaint;
-    public TextPaint redTextPaint;
-    public TextPaint blackTextPaint;
-    public int baselineY;
+    public Paint alphaPaint;
     public int bitmapLeft;
     public int bitmapTop;
-    private long lastTouchTime;
-    boolean isTouchingInside = true;
     private int lastTouchX;
     private int lastTouchY;
+    private boolean isHolding=false;
     public BaseCharacterView bindingCharacter;
 
     public SmellButton(Context context, @Nullable AttributeSet attrs) {
@@ -66,23 +65,15 @@ public class SmellButton extends View {
         buttonSize = (int) (windowWidth / 8);
 
         normalPaint = new Paint();
-
-        normalPaint.setColor(Color.WHITE);
         normalPaint.setStyle(Paint.Style.FILL);
+        normalPaint.setColor(Color.WHITE);
         normalPaint.setAntiAlias(true);
 
 
-        redTextPaint = new TextPaint();
-        redTextPaint.setColor(Color.RED);
-        redTextPaint.setTextSize(buttonSize / 2);
-        redTextPaint.setTextAlign(Paint.Align.CENTER);
 
-        blackTextPaint = new TextPaint();
-        blackTextPaint.setColor(Color.BLACK);
-        blackTextPaint.setTextSize(buttonSize / 2);
-        blackTextPaint.setTextAlign(Paint.Align.CENTER);
-        Paint.FontMetricsInt fontMetrics = redTextPaint.getFontMetricsInt();
-        baselineY = (buttonSize - fontMetrics.bottom - fontMetrics.top) / 2;
+        alphaPaint = new Paint();
+        alphaPaint.setAlpha(100);
+        alphaPaint.setAntiAlias(true);
 
 
 
@@ -104,39 +95,35 @@ public class SmellButton extends View {
         //获取到手指处的横坐标和纵坐标
         int x = (int) event.getX();
         int y = (int) event.getY();
+        lastTouchX = x;
+        lastTouchY = y;
         switch (event.getAction()) {
 
             case MotionEvent.ACTION_DOWN:
-                lastTouchX = x;
-                lastTouchY = y;
-                lastTouchTime = new Date().getTime();
-                if (GameBaseAreaActivity.myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF) {
-                    bindingCharacter.isStay = true;
-                }
-                isTouchingInside = true;
-
+                isHolding=true;
                 break;
 
 
             case MotionEvent.ACTION_UP:
-                lastTouchTime = 0;
-                if (GameBaseAreaActivity.myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF) {
-                    bindingCharacter.isStay = false;
+
+                if (lastTouchX > 0 && lastTouchX < getWidth() && lastTouchY > 0 && lastTouchY < getHeight()) {
+                    bindingCharacter.smell();
                 }
-                if (lastTouchX > 0 && lastTouchX < getWidth() && lastTouchY > 0 && lastTouchY < getHeight())
-                    bindingCharacter.attack();
+                isHolding=false;
                 break;
 
             case MotionEvent.ACTION_MOVE:
-                lastTouchX = x;
-                lastTouchY = y;
-                if (new Date().getTime() - lastTouchTime > 800) {
-                    if (bindingCharacter.attackCount<bindingCharacter.maxAttackCount&&GameBaseAreaActivity.myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER) {
-                        bindingCharacter.reloadAttackCount();
-                    }
+                if (lastTouchX > 0 && lastTouchX < getWidth() && lastTouchY > 0 && lastTouchY < getHeight()) {
+                    isHolding=true;
+                }else{
+                    isHolding=false;
                 }
+                break;
+
+
 
         }
+
 
         return true;
     }
@@ -169,7 +156,20 @@ public class SmellButton extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         if(smellBitmap!=null) {
-            canvas.drawBitmap(smellBitmap, bitmapLeft, bitmapTop, null);
+            if(isHolding)
+                canvas.drawBitmap(smellBitmap, bitmapLeft, bitmapTop, alphaPaint);
+            else
+                canvas.drawBitmap(smellBitmap, bitmapLeft, bitmapTop, normalPaint);
         }
+        if (bindingCharacter.nowSmellCount>0) {
+            float percent = (float)bindingCharacter.nowSmellCount/BaseCharacterView.smellTotalCount;
+            float sweepAngle = 360 * percent;
+            if (sweepAngle > 360)
+                sweepAngle = 359;
+            if (sweepAngle > 0)
+                Log.i("", "");
+            canvas.drawArc(new RectF(0, 0, buttonSize, buttonSize), 0, sweepAngle, true, normalPaint);
+        }
+        invalidate();
     }
 }

@@ -30,14 +30,15 @@ public class LockingButton extends View {
     static Bitmap lockingBitmap;
     public int buttonSize;
     public Paint normalPaint;
+    public Paint alphaPaint;
     public Paint backgroundPaint;
     public TextPaint textPaint;
     public int baselineY;
     public int bitmapLeft;
     public int bitmapTop;
-    boolean isTouchingInside = true;
     private int lastTouchX=-999;
     private int lastTouchY=-999;
+    private boolean isHolding;
     public BaseCharacterView bindingCharacter;
 
     public LockingButton(Context context, @Nullable AttributeSet attrs) {
@@ -86,11 +87,14 @@ public class LockingButton extends View {
 
 
         normalPaint = new Paint();
-
         normalPaint.setColor(Color.WHITE);
         normalPaint.setStyle(Paint.Style.FILL);
         normalPaint.setAntiAlias(true);
-
+        
+        alphaPaint = new Paint();
+        alphaPaint.setAlpha(100);
+        alphaPaint.setStyle(Paint.Style.FILL);
+        alphaPaint.setAntiAlias(true);
 
         textPaint = new TextPaint();
         textPaint.setColor(Color.BLACK);
@@ -116,14 +120,20 @@ public class LockingButton extends View {
         //获取到手指处的横坐标和纵坐标
         int x = (int) event.getX();
         int y = (int) event.getY();
+        lastTouchX = x;
+        lastTouchY = y;
+        if (lastTouchX > 0 && lastTouchX < getWidth() && lastTouchY > 0 && lastTouchY < getHeight())
+            isHolding = true;
+        else
+            isHolding = false;
         switch (event.getAction()) {
 
             case MotionEvent.ACTION_DOWN:
                 lastTouchX = x;
                 lastTouchY = y;
 
-                isTouchingInside = true;
-
+                isHolding = true;
+                
                 break;
 
 
@@ -141,13 +151,12 @@ public class LockingButton extends View {
                         bindingCharacter.switchLockingState(false);
                     }
                 }
-                lastTouchX = -999;
-                lastTouchY = -999;
+                isHolding=false;
+
                 break;
 
             case MotionEvent.ACTION_MOVE:
-                lastTouchX = x;
-                lastTouchY = y;
+
 
         }
 
@@ -181,13 +190,24 @@ public class LockingButton extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        canvas.drawBitmap(lockingBitmap, bitmapLeft, bitmapTop, null);
+
         if (bindingCharacter == null) {
             bindingCharacter = GameBaseAreaActivity.myCharacter;
             return;
         }
-        if (bindingCharacter.isLocking)
-            canvas.drawCircle(buttonSize / 2, buttonSize / 2, buttonSize / 2, backgroundPaint);
+        if (bindingCharacter.isLocking){
+            if(isHolding) {
+                canvas.drawBitmap(lockingBitmap, bitmapLeft, bitmapTop, alphaPaint);
+            }else{
+                canvas.drawBitmap(lockingBitmap, bitmapLeft, bitmapTop, normalPaint);
+            }
+        }else{
+            if(isHolding) {
+                canvas.drawBitmap(lockingBitmap, bitmapLeft, bitmapTop, normalPaint);
+            }else{
+                canvas.drawBitmap(lockingBitmap, bitmapLeft, bitmapTop, alphaPaint);
+            }
+        }
 //        if(bindingCharacter.attackCount<bindingCharacter.maxAttackCount&&bindingCharacter.reloadAttackStartTime!=0){
 //            long startTime=bindingCharacter.reloadAttackStartTime;
 //            float percent=(float) (new Date().getTime()-startTime)/bindingCharacter.reloadAttackNeedTime;

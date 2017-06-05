@@ -34,7 +34,7 @@ public class NormalWolf extends BaseCharacterView {
     public final static int defaultViewAngle = 90;
     public final static int defaultHearRadius = 600;
     public  final static int defaultForceViewRadius=300;
-    public  final static int defaultSmellRadius=1000;
+    public  final static int defaultSmellRadius=2000;
     public  final static int defaultSmellSpeed=30;
     public final static int defaultWalkWaitTime = 500;
     public final static int defaultRunWaitTime = 200;

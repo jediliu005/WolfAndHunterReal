@@ -30,9 +30,5 @@
         android:layout_height="wrap_content"
         android:id="@+id/attack_button_right"
         />
-    <com.jedi.wolf_and_hunter.myViews.LockingButton
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/locking_button"
-        />
+
 </FrameLayout>

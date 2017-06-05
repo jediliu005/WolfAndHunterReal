@@ -24,6 +24,7 @@ import com.jedi.wolf_and_hunter.myObj.MyVirtualWindow;
 import com.jedi.wolf_and_hunter.myViews.AttackRange;
 import com.jedi.wolf_and_hunter.myViews.GameMap;
 import com.jedi.wolf_and_hunter.myViews.JRocker;
+import com.jedi.wolf_and_hunter.myViews.PromptView;
 import com.jedi.wolf_and_hunter.myViews.SightView;
 import com.jedi.wolf_and_hunter.myViews.ViewRange;
 import com.jedi.wolf_and_hunter.myViews.landform.Landform;
@@ -76,12 +77,11 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public int maxAttackCount;
     public volatile int nowSmellCount;
     public volatile int nowSmellSpeed;
-    public static final int smellTotalCount=1000;
-    public static final int smellSleepTime=100;
-    public long lastSmellTime;
-    public static final int reloadAttackTotalCount=1000;
-    public static final int reloadAttackSleepTime=100;
-    public volatile int nowReloadingAttackCount=0;
+    public static final int smellTotalCount = 1000;
+    public static final int smellSleepTime = 100;
+    public static final int reloadAttackTotalCount = 1000;
+    public static final int reloadAttackSleepTime = 100;
+    public volatile int nowReloadingAttackCount = 0;
     public volatile int nowReloadAttackSpeed;
     public int killCount;
     public int dieCount;
@@ -90,13 +90,15 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public volatile int nowViewRadius = 500;
     public volatile int nowHearRadius = 500;
     public volatile int nowForceViewRadius = 200;
-    public volatile int nowSmellRadius = 1000;
+    public volatile int nowSmellRadius = 2000;
+    public long lastSmellTime;
     public int nowWalkWaitTime = 600;
     public int nowRunWaitTime = 300;
     public volatile int nowSpeed = 10;
     public SightView sight;
     public AttackRange attackRange;
     public ViewRange viewRange;
+    public PromptView promptView;
     private int teamID;
     public int id;
     public MyVirtualWindow virtualWindow;
@@ -108,7 +110,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public GameBaseAreaActivity.GameHandler gameHandler;
     public volatile HashSet<Integer> seeMeTeamIDs;
     public volatile HashSet<BaseCharacterView> theyDiscoverMe;
-    public volatile HashSet<Point> lastSmellEnemiesPosition;
+    public volatile HashSet<Point> enemiesPositionSet;
 
     public Thread movingMediaThread;
     public int runOrWalk = 0;
@@ -131,7 +133,6 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     int windowWidth;
     int windowHeight;
     public volatile boolean isStop = false;
-    public Bitmap arrowBitMap;
     public Matrix matrixForArrow;
     public SurfaceHolder mHolder;
     public int arrowBitmapWidth;
@@ -242,7 +243,8 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
     //sight仅对玩家操控角色有意义，不在这里统一创建
     private void init() {
-        nowReloadingAttackCount=0;
+        enemiesPositionSet = new HashSet<Point>();
+        nowReloadingAttackCount = 0;
         theyDiscoverMe = new HashSet<BaseCharacterView>();
         seeMeTeamIDs = new HashSet<Integer>();
         windowWidth = MyVirtualWindow.getWindowWidth(getContext());
@@ -296,14 +298,14 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         textAlphaPaint.setAntiAlias(true);
 
 
-        arrowBitMap = BitmapFactory.decodeResource(getResources(), R.drawable.arrow);
-        matrixForArrow = new Matrix();
-
-        matrixForArrow.postScale((float) (0.5 * characterBodySize / arrowBitMap.getWidth()), (float) (0.5 * characterBodySize / arrowBitMap.getHeight()));
-        arrowBitMap = Bitmap.createBitmap(arrowBitMap, 0, 0, arrowBitMap.getWidth(), arrowBitMap.getHeight(),
-                matrixForArrow, true);
-        arrowBitmapHeight = arrowBitMap.getHeight();
-        arrowBitmapWidth = arrowBitMap.getHeight();
+//        arrowBitMap = BitmapFactory.decodeResource(getResources(), R.drawable.arrow);
+//        matrixForArrow = new Matrix();
+//
+//        matrixForArrow.postScale((float) (0.5 * characterBodySize / arrowBitMap.getWidth()), (float) (0.5 * characterBodySize / arrowBitMap.getHeight()));
+//        arrowBitMap = Bitmap.createBitmap(arrowBitMap, 0, 0, arrowBitMap.getWidth(), arrowBitMap.getHeight(),
+//                matrixForArrow, true);
+//        arrowBitmapHeight = arrowBitMap.getHeight();
+//        arrowBitmapWidth = arrowBitMap.getHeight();
 //        aroundSize = 2 * arrowBitmapWidth;
 
         FrameLayout.LayoutParams mLayoutParams = (FrameLayout.LayoutParams) this.getLayoutParams();
@@ -356,7 +358,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             else
                 return;
         }
-        if(GameBaseAreaActivity.isStop == true || needMove==false || isDead == true)
+        if (GameBaseAreaActivity.isStop == true || needMove == false || isDead == true)
             return;
         movingMediaThread = new Thread(new Runnable() {
             @Override
@@ -401,7 +403,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                         rightVol = rightVol / 3;
                     }
                     moveMediaPlayer.setVolume(leftVol, rightVol);
-                    if (isStay == false&&needMove==true)
+                    if (isStay == false && needMove == true)
                         moveMediaPlayer.start();
                     try {
                         if (runOrWalk == MOVINT_TYPE_WALK)
@@ -533,6 +535,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         int nowOffY = offY;
         float realRelateAngle = 0;
         float targetFacingAngle = 0;
+        isSmelling=false;
         if (nowOffX == 0 && nowOffY == 0)
             return;
         targetFacingAngle = MyMathsUtils.getAngleBetweenXAxus(nowOffX, nowOffY);
@@ -544,7 +547,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             else
                 relateAngle = 360 - relateAngle;
         }
-        realRelateAngle=relateAngle;
+        realRelateAngle = relateAngle;
         if (Math.abs(relateAngle) > nowAngleChangSpeed * 2)
             realRelateAngle = Math.abs(relateAngle) / relateAngle * nowAngleChangSpeed * 2;
 
@@ -586,8 +589,8 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                 e.printStackTrace();
             }
 //        }
-            if(Math.abs(nowOffX)>nowSpeed||Math.abs(nowOffY)>nowSpeed)
-                Log.i("","");
+            if (Math.abs(nowOffX) > nowSpeed || Math.abs(nowOffY) > nowSpeed)
+                Log.i("", "");
             nowLeft = nowLeft + nowOffX;
             nowTop = nowTop + nowOffY;
             nowRight = nowLeft + getWidth();
@@ -603,7 +606,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
     }
 
-    public void initCharacterState(){
+    public void initCharacterState() {
 
     }
 
@@ -633,8 +636,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         } catch (Exception e) {
             e.printStackTrace();
         }
-        if(true)
-            return;
+
         nowLeft = nowLeft + nowOffX;
         nowTop = nowTop + nowOffY;
         nowRight = nowLeft + getWidth();
@@ -955,14 +957,14 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                             canvas.drawBitmap(characterPic, (int) (characterBodySize * 0.1), (int) (characterBodySize * 0.1), normalPaint);
                             canvas.rotate(nowFacingAngle, characterBodySize / 2, characterBodySize / 2);
 //                        canvas.drawRect(0, 0, characterBodySize, characterBodySize, normalPaint);
-                            canvas.drawBitmap(arrowBitMap, characterBodySize - arrowBitmapWidth, (characterBodySize - arrowBitmapHeight) / 2, normalPaint);
+//                            canvas.drawBitmap(arrowBitMap, characterBodySize - arrowBitmapWidth, (characterBodySize - arrowBitmapHeight) / 2, normalPaint);
 
                         } else if (nowHiddenLevel > HIDDEN_LEVEL_NO_HIDDEN) {
                             canvas.drawCircle(characterBodySize / 2, characterBodySize / 2, characterBodySize / 2 - borderWidth, alphaPaint);
-                            canvas.drawBitmap(characterPic, (int) (characterBodySize * 0.1) , (int) (characterBodySize * 0.1) , alphaPaint);
+                            canvas.drawBitmap(characterPic, (int) (characterBodySize * 0.1), (int) (characterBodySize * 0.1), alphaPaint);
                             canvas.rotate(nowFacingAngle, characterBodySize / 2, characterBodySize / 2);
 //                        canvas.drawRect(0, 0, characterBodySize, characterBodySize, alphaPaint);
-                            canvas.drawBitmap(arrowBitMap, characterBodySize - arrowBitmapWidth, (characterBodySize - arrowBitmapHeight) / 2, alphaPaint);
+//                            canvas.drawBitmap(arrowBitMap, characterBodySize - arrowBitmapWidth, (characterBodySize - arrowBitmapHeight) / 2, alphaPaint);
 
                         }
                     } else {//不是队友
@@ -971,7 +973,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                             canvas.drawBitmap(characterPic, (int) (characterBodySize * 0.1), (int) (characterBodySize * 0.1), normalPaint);
                             canvas.rotate(nowFacingAngle, characterBodySize / 2, characterBodySize / 2);
 //                        canvas.drawRect(0, 0, characterBodySize, characterBodySize, normalPaint);
-                            canvas.drawBitmap(arrowBitMap, characterBodySize - arrowBitmapWidth, (characterBodySize - arrowBitmapHeight) / 2, normalPaint);
+//                            canvas.drawBitmap(arrowBitMap, characterBodySize - arrowBitmapWidth, (characterBodySize - arrowBitmapHeight) / 2, normalPaint);
                             viewRange.isHidden = false;
                             attackRange.isHidden = true;
 
@@ -979,7 +981,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                             canvas.drawCircle(characterBodySize / 2, characterBodySize / 2, characterBodySize / 2 - borderWidth, transparentPaint);
                             canvas.drawBitmap(characterPic, (int) (characterBodySize * 0.1), (int) (characterBodySize * 0.1), transparentPaint);
                             canvas.rotate(nowFacingAngle, characterBodySize / 2, characterBodySize / 2);
-                            canvas.drawBitmap(arrowBitMap, characterBodySize - arrowBitmapWidth, (characterBodySize - arrowBitmapHeight) / 2, transparentPaint);
+//                            canvas.drawBitmap(arrowBitMap, characterBodySize - arrowBitmapWidth, (characterBodySize - arrowBitmapHeight) / 2, transparentPaint);
                             viewRange.isHidden = true;
                             attackRange.isHidden = true;
                         }
@@ -1087,7 +1089,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
 
     public void keepDirectionAndJump(int limitLeft, int limitTop, int limitRight, int limitBottom) {
-        if(jumpToX == -99999&&jumpToY == -99999)
+        if (jumpToX == -99999 && jumpToY == -99999)
             return;
         centerX = (nowLeft + nowRight) / 2;
         centerY = (nowTop + nowBottom) / 2;
@@ -1224,7 +1226,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         float targetFacingAngle = 0;
         if (lockingCharacter != null) {
 
-            if (lockingCharacter.isDead||lockingCharacter.isForceToBeSawByMe == false) {
+            if (lockingCharacter.isDead || lockingCharacter.isForceToBeSawByMe == false) {
                 lockingCharacter = null;
                 return;
             } else {
@@ -1337,58 +1339,67 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     }
 
 
-
-    public void smell(boolean isMoving){
-        lastSmellTime=0;
-        if(smellThread!=null){
-            if(isSmelling){
-                isSmelling=false;
-                try {
-                    smellThread.join();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                smellThread=null;
-                return;
-            }
+    public synchronized void smell() {
+        if (smellThread != null) {
+            return;
+//
+//            if(isSmelling){
+//                isSmelling=false;
+//                try {
+//                    smellThread.join();
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//                smellThread=null;
+//                return;
+//            }
         }
-
-        smellThread=new smellThread(this);
+        nowSmellCount = 0;
+        smellThread = new smellThread(this);
         smellThread.setDaemon(true);
         smellThread.start();
     }
 
-    class smellThread extends Thread{
+    class smellThread extends Thread {
         BaseCharacterView bindingCharacter;
-        smellThread(BaseCharacterView bindingCharacter){
-            this.bindingCharacter=bindingCharacter;
+
+        smellThread(BaseCharacterView bindingCharacter) {
+            this.bindingCharacter = bindingCharacter;
         }
+
         @Override
         public void run() {
-            while(GameBaseAreaActivity.isStop==false&&isSmelling){
-                nowSmellCount+=nowSmellSpeed;
-                if(nowSmellCount>smellTotalCount)
-                    nowSmellCount=smellTotalCount;
-                if(nowSmellCount==smellTotalCount){
-                    Point thisCharacterPosition=new Point(bindingCharacter.centerX,bindingCharacter.centerY);
-                    for(BaseCharacterView character:GameBaseAreaActivity.allCharacters){
-                        if(character.teamID==bindingCharacter.teamID)
-                            continue;
-                        Point enemyPosition=new Point(character.centerX,character.centerY);
-                        double distance=MyMathsUtils.getDistance(enemyPosition,thisCharacterPosition);
-                        if(distance<=nowSmellRadius){
-                            lastSmellEnemiesPosition.add(enemyPosition);
+            enemiesPositionSet.clear();
+            isSmelling = true;
+            try {
+                while (GameBaseAreaActivity.isStop == false && isSmelling) {
+                    nowSmellCount += nowSmellSpeed;
+                    if (nowSmellCount > smellTotalCount)
+                        nowSmellCount = smellTotalCount;
+                    if (nowSmellCount == smellTotalCount) {
+                        lastSmellTime=new Date().getTime();
+                        Point thisCharacterPosition = new Point(bindingCharacter.centerX, bindingCharacter.centerY);
+                        for (BaseCharacterView character : GameBaseAreaActivity.allCharacters) {
+                            if (character.teamID == bindingCharacter.teamID)
+                                continue;
+                            Point enemyPosition = new Point(character.centerX, character.centerY);
+                            double distance = MyMathsUtils.getDistance(enemyPosition, thisCharacterPosition);
+                            if (distance <= nowSmellRadius) {
+                                enemiesPositionSet.add(enemyPosition);
+                            }
                         }
+                        break;
                     }
-                    lastSmellTime=new Date().getTime();
-                    nowSmellCount=0;
-                    isSmelling=false;
-                }
-                try {
+
                     Thread.sleep(smellSleepTime);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+
                 }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                nowSmellCount = 0;
+                isSmelling = false;
+                smellThread = null;
             }
         }
     }

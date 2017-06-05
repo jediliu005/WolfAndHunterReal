@@ -26,8 +26,10 @@ import com.jedi.wolf_and_hunter.myViews.GameMap;
 import com.jedi.wolf_and_hunter.myViews.LeftRocker;
 import com.jedi.wolf_and_hunter.myViews.LockingButton;
 import com.jedi.wolf_and_hunter.myViews.MapBaseFrame;
+import com.jedi.wolf_and_hunter.myViews.PromptView;
 import com.jedi.wolf_and_hunter.myViews.RightRocker;
 import com.jedi.wolf_and_hunter.myViews.SightView;
+import com.jedi.wolf_and_hunter.myViews.SmellButton;
 import com.jedi.wolf_and_hunter.myViews.Trajectory;
 import com.jedi.wolf_and_hunter.myViews.ViewRange;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
@@ -70,7 +72,7 @@ public class GameBaseAreaActivity extends Activity {
     //    AttackButton leftAtttackButton;
     AttackButton rightAtttackButton;
     LockingButton lockingButton;
-    public static PlayerInfo myPlayerInfo;
+    SmellButton smellButton;
     public static volatile ArrayList<BaseCharacterView> allCharacters;
     public static ArrayList<Trajectory> allTrajectories;
     public static MapBaseFrame mapBaseFrame;
@@ -263,41 +265,28 @@ public class GameBaseAreaActivity extends Activity {
                 mySight.hasUpdatedPosition = false;
                 mySight.updateNowPosition();
             }
-            //获得视窗虚拟位置
-//                virtualWindow.updateNowWindowPosition(mapBaseFrame);
-//                mySight.updateNowWindowPosition();
             if (myCharacter.isDead == true) {
                 myCharacter.deadReset();
-//                needChange = true;
 
             } else if (myCharacter.judgeingAttack) {
                 myCharacter.keepDirectionAndJump(0, 0, mapBaseFrame.getWidth(), mapBaseFrame.getHeight());
-//                needChange = true;
             } else {
                 if (controlMode == CONTROL_MODE_MASTER) {//CONTROL_MODE_MASTER这种操控方式已经过期，也许有用
                     if (myCharacter.needMove == true) {
                         myCharacter.masterModeOffsetLRTBParams();
-//                        needChange = true;
                     }
                     if (mySight != null && mySight.needMove == true) {
                         mySight.masterModeOffsetLRTBParams(isMyCharacterMoving);
-//                        needChange = true;
                     }
                 } else if (controlMode == CONTROL_MODE_NORMAL) {
-//                        Log.i("Player1 offX", Integer.toString(myCharacter.offX));
-//                        Log.i("Player1 nowLeft", Integer.toString(myCharacter.nowLeft));
                     if (myCharacter.needMove == true) {
-                        if (myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
+                        if (myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
                             myCharacter.normalModeOffsetLRTBParams();
-                        else if (myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF)
+                        else if (myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF)
                             myCharacter.normalModeOffsetWolfLRTBParams();
-//                        needChange = true;
                     }
-//                        Log.i("Player1 offX", Integer.toString(myCharacter.offX));
-//                        Log.i("Player1 nowLeft", Integer.toString(myCharacter.nowLeft));
                     if (mySight != null && mySight.needMove == true) {
                         mySight.normalModeOffsetLRTBParams();
-//                        needChange = true;
                     }else if(myCharacter.isLocking){
                         myCharacter.dealLocking();
                     }
@@ -306,7 +295,6 @@ public class GameBaseAreaActivity extends Activity {
 
                 }
             }
-//            if (needChange) {
             FrameLayout.LayoutParams mLayoutParams = (FrameLayout.LayoutParams) myCharacter.getLayoutParams();
             mLayoutParams.leftMargin = myCharacter.nowLeft;
             mLayoutParams.topMargin = myCharacter.nowTop;
@@ -326,7 +314,6 @@ public class GameBaseAreaActivity extends Activity {
             }
 
             mySight.setLayoutParams(mySight.mLayoutParams);
-//                    virtualWindow.offsetWindow();
 
 
             myCharacter.changeThisCharacterOnLandformses();
@@ -348,9 +335,16 @@ public class GameBaseAreaActivity extends Activity {
             FrameLayout.LayoutParams viewRangeLP = (FrameLayout.LayoutParams) myCharacter.viewRange.getLayoutParams();
             viewRangeLP.leftMargin = myCharacter.viewRange.centerX - myCharacter.nowViewRadius;
             viewRangeLP.topMargin = myCharacter.viewRange.centerY - myCharacter.nowViewRadius;
-//            viewRangeLP.width=2*myCharacter.nowViewRadius;
-//            viewRangeLP.height=2*myCharacter.nowViewRadius;
             myCharacter.viewRange.setLayoutParams(viewRangeLP);
+
+            if(myCharacter.promptView!=null){
+                myCharacter.promptView.centerX = myCharacter.centerX;
+                myCharacter.promptView.centerY = myCharacter.centerY;
+                myCharacter.promptView.layoutParams.leftMargin = myCharacter.promptView.centerX - myCharacter.promptView.viewSize/2;
+                myCharacter.promptView.layoutParams.topMargin = myCharacter.promptView.centerY - myCharacter.promptView.viewSize/2;
+
+                myCharacter.promptView.setLayoutParams(myCharacter.promptView.layoutParams);
+            }
 
 //            myCharacter.viewRange.invalidate();
 
@@ -487,11 +481,15 @@ public class GameBaseAreaActivity extends Activity {
 
         allCharacters = new ArrayList<BaseCharacterView>();
         //添加我的角色
-        myPlayerInfo = playerInfos.get(0);
+        PlayerInfo myPlayerInfo = playerInfos.get(0);
         if (myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
             myCharacter = new NormalHunter(this, virtualWindow);
-        else
+        else {
             myCharacter = new NormalWolf(this, virtualWindow);
+            PromptView promptView=new PromptView(this,myCharacter);
+            mapBaseFrame.addView(promptView);
+            myCharacter.promptView=promptView;
+        }
         myCharacter.setTeamID(myPlayerInfo.teamID);
 
         allCharacters.add(myCharacter);
@@ -566,18 +564,31 @@ public class GameBaseAreaActivity extends Activity {
         rightRocker.bringToFront();
         rightAtttackButton.bringToFront();
 
-        lockingButton = (LockingButton) findViewById(R.id.locking_button);
-        int lockingButtonSize = lockingButton.buttonSize;
-        lockingButton.bindingCharacter = myCharacter;
-        FrameLayout.LayoutParams lblp = (FrameLayout.LayoutParams) lockingButton.getLayoutParams();
-        if (lblp == null) {
-            lblp = new FrameLayout.LayoutParams(lockingButtonSize, lockingButtonSize);
+        if(myCharacter.characterType==BaseCharacterView.CHARACTER_TYPE_HUNTER) {
+            lockingButton = new LockingButton(this);
+            int lockingButtonSize = lockingButton.buttonSize;
+            lockingButton.bindingCharacter = myCharacter;
+            FrameLayout.LayoutParams lblp = (FrameLayout.LayoutParams) lockingButton.getLayoutParams();
+            if (lblp == null) {
+                lblp = new FrameLayout.LayoutParams(lockingButtonSize, lockingButtonSize);
+            }
+            lblp.leftMargin = rabp.leftMargin - lockingButtonSize;
+            lblp.topMargin = rabp.topMargin;
+            lockingButton.setLayoutParams(lblp);
+            baseFrame.addView(lockingButton);
+        }else  if(myCharacter.characterType==BaseCharacterView.CHARACTER_TYPE_WOLF) {
+            smellButton= new SmellButton(this);
+            int smellButtonSize = smellButton.buttonSize;
+            smellButton.bindingCharacter = myCharacter;
+            FrameLayout.LayoutParams sblp = (FrameLayout.LayoutParams) smellButton.getLayoutParams();
+            if (sblp == null) {
+                sblp = new FrameLayout.LayoutParams(smellButtonSize, smellButtonSize);
+            }
+            sblp.leftMargin = rabp.leftMargin - smellButtonSize;
+            sblp.topMargin = rabp.topMargin;
+            smellButton.setLayoutParams(sblp);
+            baseFrame.addView(smellButton);
         }
-        lblp.leftMargin=rabp.leftMargin-lockingButtonSize;
-        lblp.topMargin=rabp.topMargin;
-        lockingButton.setLayoutParams(lblp);
-        lockingButton.bringToFront();
-
         startAI();
 
         for (BaseCharacterView character : allCharacters) {
@@ -632,7 +643,10 @@ public class GameBaseAreaActivity extends Activity {
         t3.bringToFront();
         t4.bringToFront();
         t5.bringToFront();
-
+        if(lockingButton!=null)
+            lockingButton.bringToFront();
+        if(smellButton!=null)
+            smellButton.bringToFront();
     }
 
     @Override
