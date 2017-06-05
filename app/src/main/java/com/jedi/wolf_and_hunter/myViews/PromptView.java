@@ -19,7 +19,7 @@ import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
  * Created by Administrator on 2017/4/26.
  */
 
-public class SmellView extends View {
+public class PromptView extends View {
     public int centerX, centerY;
     public boolean isHidden;
     public FrameLayout.LayoutParams layoutParams;
@@ -27,26 +27,26 @@ public class SmellView extends View {
     Bitmap smellArrowBitMap;
     Paint borderPaint;
     Paint transparentPaint;
-    public SmellView(Context context) {
+    public PromptView(Context context) {
         super(context);
         if(GameBaseAreaActivity.myCharacter!=null)
             bindingCharacter=GameBaseAreaActivity.myCharacter;
         init();
     }
-    public SmellView(Context context, BaseCharacterView character) {
+    public PromptView(Context context, BaseCharacterView character) {
         super(context);
         bindingCharacter=character;
         init();
     }
 
-    public SmellView(Context context, @Nullable AttributeSet attrs) {
+    public PromptView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         if(GameBaseAreaActivity.myCharacter!=null)
             bindingCharacter=GameBaseAreaActivity.myCharacter;
         init();
     }
 
-    public SmellView(Context context, @Nullable AttributeSet attrs, BaseCharacterView character) {
+    public PromptView(Context context, @Nullable AttributeSet attrs, BaseCharacterView character) {
         super(context, attrs);
         bindingCharacter=character;
         init();
