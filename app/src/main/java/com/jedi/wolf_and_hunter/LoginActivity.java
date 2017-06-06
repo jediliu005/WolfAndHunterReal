@@ -12,6 +12,7 @@ import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 
+import com.jedi.wolf_and_hunter.activities.BlueToothTestActivity;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
 import com.jedi.wolf_and_hunter.activities.MapBaseActivity;
 import com.jedi.wolf_and_hunter.myObj.PlayerInfo;
@@ -70,6 +71,14 @@ public class LoginActivity extends Activity {
         i.putExtras(bundle);
         startActivity(i);
     }
+
+
+    public void startBlueToothTest(View view) {
+        Intent i = new Intent(this, BlueToothTestActivity.class);
+        startActivity(i);
+    }
+
+
 
     public void onOffPlayer(View view) {
         TextView textView=(TextView)view;

@@ -10,17 +10,26 @@
         android:id="@+id/email_login_form"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="horizontal">
 
 
         <Button
-            android:id="@+id/email_sign_in_button"
+            android:id="@+id/start_test_button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-
             android:onClick="startTest"
+            android:layout_weight="1"
             android:text="进入地图测试"
+            android:textStyle="bold" />
+        <Button
+            android:id="@+id/start_blue_tooth_test_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_weight="1"
+            android:onClick="startBlueToothTest"
+            android:text="蓝牙测试"
             android:textStyle="bold" />
 
     </LinearLayout>
