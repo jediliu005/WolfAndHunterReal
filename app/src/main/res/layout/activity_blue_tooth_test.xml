@@ -6,12 +6,37 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context="com.jedi.wolf_and_hunter.activities.BlueToothTestActivity">
-    <Button
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_weight="1">
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="查找设备"
+            android:onClick="searchDevice"/>
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="接受链接"
+            android:onClick="runAccept"/>
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="发出请求"
+            android:onClick="runConnect"/>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/text_view_count"
+        android:layout_width="match_parent"
+        android:layout_height="100px"
         android:layout_weight="1"
-        android:text="查找设备"
-        android:onClick="searchDevice"/>
+        android:text="0"
+       />
     <ListView
         android:layout_marginTop="20dp"
         android:id="@+id/list_view_devices"
