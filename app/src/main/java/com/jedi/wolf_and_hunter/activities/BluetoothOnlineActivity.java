@@ -21,6 +21,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.jedi.wolf_and_hunter.R;
+import com.jedi.wolf_and_hunter.myObj.PlayerInfo;
+import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 import com.jedi.wolf_and_hunter.utils.BluetoothController;
 
 import java.io.IOException;
@@ -40,7 +42,7 @@ import java.util.UUID;
 public class BluetoothOnlineActivity extends Activity {
     boolean isAcceptStop;
     BluetoothOnlineActivity.MyHandler myHandler;
-    String mUUID = "e6adf90a-b0d3-4fa2-aa6a-97c119f1f1c6";
+
     BluetoothAdapter bluetoothAdapter;
     SimpleAdapter discoveredDeviceAdapter;
     SimpleAdapter joinedPlayerAdapter;
@@ -281,8 +283,8 @@ public class BluetoothOnlineActivity extends Activity {
 
         public AcceptThread() {
             try {
-                UUID.randomUUID().toString();
-                bluetoothServerSocket = bluetoothController.mBluetoothAdapter.listenUsingRfcommWithServiceRecord("BluetoothServer", UUID.fromString(mUUID));
+
+                bluetoothServerSocket = bluetoothController.mBluetoothAdapter.listenUsingRfcommWithServiceRecord("BluetoothServer", UUID.fromString(BluetoothController.mUUID));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -347,7 +349,7 @@ public class BluetoothOnlineActivity extends Activity {
         public ConnectThread(BluetoothDevice device) {
             bluetoothDevice = device;
             try {
-                bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString(mUUID));
+                bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString(BluetoothController.mUUID));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -416,6 +418,21 @@ public class BluetoothOnlineActivity extends Activity {
             return;
 
 
+    }
+
+    public void startGame(View view) {
+        if(joinedPlayerDeviceSet==null||joinedPlayerDeviceSet.size()==0)
+            Toast.makeText(this,"请先找到配对玩家",Toast.LENGTH_SHORT);
+        ArrayList<PlayerInfo> playerInfos=new ArrayList<PlayerInfo>();
+        for(BluetoothDevice device:joinedPlayerDeviceSet){
+            PlayerInfo playerInfo=new PlayerInfo(true,1, BaseCharacterView.CHARACTER_TYPE_HUNTER,1,device);
+            playerInfos.add(playerInfo);
+        }
+        Intent i = new Intent(this, BluetoothOnlineGameBaseAreaActivity.class);
+        Bundle bundle = new Bundle();
+        bundle.putSerializable("playerInfos", playerInfos);
+        i.putExtras(bundle);
+        startActivity(i);
     }
 
     class RefreshPlayerListViewTask extends TimerTask {

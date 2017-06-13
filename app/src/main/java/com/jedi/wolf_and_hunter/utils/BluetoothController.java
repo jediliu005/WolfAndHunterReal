@@ -18,27 +18,25 @@ import java.util.Set;
  */
 
 public class BluetoothController {
-    public BluetoothAdapter mBluetoothAdapter;
-    public Set<BluetoothDevice> devicesSet;
+    public static final BluetoothAdapter mBluetoothAdapter=BluetoothAdapter.getDefaultAdapter();
+    public static final String mUUID = "e6adf90a-b0d3-4fa2-aa6a-97c119f1f1c6";
     public Context context;
-
     public BluetoothController(Context context) {
         this.context = context;
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        mReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                //发现了设备
-                if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                    Toast.makeText(context, "发现设备", Toast.LENGTH_SHORT).show();
-                    //从Intent中获取设备的BluetoothDevice对象
-                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                    devicesSet.add(device);
-
-                }
-            }
-        };
+//        mReceiver = new BroadcastReceiver() {
+//            @Override
+//            public void onReceive(Context context, Intent intent) {
+//                String action = intent.getAction();
+//                //发现了设备
+//                if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+//                    Toast.makeText(context, "发现设备", Toast.LENGTH_SHORT).show();
+//                    //从Intent中获取设备的BluetoothDevice对象
+//                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+//                    devicesSet.add(device);
+//
+//                }
+//            }
+//        };
     }
 
     private BroadcastReceiver mReceiver;
@@ -49,7 +47,7 @@ public class BluetoothController {
      *
      * @return
      */
-    public boolean isSupportBluetooth() {
+    public static boolean isSupportBluetooth() {
         if (mBluetoothAdapter != null) {
             return true;
         }
@@ -61,7 +59,7 @@ public class BluetoothController {
      *
      * @return
      */
-    public boolean getBluetoothStatus() {
+    public static boolean getBluetoothStatus() {
         if (mBluetoothAdapter != null) {
             return mBluetoothAdapter.isEnabled();
         }
@@ -74,7 +72,7 @@ public class BluetoothController {
      * @param activity
      * @param requestCode
      */
-    public void turnOnBluetooth(Activity activity, int requestCode) {
+    public static void turnOnBluetooth(Activity activity, int requestCode) {
         if (mBluetoothAdapter != null && !mBluetoothAdapter.isEnabled()) {
             Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             activity.startActivityForResult(intent, requestCode);
@@ -84,14 +82,14 @@ public class BluetoothController {
     /**
      * 关闭蓝牙
      */
-    public void turnOffBluetooth() {
+    public static void turnOffBluetooth() {
         if (mBluetoothAdapter != null && mBluetoothAdapter.isEnabled()) {
             mBluetoothAdapter.disable();
         }
     }
 
 
-    public Set<BluetoothDevice> getConnetedDevices() {
+    public static Set<BluetoothDevice> getConnetedDevices() {
         if (mBluetoothAdapter != null && mBluetoothAdapter.isEnabled()) {
             return mBluetoothAdapter.getBondedDevices();
         }
@@ -99,16 +97,16 @@ public class BluetoothController {
     }
 
 
-    public void startDiscovery() {
+    public static void startDiscovery() {
         mBluetoothAdapter.startDiscovery();
     }
 
-    public void cancelDiscovery() {
+    public static void cancelDiscovery() {
         mBluetoothAdapter.cancelDiscovery();
     }
 
     @Deprecated
-    public void setDiscoverableTimeout(int timeout) {
+    public static void setDiscoverableTimeout(int timeout) {
 
         try {
 
@@ -134,7 +132,7 @@ public class BluetoothController {
 
     }
 
-    public void closeDiscoverableTimeout() {
+    public static void closeDiscoverableTimeout() {
         try {
             Method setDiscoverableTimeout = BluetoothAdapter.class.getMethod("setDiscoverableTimeout", int.class);
             setDiscoverableTimeout.setAccessible(true);

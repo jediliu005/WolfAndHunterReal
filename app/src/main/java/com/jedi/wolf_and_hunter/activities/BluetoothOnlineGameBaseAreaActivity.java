@@ -1,27 +1,26 @@
 package com.jedi.wolf_and_hunter.activities;
 
 import android.app.Activity;
-import android.content.Context;
-import android.content.Intent;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
 import android.graphics.Color;
-import android.graphics.Point;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
+import com.jedi.wolf_and_hunter.R;
 import com.jedi.wolf_and_hunter.ai.BaseAI;
 import com.jedi.wolf_and_hunter.ai.HunterAI;
 import com.jedi.wolf_and_hunter.ai.WolfAI;
 import com.jedi.wolf_and_hunter.myObj.MyVirtualWindow;
 import com.jedi.wolf_and_hunter.myObj.PlayerInfo;
 import com.jedi.wolf_and_hunter.myViews.AttackButton;
-import com.jedi.wolf_and_hunter.myViews.AttackRange;
 import com.jedi.wolf_and_hunter.myViews.GameMap;
 import com.jedi.wolf_and_hunter.myViews.LeftRocker;
 import com.jedi.wolf_and_hunter.myViews.LockingButton;
@@ -31,25 +30,26 @@ import com.jedi.wolf_and_hunter.myViews.RightRocker;
 import com.jedi.wolf_and_hunter.myViews.SightView;
 import com.jedi.wolf_and_hunter.myViews.SmellButton;
 import com.jedi.wolf_and_hunter.myViews.Trajectory;
-import com.jedi.wolf_and_hunter.myViews.ViewRange;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 import com.jedi.wolf_and_hunter.myViews.characters.NormalHunter;
 import com.jedi.wolf_and_hunter.myViews.characters.NormalWolf;
 import com.jedi.wolf_and_hunter.myViews.landform.Landform;
 import com.jedi.wolf_and_hunter.myViews.landform.TallGrassland;
-import com.jedi.wolf_and_hunter.R;
-import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
+import com.jedi.wolf_and_hunter.utils.BluetoothController;
 import com.jedi.wolf_and_hunter.utils.ViewUtils;
 
-import org.w3c.dom.Text;
-
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.UUID;
 
-public class GameBaseAreaActivity extends Activity {
+public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
     public TextView t1;
     public TextView t2;
     public TextView t3;
@@ -61,7 +61,7 @@ public class GameBaseAreaActivity extends Activity {
     public static int mapWidth = 3000;
     public static int mapHeight = 3000;
 
-
+    ArrayList<BluetoothDevice> otherPlayerDevicesList=null;
 
     private final static int CONTROL_MODE_NORMAL = 0;
     private final static int CONTROL_MODE_MASTER = 1;
@@ -136,7 +136,7 @@ public class GameBaseAreaActivity extends Activity {
     }
 
 
-    public class GameHandler extends Handler {
+    public class GameHandler extends GameBaseAreaActivity.GameHandler {
         public static final int ADD_TRAJECTORY = 1;
         public static final int REMOVE_TRAJECTORY = 2;
 
@@ -417,33 +417,64 @@ public class GameBaseAreaActivity extends Activity {
 
     }
 
-    private void startAI() {
-        for (int i = 1; i < playerInfos.size(); i++) {
-            PlayerInfo playerInfo = playerInfos.get(i);
-            BaseAI ai = null;
-            if (playerInfo.isAvailable == false)
-                continue;
-            BaseCharacterView aiCharacter = null;
-            if (playerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER) {
-                aiCharacter = new NormalHunter(this, virtualWindow);
-                ai = new HunterAI(aiCharacter);
-            } else if (playerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF) {
-                aiCharacter = new NormalWolf(this, virtualWindow);
-                ai = new WolfAI(aiCharacter);
-            }
-            aiCharacter.gameHandler = gameHandler;
-            aiCharacter.setTeamID(playerInfo.teamID);
+    class BluetoothLoopConnectTask extends TimerTask{
+        private int connectDeviceIndex=0;
+        private BluetoothSocket bluetoothSocket;
+        public BluetoothLoopConnectTask(){
+            BluetoothController.cancelDiscovery();
+        }
+        @Override
+        public void run() {
+            InputStream is = null;
+            try {
+                BluetoothDevice bluetoothDevice=otherPlayerDevicesList.get(connectDeviceIndex++%4);
+                bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString(BluetoothController.mUUID));
+                //通过socket连接设备，这是一个阻塞操作，知道连接成功或发生异常
+                bluetoothSocket.connect();
+                is = bluetoothSocket.getInputStream();
+                byte[] temp = new byte[10];
+                is.read(temp);
+                gameHandler.sendEmptyMessage(0);
 
+            } catch (IOException e) {
+                e.printStackTrace();
+                //无法连接，关闭socket并且退出
 
-            allCharacters.add(aiCharacter);
-            Timer timerForAI = new Timer("AIPlayer1", true);
-            timerForAI.schedule(ai, 1000, 30);
-            timerForAIList.add(timerForAI);
-            if (i == 2) {
-                testingAI = ai;
+            } finally {
+                try {
+                    is.close();
+                    bluetoothSocket.close();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
             }
         }
+    }
 
+
+
+
+    private void startBlueToothConnection() {
+        for (int i = 1; i < playerInfos.size(); i++) {
+            PlayerInfo playerInfo = playerInfos.get(i);
+
+            if (playerInfo.isOtherOnlinePlayer == false)
+                continue;
+            otherPlayerDevicesList.add(playerInfo.device);
+            BaseCharacterView otherPlayerCharacter = null;
+            if (playerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER) {
+                otherPlayerCharacter = new NormalHunter(this, virtualWindow);
+            } else if (playerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF) {
+                otherPlayerCharacter = new NormalWolf(this, virtualWindow);
+            }
+            otherPlayerCharacter.gameHandler = gameHandler;
+            otherPlayerCharacter.setTeamID(playerInfo.teamID);
+
+
+            allCharacters.add(otherPlayerCharacter);
+
+        }
+        Timer timerForBluetooth = new Timer("TimerForBluetooth", true);
 
     }
 
@@ -462,14 +493,6 @@ public class GameBaseAreaActivity extends Activity {
                 }
             }
         }
-//        for (int i = 0; i < landformses.length; i++) {
-//            if (Math.abs(i) % 3 == 0) {
-//                for (int j = 0; j < landformses[i].length; j++) {
-//                    if (Math.abs(i - j) % 3 == 0)
-//                        landformses[i][j] = new TallGrassland(this);
-//                }
-//            }
-//        }
 
 
 
@@ -516,7 +539,7 @@ public class GameBaseAreaActivity extends Activity {
             mapBaseFrame.mySight = mySight;
         }
 
-
+        startBlueToothConnection();
 
 
 
@@ -589,7 +612,7 @@ public class GameBaseAreaActivity extends Activity {
             smellButton.setLayoutParams(sblp);
             baseFrame.addView(smellButton);
         }
-        startAI();
+
 
         for (BaseCharacterView character : allCharacters) {
 //            int left = -1;
@@ -651,17 +674,20 @@ public class GameBaseAreaActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_game_base_area);
+        super.onCreate(savedInstanceState);
         playerInfos = (ArrayList<PlayerInfo>) getIntent().getExtras().get("playerInfos");
         allTrajectories = new ArrayList<Trajectory>();
         allCharacters = new ArrayList<BaseCharacterView>();
+        otherPlayerDevicesList=new ArrayList<BluetoothDevice>();
         isStop = false;
         backGround = MediaPlayer.create(this, R.raw.background);
         ViewUtils.initWindowParams(this);
         DisplayMetrics dm = ViewUtils.getWindowsDisplayMetrics();
         baseFrame = (FrameLayout) findViewById(R.id.baseFrame);
+//        mapBaseFrame = new MapBaseFrame(this, (int) (dm.widthPixels * 1.5), (int) (dm.heightPixels * 1.5));
         mapBaseFrame = new MapBaseFrame(this, mapWidth, mapHeight);
+
         baseFrame.addView(mapBaseFrame);
 
 
@@ -736,18 +762,8 @@ public class GameBaseAreaActivity extends Activity {
             }
         });
 
-//        FrameLayout.LayoutParams paramsForMapBase = (FrameLayout.LayoutParams) mapBaseFrame.getLayoutParams();
-//        paramsForMapBase.width = 2000;
-//        paramsForMapBase.height = 1500;
-//        mapBaseFrame.setLayoutParams(paramsForMapBase);
-
-
-        //scheduleAtFixedRate后一次Task不以前一个Task执行完毕的时间为起点延时执行
-//        timerForAllMoving.scheduleAtFixedRate(new GameMainTask(), 1000, 30);
-//        timerForTrajectory.scheduleAtFixedRate(new RemoveTrajectoryTask(), 1000, 300);
         timerForAllMoving.scheduleAtFixedRate(new GameMainTask(), 1000, 30);
         timerForTrajectory.schedule(new RemoveTrajectoryTask(), 1000, 300);
-//        timerForWindowMoving.scheduleAtFixedRate(virtualWindow, 0, 20);
 
     }
 
