@@ -6,55 +6,51 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context="com.jedi.wolf_and_hunter.activities.BlueToothTestActivity">
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="1">
-        <Button
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="查找设备"
-            android:onClick="searchDevice"/>
-        <Button
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="接受链接"
-            android:onClick="runAccept"/>
-        <Button
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="发出请求"
-            android:onClick="runConnect"/>
-    </LinearLayout>
-
-    <TextView
-        android:id="@+id/text_view_count"
-        android:layout_width="match_parent"
-        android:layout_height="100px"
-        android:layout_weight="1"
-        android:text="0"
-       />
-    <ListView
-        android:layout_marginTop="20dp"
-        android:id="@+id/list_view_devices"
-        android:layout_weight="6"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
+    <!--<LinearLayout-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_weight="1">-->
+        <!--<Button-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_weight="1"-->
+            <!--android:text="查找设备"-->
+            <!--android:onClick="searchDevice"/>-->
+        <!--<Button-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_weight="1"-->
+            <!--android:text="接受链接"-->
+            <!--android:onClick="runAccept"/>-->
+        <!--<Button-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_weight="1"-->
+            <!--android:text="发出请求"-->
+            <!--android:onClick="runConnect"/>-->
+    <!--</LinearLayout>-->
 
 
-    </ListView>
-    <ListView
-        android:layout_marginTop="20dp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="3"
-        android:id="@+id/list_view_joined_player"
-        >
+    <!--<ListView-->
+        <!--android:background="#ffff11"-->
+        <!--android:layout_marginTop="20dp"-->
+        <!--android:id="@+id/list_view_devices"-->
+        <!--android:layout_weight="4"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="0px">-->
 
 
-    </ListView>
+    <!--</ListView>-->
+    <!--<ListView-->
+        <!--android:background="#11FFFF"-->
+        <!--android:layout_marginTop="20dp"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="0px"-->
+        <!--android:layout_weight="4"-->
+        <!--android:id="@+id/list_view_joined_player"-->
+        <!--&gt;-->
+
+
+    <!--</ListView>-->
 
 </LinearLayout>

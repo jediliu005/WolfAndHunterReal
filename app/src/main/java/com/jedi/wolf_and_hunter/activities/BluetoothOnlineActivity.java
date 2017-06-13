@@ -9,59 +9,52 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.icu.util.Output;
-import android.icu.util.ULocale;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
-import android.widget.ListAdapter;
 import android.widget.ListView;
-import android.widget.ScrollView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.jedi.wolf_and_hunter.R;
 import com.jedi.wolf_and_hunter.utils.BluetoothController;
-import com.jedi.wolf_and_hunter.utils.StrTools;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
-public class BlueToothTestActivity extends Activity {
-    private static final long SCAN_PERIOD = 10000;
-//    public  int count = 0;
+public class BluetoothOnlineActivity extends Activity {
     boolean isAcceptStop;
-    boolean isConnectStop;
-    MyHandler myHandler;
+    BluetoothOnlineActivity.MyHandler myHandler;
     String mUUID = "e6adf90a-b0d3-4fa2-aa6a-97c119f1f1c6";
-//    TextView countTextView;
     BluetoothAdapter bluetoothAdapter;
-    SimpleAdapter discoveredPlayerAdapter;
+    SimpleAdapter discoveredDeviceAdapter;
     SimpleAdapter joinedPlayerAdapter;
-    ListView devicesListView;
-    List<Map<String, String>> discoveredDeviceInfoList;
-    List<Map<String, String>> joinedPlayerDeviceInfoList;
-    Set<BluetoothDevice> discoveredDevices;
-    String ServerDeviceMac;
-    BluetoothDevice targetDevice;
-    Set<String> playerDeviceMacs;
+    ListView discoverDevicesListView;
     ListView joinedPlayerListView;
+    List<Map<String, String>> discoveredDeviceInfoList;
+    List<Map<String, String>> joinedPlayerDeviceSetInfoList;
+    Set<BluetoothDevice> discoveredDevices;
+    BluetoothDevice serverDevice;
+    Set<String> playerDeviceMacs;
     BluetoothController bluetoothController;
+    Timer timerForRefreshPlayerListView;
+    Set<BluetoothDevice> needToBondDeviceSet;
+    Set<BluetoothDevice> joinedPlayerDeviceSet;
     boolean isLoopSearching;
     private BluetoothServerSocket bluetoothServerSocket;
 
@@ -72,11 +65,66 @@ public class BlueToothTestActivity extends Activity {
          *
          * @param msg
          */
+        public static final int REFRESH_PLAYER_LIST_VIEW = 1;
+
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
-//            count++;
-//            countTextView.setText(Integer.toString(count));
+            int what = msg.what;
+            switch (what) {
+                case REFRESH_PLAYER_LIST_VIEW:
+                    Toast.makeText(getBaseContext(), "等待对方设备确认配对。。。", Toast.LENGTH_SHORT);
+                    boolean needToNotify = false;
+                    Set<BluetoothDevice> removeDevices = null;
+                    for (BluetoothDevice needToBondDevice : needToBondDeviceSet) {
+                        int state = needToBondDevice.getBondState();
+                        if (state == BluetoothDevice.BOND_BONDED) {
+                            playerDeviceMacs.add(needToBondDevice.getAddress());
+                            Map<String, String> dataMap = new HashMap<String, String>();
+                            dataMap.put("name", needToBondDevice.getName());
+                            dataMap.put("mac", needToBondDevice.getAddress());
+                            joinedPlayerDeviceSetInfoList.add(dataMap);
+                            needToNotify = true;
+                            if (removeDevices == null)
+                                removeDevices = new HashSet<BluetoothDevice>();
+                            removeDevices.add(needToBondDevice);
+                            joinedPlayerDeviceSet.add(needToBondDevice);
+                        }
+                    }
+                    if (removeDevices != null) {
+                        for (BluetoothDevice device : removeDevices) {
+                            needToBondDeviceSet.remove(device);
+                        }
+                        removeDevices.clear();
+                    }
+                    for (BluetoothDevice joinedPlayerDevice : joinedPlayerDeviceSet) {
+                        if (joinedPlayerDevice.getBondState() != BluetoothDevice.BOND_BONDED) {
+                            if (removeDevices == null)
+                                removeDevices = new HashSet<BluetoothDevice>();
+                            removeDevices.add(joinedPlayerDevice);
+                            Map<String, String> removeMap = null;
+                            for (Map<String, String> deviceMap : joinedPlayerDeviceSetInfoList) {
+                                String mac = deviceMap.get("mac");
+                                if (mac.equals(joinedPlayerDevice.getAddress())) {
+                                    removeMap = deviceMap;
+                                    break;
+                                }
+                            }
+                            if (removeMap != null) {
+                                joinedPlayerDeviceSetInfoList.remove(removeMap);
+                                joinedPlayerDeviceSet.remove(joinedPlayerDevice);
+                                playerDeviceMacs.remove(joinedPlayerDevice.getAddress());
+                            }
+                            needToNotify = true;
+                        }
+                    }
+                    if (needToNotify) {
+                        joinedPlayerAdapter.notifyDataSetChanged();
+
+                    }
+
+                    break;
+            }
         }
     }
 
@@ -114,7 +162,7 @@ public class BlueToothTestActivity extends Activity {
 //                    if (isLoopSearching)
 //                        searchDevice(null);
 //                    else
-                    Toast.makeText(context, "结束搜索设备", Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(context, "结束搜索设备", Toast.LENGTH_SHORT).show();
 
                     break;
                 case BluetoothAdapter.ACTION_SCAN_MODE_CHANGED:
@@ -147,11 +195,10 @@ public class BlueToothTestActivity extends Activity {
                         dataMap.put("name", device.getName());
                         dataMap.put("mac", device.getAddress());
                         discoveredDeviceInfoList.add(dataMap);
-                        discoveredPlayerAdapter.notifyDataSetChanged();
+                        discoveredDeviceAdapter.notifyDataSetChanged();
                         discoveredDevices.add(device);
                     }
 
-                    targetDevice = device;
                     break;
 
             }
@@ -173,6 +220,20 @@ public class BlueToothTestActivity extends Activity {
 
     }
 
+    private void paireDevice(BluetoothDevice device) {
+        Boolean returnValue = false;
+        try {
+            Method createBondMethod = BluetoothDevice.class
+                    .getMethod("createBond");
+            createBondMethod.invoke(device);
+            needToBondDeviceSet.add(device);
+        } catch (Exception e) {
+            // TODO: handle exception
+            e.getStackTrace();
+
+        }
+    }
+
     class DeviceListViewOnItemClickListener implements AdapterView.OnItemClickListener {
 
 
@@ -191,76 +252,27 @@ public class BlueToothTestActivity extends Activity {
          */
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-            LinearLayout layout =(LinearLayout)view;
-            TextView macTextView=(TextView) layout.getChildAt(1);
-            String mac=macTextView.getText().toString();
-            BluetoothDevice thisDevice=null;
-            for(BluetoothDevice device:discoveredDevices){
-                if(device.getAddress().equals(mac)) {
+            LinearLayout layout = (LinearLayout) view;
+            TextView macTextView = (TextView) layout.getChildAt(1);
+            String mac = macTextView.getText().toString();
+            BluetoothDevice thisDevice = null;
+            for (BluetoothDevice device : discoveredDevices) {
+                if (device.getAddress().equals(mac)) {
                     thisDevice = device;
                     break;
                 }
             }
-            if(thisDevice==null){
+            if (thisDevice == null) {
                 Toast.makeText(getBaseContext(), "找不到设备", Toast.LENGTH_SHORT).show();
-            }else{
+            } else {
                 String name = thisDevice.getName();
                 if (playerDeviceMacs.contains(mac) == false) {
-                    playerDeviceMacs.add(mac);
-                    Map<String, String> dataMap = new HashMap<String, String>();
-                    dataMap.put("name", name);
-                    dataMap.put("mac", mac);
-                    joinedPlayerDeviceInfoList.add(dataMap);
-                    joinedPlayerAdapter.notifyDataSetChanged();
-
-
+                    paireDevice(thisDevice);
+                    needToBondDeviceSet.add(thisDevice);
                 }
             }
-           
+
         }
-    }
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_blue_tooth_test);
-        discoveredDevices=new HashSet<BluetoothDevice>();
-        playerDeviceMacs = new HashSet<String>();
-        bluetoothController = new BluetoothController(this);
-        bluetoothAdapter = bluetoothController.mBluetoothAdapter;
-        myHandler = new MyHandler();
-        discoveredDeviceInfoList = new ArrayList<Map<String, String>>();
-//        devicesListView = (ListView) findViewById(R.id.list_view_devices);
-        devicesListView.setOnItemClickListener(new DeviceListViewOnItemClickListener());
-        discoveredPlayerAdapter = new SimpleAdapter(this, discoveredDeviceInfoList, R.layout.online_user_list_item, new String[]{"name", "mac"}, new int[]{R.id.device_info_name, R.id.device_info_mac});
-        devicesListView.setAdapter(discoveredPlayerAdapter);
-
-
-        joinedPlayerDeviceInfoList = new ArrayList<Map<String, String>>();
-//        joinedPlayerListView = (ListView) findViewById(R.id.list_view_joined_player);
-        joinedPlayerAdapter = new SimpleAdapter(this, joinedPlayerDeviceInfoList, R.layout.online_user_list_item, new String[]{"name", "mac"}, new int[]{R.id.device_info_name, R.id.device_info_mac});
-        joinedPlayerListView.setAdapter(joinedPlayerAdapter);
-
-
-        IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
-        filter.addAction(BluetoothDevice.ACTION_FOUND);
-        filter.addAction(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED);
-        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
-        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-        filter.addAction(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED);
-        registerReceiver(receiver, filter);
-
-        if (bluetoothAdapter.isEnabled()) {
-            Intent in = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-            in.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
-            startActivity(in);
-        } else {
-            Toast.makeText(this, "蓝牙不可用", Toast.LENGTH_LONG).show();
-            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBtIntent, 1);
-        }
-
-
     }
 
 
@@ -286,12 +298,12 @@ public class BlueToothTestActivity extends Activity {
                     bluetoothController.cancelDiscovery();
                     //启连接请求，这是一个阻塞方法，必须放在子线程
                     socket = bluetoothServerSocket.accept();
-                    OutputStream os=null;
+                    OutputStream os = null;
                     //建立了连接
                     if (socket != null) {
                         //管理连接(在一个独立的线程里进行)
                         manageConnectedSocket(socket);
-                        os=socket.getOutputStream();
+                        os = socket.getOutputStream();
                         os.write(1);
                         os.flush();
                         os.close();
@@ -346,29 +358,29 @@ public class BlueToothTestActivity extends Activity {
             super.run();
             //取消搜索因为搜索会让连接变慢
             bluetoothController.mBluetoothAdapter.cancelDiscovery();
-            InputStream is=null;
+            InputStream is = null;
 
-                try {
+            try {
 //                    bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString(mUUID));
-                    //通过socket连接设备，这是一个阻塞操作，知道连接成功或发生异常
-                    bluetoothSocket.connect();
-                    is=bluetoothSocket.getInputStream();
-                    byte [] temp=new byte[10];
-                    is.read(temp);
-                    myHandler.sendEmptyMessage(0);
+                //通过socket连接设备，这是一个阻塞操作，知道连接成功或发生异常
+                bluetoothSocket.connect();
+                is = bluetoothSocket.getInputStream();
+                byte[] temp = new byte[10];
+                is.read(temp);
+                myHandler.sendEmptyMessage(0);
 
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    //无法连接，关闭socket并且退出
+            } catch (IOException e) {
+                e.printStackTrace();
+                //无法连接，关闭socket并且退出
 
-                }finally {
-                    try {
-                        is.close();
-                        bluetoothSocket.close();
-                    } catch (IOException e1) {
-                        e1.printStackTrace();
-                    }
+            } finally {
+                try {
+                    is.close();
+                    bluetoothSocket.close();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
                 }
+            }
 
 
             //管理连接(在独立的线程)
@@ -386,8 +398,8 @@ public class BlueToothTestActivity extends Activity {
         }
     }
 
-    AcceptThread acceptThread;
-    ConnectThread connectThread;
+    BluetoothOnlineActivity.AcceptThread acceptThread;
+    BluetoothOnlineActivity.ConnectThread connectThread;
 
     public void runAccept(View view) {
         if (acceptThread != null && acceptThread.getState() != Thread.State.TERMINATED) {
@@ -395,7 +407,7 @@ public class BlueToothTestActivity extends Activity {
             return;
         }
         Toast.makeText(this, "开始接受请求", Toast.LENGTH_LONG).show();
-        acceptThread = new AcceptThread();
+        acceptThread = new BluetoothOnlineActivity.AcceptThread();
         acceptThread.start();
     }
 
@@ -403,12 +415,66 @@ public class BlueToothTestActivity extends Activity {
         if (connectThread != null && connectThread.getState() != Thread.State.TERMINATED)
             return;
 
-        if (targetDevice != null) {
-            connectThread = new ConnectThread(targetDevice);
-            connectThread.start();
-        } else {
-            Toast.makeText(this, "没有找到目标设备", Toast.LENGTH_LONG).show();
+
+    }
+
+    class RefreshPlayerListViewTask extends TimerTask {
+
+        @Override
+        public void run() {
+
+            myHandler.sendEmptyMessage(MyHandler.REFRESH_PLAYER_LIST_VIEW);
+
         }
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_bluetooth_online);
+        playerDeviceMacs = new HashSet<String>();
+        bluetoothController = new BluetoothController(this);
+        bluetoothAdapter = bluetoothController.mBluetoothAdapter;
+        myHandler = new BluetoothOnlineActivity.MyHandler();
+        discoveredDeviceInfoList = new ArrayList<Map<String, String>>();
+        discoverDevicesListView = (ListView) findViewById(R.id.list_view_devices);
+        discoverDevicesListView.setOnItemClickListener(new BluetoothOnlineActivity.DeviceListViewOnItemClickListener());
+        discoveredDeviceAdapter = new SimpleAdapter(this, discoveredDeviceInfoList, R.layout.online_user_list_item, new String[]{"name", "mac"}, new int[]{R.id.device_info_name, R.id.device_info_mac});
+        discoverDevicesListView.setAdapter(discoveredDeviceAdapter);
+        discoveredDevices = new HashSet<BluetoothDevice>();
+
+        joinedPlayerDeviceSetInfoList = new ArrayList<Map<String, String>>();
+        joinedPlayerListView = (ListView) findViewById(R.id.list_view_joined_player);
+        joinedPlayerAdapter = new SimpleAdapter(this, joinedPlayerDeviceSetInfoList, R.layout.online_user_list_item, new String[]{"name", "mac"}, new int[]{R.id.device_info_name, R.id.device_info_mac});
+        joinedPlayerListView.setAdapter(joinedPlayerAdapter);
+
+
+        IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+        filter.addAction(BluetoothDevice.ACTION_FOUND);
+        filter.addAction(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED);
+//        filter.addAction(BluetoothAdapter.ACTION_REQUEST_ENABLE);//这条没用，不明原因，我猜是不广播这个？
+//        filter.addAction(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);//这条没用，不明原因，我猜是不广播这个？
+        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
+        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+        filter.addAction(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED);
+        registerReceiver(receiver, filter);
+
+        if (bluetoothAdapter.isEnabled()) {
+//            Toast.makeText(this, "蓝牙可用,本设备可见10秒", Toast.LENGTH_LONG).show();
+            Intent in = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+            in.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
+            startActivity(in);
+        } else {
+            Toast.makeText(this, "蓝牙不可用", Toast.LENGTH_LONG).show();
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBtIntent, 1);
+        }
+
+        needToBondDeviceSet = new HashSet<BluetoothDevice>();
+        joinedPlayerDeviceSet = new HashSet<BluetoothDevice>();
+        timerForRefreshPlayerListView = new Timer();
+        timerForRefreshPlayerListView.schedule(new RefreshPlayerListViewTask(), 100, 1000);
+
 
     }
 
@@ -433,6 +499,7 @@ public class BlueToothTestActivity extends Activity {
                 e.printStackTrace();
             }
         }
+        timerForRefreshPlayerListView.cancel();
 //        bluetoothController.closeDiscoverableTimeout();
         Intent in = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
         in.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 1);
