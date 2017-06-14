@@ -89,6 +89,7 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
     public static MyVirtualWindow virtualWindow;
     private MediaPlayer backGround;
     private int targetKillCount = 10;
+    public boolean isRoomOwner=false;
 
 
     private class GameMainTask extends TimerTask {

@@ -1,17 +1,20 @@
 package com.jedi.wolf_and_hunter.activities;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.LinearLayout;
@@ -40,9 +43,11 @@ import java.util.TimerTask;
 import java.util.UUID;
 
 public class BluetoothOnlineActivity extends Activity {
+    String myName;
+    String myMac;
     boolean isAcceptStop;
     BluetoothOnlineActivity.MyHandler myHandler;
-
+    boolean isRoomOwner = false;
     BluetoothAdapter bluetoothAdapter;
     SimpleAdapter discoveredDeviceAdapter;
     SimpleAdapter joinedPlayerAdapter;
@@ -52,7 +57,7 @@ public class BluetoothOnlineActivity extends Activity {
     List<Map<String, String>> joinedPlayerDeviceSetInfoList;
     Set<BluetoothDevice> discoveredDevices;
     BluetoothDevice serverDevice;
-    Set<String> playerDeviceMacs;
+    //    Set<String> playerDeviceMacs;
     BluetoothController bluetoothController;
     Timer timerForRefreshPlayerListView;
     Set<BluetoothDevice> needToBondDeviceSet;
@@ -75,13 +80,13 @@ public class BluetoothOnlineActivity extends Activity {
             int what = msg.what;
             switch (what) {
                 case REFRESH_PLAYER_LIST_VIEW:
-                    Toast.makeText(getBaseContext(), "等待对方设备确认配对。。。", Toast.LENGTH_SHORT);
+                    Toast.makeText(BluetoothOnlineActivity.this, "等待对方设备确认配对。。。", Toast.LENGTH_SHORT);
                     boolean needToNotify = false;
                     Set<BluetoothDevice> removeDevices = null;
                     for (BluetoothDevice needToBondDevice : needToBondDeviceSet) {
                         int state = needToBondDevice.getBondState();
                         if (state == BluetoothDevice.BOND_BONDED) {
-                            playerDeviceMacs.add(needToBondDevice.getAddress());
+//                            playerDeviceMacs.add(needToBondDevice.getAddress());
                             Map<String, String> dataMap = new HashMap<String, String>();
                             dataMap.put("name", needToBondDevice.getName());
                             dataMap.put("mac", needToBondDevice.getAddress());
@@ -100,6 +105,8 @@ public class BluetoothOnlineActivity extends Activity {
                         removeDevices.clear();
                     }
                     for (BluetoothDevice joinedPlayerDevice : joinedPlayerDeviceSet) {
+                        if (joinedPlayerDevice.getAddress().equals(myMac))
+                            continue;
                         if (joinedPlayerDevice.getBondState() != BluetoothDevice.BOND_BONDED) {
                             if (removeDevices == null)
                                 removeDevices = new HashSet<BluetoothDevice>();
@@ -115,14 +122,13 @@ public class BluetoothOnlineActivity extends Activity {
                             if (removeMap != null) {
                                 joinedPlayerDeviceSetInfoList.remove(removeMap);
                                 joinedPlayerDeviceSet.remove(joinedPlayerDevice);
-                                playerDeviceMacs.remove(joinedPlayerDevice.getAddress());
+//                                playerDeviceMacs.remove(joinedPlayerDevice.getAddress());
                             }
                             needToNotify = true;
                         }
                     }
                     if (needToNotify) {
                         joinedPlayerAdapter.notifyDataSetChanged();
-
                     }
 
                     break;
@@ -184,6 +190,7 @@ public class BluetoothOnlineActivity extends Activity {
                     Toast.makeText(context, "发现设备", Toast.LENGTH_SHORT).show();
                     //从Intent中获取设备的BluetoothDevice对象
                     BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                    serverDevice = device;
                     String deviceMAC = device.getAddress();
                     boolean hasDevice = false;
                     for (Map<String, String> deviceMap : discoveredDeviceInfoList) {
@@ -223,12 +230,10 @@ public class BluetoothOnlineActivity extends Activity {
     }
 
     private void paireDevice(BluetoothDevice device) {
-        Boolean returnValue = false;
         try {
             Method createBondMethod = BluetoothDevice.class
                     .getMethod("createBond");
             createBondMethod.invoke(device);
-            needToBondDeviceSet.add(device);
         } catch (Exception e) {
             // TODO: handle exception
             e.getStackTrace();
@@ -236,7 +241,7 @@ public class BluetoothOnlineActivity extends Activity {
         }
     }
 
-    class DeviceListViewOnItemClickListener implements AdapterView.OnItemClickListener {
+    class DiscoverDeviceListViewOnItemClickListener implements AdapterView.OnItemClickListener {
 
 
         /**
@@ -256,7 +261,11 @@ public class BluetoothOnlineActivity extends Activity {
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
             LinearLayout layout = (LinearLayout) view;
             TextView macTextView = (TextView) layout.getChildAt(1);
+            TextView nameTextView = (TextView) layout.getChildAt(0);
             String mac = macTextView.getText().toString();
+            if (mac.equals(myMac)) {
+                return;
+            }
             BluetoothDevice thisDevice = null;
             for (BluetoothDevice device : discoveredDevices) {
                 if (device.getAddress().equals(mac)) {
@@ -265,14 +274,101 @@ public class BluetoothOnlineActivity extends Activity {
                 }
             }
             if (thisDevice == null) {
-                Toast.makeText(getBaseContext(), "找不到设备", Toast.LENGTH_SHORT).show();
+                Toast.makeText(BluetoothOnlineActivity.this, "找不到设备", Toast.LENGTH_SHORT).show();
             } else {
-                String name = thisDevice.getName();
-                if (playerDeviceMacs.contains(mac) == false) {
+                if (joinedPlayerDeviceSet.contains(thisDevice) == false) {
                     paireDevice(thisDevice);
-                    needToBondDeviceSet.add(thisDevice);
+                    if (isRoomOwner) {
+                        needToBondDeviceSet.add(thisDevice);
+                    }
                 }
             }
+
+        }
+    }
+
+    class JoinedPlayerListViewOnItemClickListener implements AdapterView.OnItemClickListener {
+        Context context;
+
+        public JoinedPlayerListViewOnItemClickListener(Context context) {
+            this.context = context;
+        }
+
+        /**
+         * Callback method to be invoked when an item in this AdapterView has
+         * been clicked.
+         * <p>
+         * Implementers can call getItemAtPosition(position) if they need
+         * to access the data associated with the selected item.
+         *
+         * @param parent   The AdapterView where the click happened.
+         * @param view     The view within the AdapterView that was clicked (this
+         *                 will be a view provided by the adapter)
+         * @param position The position of the view in the adapter.
+         * @param id       The row id of the item that was clicked.
+         */
+        @Override
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            LinearLayout layout = (LinearLayout) view;
+            TextView macTextView = (TextView) layout.getChildAt(1);
+            TextView nameTextView = (TextView) layout.getChildAt(0);
+            String mac = macTextView.getText().toString();
+            if (mac.equals(myMac)) {
+                if (isRoomOwner == false) {
+                    new AlertDialog.Builder(context).setTitle("提示")//设置对话框标题
+
+                            .setMessage("是否成为房主（注意，房主断开连接将导致该局游戏结束）")//设置显示的内容
+
+                            .setPositiveButton("确定", new DialogInterface.OnClickListener() {//添加确定按钮
+                                @Override
+
+                                public void onClick(DialogInterface dialog, int which) {//确定按钮的响应事件
+
+                                    isRoomOwner = true;
+
+                                }
+
+                            }).setNegativeButton("取消", new DialogInterface.OnClickListener() {//添加返回按钮
+
+
+                        @Override
+
+                        public void onClick(DialogInterface dialog, int which) {//响应事件
+
+
+                        }
+
+                    }).show();//在按键响应事件中显示此对话框
+                } else {
+                    new AlertDialog.Builder(context).setTitle("提示")//设置对话框标题
+
+                            .setMessage("是否放弃房主资格（房间内玩家将解散）")//设置显示的内容
+
+                            .setPositiveButton("确定", new DialogInterface.OnClickListener() {//添加确定按钮
+                                @Override
+
+                                public void onClick(DialogInterface dialog, int which) {//确定按钮的响应事件
+
+                                    isRoomOwner = false;
+
+                                }
+
+                            }).setNegativeButton("取消", new DialogInterface.OnClickListener() {//添加返回按钮
+
+
+                        @Override
+
+                        public void onClick(DialogInterface dialog, int which) {//响应事件
+
+
+                        }
+
+                    }).show();//在按键响应事件中显示此对话框
+                }
+
+                return;
+            }
+
 
         }
     }
@@ -283,8 +379,9 @@ public class BluetoothOnlineActivity extends Activity {
 
         public AcceptThread() {
             try {
-
-                bluetoothServerSocket = bluetoothController.mBluetoothAdapter.listenUsingRfcommWithServiceRecord("BluetoothServer", UUID.fromString(BluetoothController.mUUID));
+                BluetoothServerSocket tmp = null;
+                tmp = bluetoothController.mBluetoothAdapter.listenUsingRfcommWithServiceRecord("BluetoothServer", UUID.fromString(BluetoothController.mUUID));
+                bluetoothServerSocket = tmp;
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -294,33 +391,51 @@ public class BluetoothOnlineActivity extends Activity {
         public void run() {
             super.run();
             BluetoothSocket socket = null;
+            bluetoothController.cancelDiscovery();
             //不断监听直到返回连接或者发生异常
             try {
                 while (isAcceptStop == false) {
-                    bluetoothController.cancelDiscovery();
+                    //据说处于查找状态会影响性能哦
+
                     //启连接请求，这是一个阻塞方法，必须放在子线程
                     socket = bluetoothServerSocket.accept();
+                    InputStream is = null;
                     OutputStream os = null;
-                    //建立了连接
-                    if (socket != null) {
-                        //管理连接(在一个独立的线程里进行)
-                        manageConnectedSocket(socket);
-                        os = socket.getOutputStream();
-                        os.write(1);
-                        os.flush();
-                        os.close();
-                        try {
-                            socket.close();//关闭连接
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                    is = socket.getInputStream();
+                    StringBuffer str = new StringBuffer();
+                    byte[] buff = new byte[1024];
 
+                    while (is.read(buff) !=-1) {
+                        str.append(new String(buff, 0, buff.length));
                     }
+                    Log.i("------serverR-------", str.toString());
+                    String s = "return";
+                    buff = s.getBytes();
+                    os = socket.getOutputStream();
+                    os.write(buff);
+                    os.flush();
+//                    OutputStream os = null;
+//                    //建立了连接
+//                    if (socket != null) {
+//                        //管理连接(在一个独立的线程里进行)
+//                        manageConnectedSocket(socket);
+//                        os = socket.getOutputStream();
+//                        os.write(1);
+//                        os.flush();
+//                        os.close();
+//                        try {
+//                            socket.close();//关闭连接
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
+//
+//                    }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
                 cancel();
+                BluetoothController.startDiscovery();
             }
         }
 
@@ -342,17 +457,21 @@ public class BluetoothOnlineActivity extends Activity {
     }
 
 
-    public class ConnectThread extends Thread {
-        private BluetoothDevice bluetoothDevice;
-        private BluetoothSocket bluetoothSocket;
+    class ConnectThread extends Thread {
+        private BluetoothDevice serverDevice;
+        private BluetoothSocket socket;
 
         public ConnectThread(BluetoothDevice device) {
-            bluetoothDevice = device;
+            serverDevice = device;
+
+            BluetoothSocket tmp = null;
             try {
-                bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString(BluetoothController.mUUID));
+                tmp = device.createRfcommSocketToServiceRecord(UUID.fromString(bluetoothController.mUUID)); //应该是这里导致Service discovery failed问题
+
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.d("BLUETOOTH_CLIENT", e.getMessage());
             }
+            socket = tmp;
         }
 
         @Override
@@ -360,25 +479,34 @@ public class BluetoothOnlineActivity extends Activity {
             super.run();
             //取消搜索因为搜索会让连接变慢
             bluetoothController.mBluetoothAdapter.cancelDiscovery();
+            OutputStream os = null;
             InputStream is = null;
 
             try {
 //                    bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString(mUUID));
                 //通过socket连接设备，这是一个阻塞操作，知道连接成功或发生异常
-                bluetoothSocket.connect();
-                is = bluetoothSocket.getInputStream();
-                byte[] temp = new byte[10];
-                is.read(temp);
-                myHandler.sendEmptyMessage(0);
+                socket.connect();
+                String s = "join";
+                byte[] buff = s.getBytes();
+                os = socket.getOutputStream();
+                os.write(buff);
+                os.flush();
 
+                is = socket.getInputStream();
+                StringBuffer str = new StringBuffer();
+                buff = new byte[1024];
+
+                while (is.read(buff) > 0) {
+                    str.append(new String(buff, 0, buff.length));
+                }
+                Log.i("------client-------", str.toString());
             } catch (IOException e) {
                 e.printStackTrace();
                 //无法连接，关闭socket并且退出
 
             } finally {
                 try {
-                    is.close();
-                    bluetoothSocket.close();
+                    socket.close();
                 } catch (IOException e1) {
                     e1.printStackTrace();
                 }
@@ -394,7 +522,7 @@ public class BluetoothOnlineActivity extends Activity {
          */
         public void cancel() {
             try {
-                bluetoothSocket.close();
+                socket.close();
             } catch (IOException e) {
             }
         }
@@ -414,18 +542,20 @@ public class BluetoothOnlineActivity extends Activity {
     }
 
     public void runConnect(View view) {
-        if (connectThread != null && connectThread.getState() != Thread.State.TERMINATED)
+        if (serverDevice == null || connectThread != null && connectThread.getState() != Thread.State.TERMINATED)
             return;
+        connectThread = new ConnectThread(serverDevice);
+        connectThread.start();
 
 
     }
 
     public void startGame(View view) {
-        if(joinedPlayerDeviceSet==null||joinedPlayerDeviceSet.size()==0)
-            Toast.makeText(this,"请先找到配对玩家",Toast.LENGTH_SHORT);
-        ArrayList<PlayerInfo> playerInfos=new ArrayList<PlayerInfo>();
-        for(BluetoothDevice device:joinedPlayerDeviceSet){
-            PlayerInfo playerInfo=new PlayerInfo(true,1, BaseCharacterView.CHARACTER_TYPE_HUNTER,1,device);
+        if (joinedPlayerDeviceSet == null || joinedPlayerDeviceSet.size() == 0)
+            Toast.makeText(this, "请先找到配对玩家", Toast.LENGTH_SHORT);
+        ArrayList<PlayerInfo> playerInfos = new ArrayList<PlayerInfo>();
+        for (BluetoothDevice device : joinedPlayerDeviceSet) {
+            PlayerInfo playerInfo = new PlayerInfo(true, 1, BaseCharacterView.CHARACTER_TYPE_HUNTER, 1, device);
             playerInfos.add(playerInfo);
         }
         Intent i = new Intent(this, BluetoothOnlineGameBaseAreaActivity.class);
@@ -449,22 +579,43 @@ public class BluetoothOnlineActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bluetooth_online);
-        playerDeviceMacs = new HashSet<String>();
+        discoveredDevices = new HashSet<BluetoothDevice>();
+        needToBondDeviceSet = new HashSet<BluetoothDevice>();
+        joinedPlayerDeviceSet = new HashSet<BluetoothDevice>();
+//        playerDeviceMacs = new HashSet<String>();
         bluetoothController = new BluetoothController(this);
-        bluetoothAdapter = bluetoothController.mBluetoothAdapter;
+        bluetoothAdapter = BluetoothController.mBluetoothAdapter;
         myHandler = new BluetoothOnlineActivity.MyHandler();
-        discoveredDeviceInfoList = new ArrayList<Map<String, String>>();
+
+
+        myName = bluetoothAdapter.getName();
+        //6.0以上系统用adapter只会获取到20.00.00.00.00,一下是网上找到的神方法
+
+
+        myMac = android.provider.Settings.Secure.getString(this.getContentResolver(), "bluetooth_address");
+        if (myMac == null)
+            myMac = bluetoothAdapter.getAddress();
+        BluetoothDevice myDevice = bluetoothAdapter.getRemoteDevice(myMac);
+        joinedPlayerDeviceSet.add(myDevice);
+        Map<String, String> myInfoMap = new HashMap<String, String>();
+        myInfoMap.put("name", "（本机）" + myName);
+        myInfoMap.put("mac", myMac);
+
+
         discoverDevicesListView = (ListView) findViewById(R.id.list_view_devices);
-        discoverDevicesListView.setOnItemClickListener(new BluetoothOnlineActivity.DeviceListViewOnItemClickListener());
+        discoverDevicesListView.setOnItemClickListener(new BluetoothOnlineActivity.DiscoverDeviceListViewOnItemClickListener());
+        discoveredDeviceInfoList = new ArrayList<Map<String, String>>();
         discoveredDeviceAdapter = new SimpleAdapter(this, discoveredDeviceInfoList, R.layout.online_user_list_item, new String[]{"name", "mac"}, new int[]{R.id.device_info_name, R.id.device_info_mac});
         discoverDevicesListView.setAdapter(discoveredDeviceAdapter);
-        discoveredDevices = new HashSet<BluetoothDevice>();
+
 
         joinedPlayerDeviceSetInfoList = new ArrayList<Map<String, String>>();
         joinedPlayerListView = (ListView) findViewById(R.id.list_view_joined_player);
+        joinedPlayerListView.setOnItemClickListener(new BluetoothOnlineActivity.JoinedPlayerListViewOnItemClickListener(this));
         joinedPlayerAdapter = new SimpleAdapter(this, joinedPlayerDeviceSetInfoList, R.layout.online_user_list_item, new String[]{"name", "mac"}, new int[]{R.id.device_info_name, R.id.device_info_mac});
         joinedPlayerListView.setAdapter(joinedPlayerAdapter);
-
+        joinedPlayerDeviceSetInfoList.add(myInfoMap);
+        joinedPlayerAdapter.notifyDataSetChanged();
 
         IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
         filter.addAction(BluetoothDevice.ACTION_FOUND);
@@ -487,8 +638,7 @@ public class BluetoothOnlineActivity extends Activity {
             startActivityForResult(enableBtIntent, 1);
         }
 
-        needToBondDeviceSet = new HashSet<BluetoothDevice>();
-        joinedPlayerDeviceSet = new HashSet<BluetoothDevice>();
+
         timerForRefreshPlayerListView = new Timer();
         timerForRefreshPlayerListView.schedule(new RefreshPlayerListViewTask(), 100, 1000);
 
