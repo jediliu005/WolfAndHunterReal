@@ -30,6 +30,8 @@ import com.jedi.wolf_and_hunter.utils.BluetoothController;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -64,7 +66,13 @@ public class BluetoothOnlineActivity extends Activity {
     Set<BluetoothDevice> joinedPlayerDeviceSet;
     boolean isLoopSearching;
     private BluetoothServerSocket bluetoothServerSocket;
-
+    private BluetoothSocket socket = null;
+    private Thread dealServerDataThread = null;
+    private Thread dealClientDataThread = null;
+    BluetoothOnlineActivity.AcceptThread acceptThread;
+    BluetoothOnlineActivity.ConnectThread connectThread;
+    Timer timerForAcceptLoop = new Timer();
+    boolean isTimerForAcceptLoopRunning = false;
 
     class MyHandler extends Handler {
         /**
@@ -72,13 +80,21 @@ public class BluetoothOnlineActivity extends Activity {
          *
          * @param msg
          */
-        public static final int REFRESH_PLAYER_LIST_VIEW = 1;
+        public static final int REFRESH_PLAYER_LIST_VIEW = 2;
+        public static final int ACCEPT_SUCCESS = 0;
+        public static final int SEND_SUCCESS = 1;
 
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
             int what = msg.what;
             switch (what) {
+                case ACCEPT_SUCCESS:
+                    Toast.makeText(getBaseContext(), "成功接收数据", Toast.LENGTH_SHORT).show();
+                    break;
+                case SEND_SUCCESS:
+                    Toast.makeText(getBaseContext(), "成功发出数据", Toast.LENGTH_SHORT).show();
+                    break;
                 case REFRESH_PLAYER_LIST_VIEW:
                     Toast.makeText(BluetoothOnlineActivity.this, "等待对方设备确认配对。。。", Toast.LENGTH_SHORT);
                     boolean needToNotify = false;
@@ -187,7 +203,7 @@ public class BluetoothOnlineActivity extends Activity {
 
                     break;
                 case BluetoothDevice.ACTION_FOUND:
-                    Toast.makeText(context, "发现设备", Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(context, "发现设备", Toast.LENGTH_SHORT).show();
                     //从Intent中获取设备的BluetoothDevice对象
                     BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                     serverDevice = device;
@@ -294,19 +310,6 @@ public class BluetoothOnlineActivity extends Activity {
             this.context = context;
         }
 
-        /**
-         * Callback method to be invoked when an item in this AdapterView has
-         * been clicked.
-         * <p>
-         * Implementers can call getItemAtPosition(position) if they need
-         * to access the data associated with the selected item.
-         *
-         * @param parent   The AdapterView where the click happened.
-         * @param view     The view within the AdapterView that was clicked (this
-         *                 will be a view provided by the adapter)
-         * @param position The position of the view in the adapter.
-         * @param id       The row id of the item that was clicked.
-         */
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
             LinearLayout layout = (LinearLayout) view;
@@ -383,75 +386,84 @@ public class BluetoothOnlineActivity extends Activity {
                 tmp = bluetoothController.mBluetoothAdapter.listenUsingRfcommWithServiceRecord("BluetoothServer", UUID.fromString(BluetoothController.mUUID));
                 bluetoothServerSocket = tmp;
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.e("AcceptThread", e.getMessage());
             }
         }
 
         @Override
         public void run() {
             super.run();
-            BluetoothSocket socket = null;
+
             bluetoothController.cancelDiscovery();
             //不断监听直到返回连接或者发生异常
             try {
                 while (isAcceptStop == false) {
                     //据说处于查找状态会影响性能哦
-
+                    if (bluetoothServerSocket == null )
+                        return;
                     //启连接请求，这是一个阻塞方法，必须放在子线程
                     socket = bluetoothServerSocket.accept();
+//                    if (socket != null) {
+//                        bluetoothServerSocket.close();//根据demo描述，close应该在accept成功后执行，不会影响已链接socket
+//                        bluetoothServerSocket = null;
+//                    }
                     InputStream is = null;
                     OutputStream os = null;
-                    is = socket.getInputStream();
-                    StringBuffer str = new StringBuffer();
-                    byte[] buff = new byte[1024];
-
-                    while (is.read(buff) !=-1) {
-                        str.append(new String(buff, 0, buff.length));
+                    PlayerInfo pi = null;
+                    try {
+                        is = socket.getInputStream();
+                        ObjectInputStream ois = new ObjectInputStream(is);
+                        pi = (PlayerInfo) ois.readObject();
+                        myHandler.sendEmptyMessage(MyHandler.ACCEPT_SUCCESS);
+                    } catch (ClassNotFoundException e) {
+                        Log.e("AcceptThread", e.getMessage());
+                    } catch (IOException e) {
+                        Log.e("AcceptThread", e.getMessage());
                     }
-                    Log.i("------serverR-------", str.toString());
-                    String s = "return";
-                    buff = s.getBytes();
-                    os = socket.getOutputStream();
-                    os.write(buff);
-                    os.flush();
-//                    OutputStream os = null;
-//                    //建立了连接
-//                    if (socket != null) {
-//                        //管理连接(在一个独立的线程里进行)
-//                        manageConnectedSocket(socket);
-//                        os = socket.getOutputStream();
-//                        os.write(1);
-//                        os.flush();
-//                        os.close();
-//                        try {
-//                            socket.close();//关闭连接
-//                        } catch (IOException e) {
-//                            e.printStackTrace();
-//                        }
-//
-//                    }
+//                    manageConnectedSocket(socket);
                 }
             } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                cancel();
-                BluetoothController.startDiscovery();
+                Log.e("AcceptThread", e.getMessage());
+
             }
         }
 
         /**
          * 取消正在监听的接口
          */
-        public void cancel() {
-            try {
-                bluetoothServerSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+
+
+        class DealServerDataThread implements Runnable {
+            BluetoothSocket socket;
+
+            public DealServerDataThread(BluetoothSocket socket) {
+                this.socket = socket;
+            }
+
+            @Override
+            public void run() {
+
+
+                InputStream is = null;
+                OutputStream os = null;
+                PlayerInfo pi = null;
+                try {
+                    is = socket.getInputStream();
+                    ObjectInputStream ois = new ObjectInputStream(is);
+                    pi = (PlayerInfo) ois.readObject();
+                } catch (ClassNotFoundException e) {
+                    Log.e("DealServerDataThread", e.getMessage());
+                } catch (IOException e) {
+                    Log.e("DealServerDataThread", e.getMessage());
+                }
             }
         }
 
         public void manageConnectedSocket(BluetoothSocket socket) {
-            myHandler.sendEmptyMessage(0);
+            BluetoothSocket socket1 = socket;
+            dealServerDataThread = new Thread(new DealServerDataThread(socket));
+            dealServerDataThread.start();
+
         }
 
     }
@@ -478,38 +490,44 @@ public class BluetoothOnlineActivity extends Activity {
         public void run() {
             super.run();
             //取消搜索因为搜索会让连接变慢
-            bluetoothController.mBluetoothAdapter.cancelDiscovery();
-            OutputStream os = null;
-            InputStream is = null;
-
+            bluetoothController.cancelDiscovery();
             try {
 //                    bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString(mUUID));
                 //通过socket连接设备，这是一个阻塞操作，知道连接成功或发生异常
                 socket.connect();
+                OutputStream os = null;
+                InputStream is = null;
+                PlayerInfo pi = null;
+
                 String s = "join";
-                byte[] buff = s.getBytes();
                 os = socket.getOutputStream();
-                os.write(buff);
-                os.flush();
-
-                is = socket.getInputStream();
-                StringBuffer str = new StringBuffer();
-                buff = new byte[1024];
-
-                while (is.read(buff) > 0) {
-                    str.append(new String(buff, 0, buff.length));
-                }
-                Log.i("------client-------", str.toString());
+                ObjectOutputStream oos = new ObjectOutputStream(os);
+                pi = new PlayerInfo(true, 1, 1, 1);
+                oos.writeObject(pi);
+//                byte[] buff = s.getBytes();
+//                os.write(buff);
+//                os.flush();
+//                os.close();
+//                is = socket.getInputStream();
+//                StringBuffer str = new StringBuffer();
+//                buff = new byte[1024];
+//
+//                while (is.read(buff) > 0) {
+//                    str.append(new String(buff, 0, buff.length));
+//                }
+//                Log.i("------client-------", str.toString());
+//                is.close();
+                myHandler.sendEmptyMessage(MyHandler.SEND_SUCCESS);
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.e("ConnectThread", e.getMessage());
                 //无法连接，关闭socket并且退出
 
             } finally {
-                try {
-                    socket.close();
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                }
+//                try {
+//                    socket.close();
+//                } catch (IOException e1) {
+//                    e1.printStackTrace();
+//                }
             }
 
 
@@ -517,33 +535,60 @@ public class BluetoothOnlineActivity extends Activity {
             // manageConnectedSocket(mmSocket);
         }
 
-        /**
-         * 取消正在进行的链接，关闭socket
-         */
-        public void cancel() {
-            try {
+
+    }
+
+    public void initConnection() {
+        try {
+            if (bluetoothServerSocket != null)
+                bluetoothServerSocket.close();
+            if (socket != null)
                 socket.close();
-            } catch (IOException e) {
-            }
+            if (acceptThread != null && acceptThread.getState() != Thread.State.TERMINATED)
+                acceptThread.interrupt();
+            if (connectThread != null && connectThread.getState() != Thread.State.TERMINATED)
+                connectThread.interrupt();
+//            if (dealServerDataThread.getState()!= Thread.State.TERMINATED)
+//                dealServerDataThread.interrupt();
+
+
+        } catch (IOException e) {
+            Log.e("cancel", e.getMessage());
         }
     }
 
-    BluetoothOnlineActivity.AcceptThread acceptThread;
-    BluetoothOnlineActivity.ConnectThread connectThread;
 
     public void runAccept(View view) {
-        if (acceptThread != null && acceptThread.getState() != Thread.State.TERMINATED) {
-            Toast.makeText(this, "服务只能启动一个", Toast.LENGTH_LONG).show();
+//        if (acceptThread != null && acceptThread.getState() != Thread.State.TERMINATED) {
+//            Toast.makeText(this, "服务只能启动一个", Toast.LENGTH_LONG).show();
+//            return;
+//        }
+        if (isTimerForAcceptLoopRunning) {
             return;
         }
+        TimerTask acceptTask = new TimerTask() {
+            @Override
+            public void run() {
+                acceptThread = new BluetoothOnlineActivity.AcceptThread();
+                acceptThread.start();
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    Log.e("runAccept", e.getMessage());
+                }
+                initConnection();
+                acceptThread = null;
+            }
+        };
+
+
         Toast.makeText(this, "开始接受请求", Toast.LENGTH_LONG).show();
-        acceptThread = new BluetoothOnlineActivity.AcceptThread();
-        acceptThread.start();
+        timerForAcceptLoop.schedule(acceptTask, 0, 1000);
+        isTimerForAcceptLoopRunning = true;
     }
 
     public void runConnect(View view) {
-        if (serverDevice == null || connectThread != null && connectThread.getState() != Thread.State.TERMINATED)
-            return;
+        initConnection();
         connectThread = new ConnectThread(serverDevice);
         connectThread.start();
 
@@ -648,29 +693,14 @@ public class BluetoothOnlineActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        initConnection();
         unregisterReceiver(receiver);
-        if (acceptThread != null && acceptThread.getState() != Thread.State.TERMINATED) {
-            isAcceptStop = true;
-            try {
-                bluetoothServerSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-        }
-        if (connectThread != null && connectThread.getState() != Thread.State.TERMINATED) {
-            connectThread.interrupt();
-            try {
-                connectThread.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
+        timerForAcceptLoop.cancel();
         timerForRefreshPlayerListView.cancel();
 //        bluetoothController.closeDiscoverableTimeout();
-        Intent in = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-        in.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 1);
-        startActivity(in);
+//        Intent in = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+//        in.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 1);
+//        startActivity(in);
         bluetoothController.cancelDiscovery();
     }
 }
