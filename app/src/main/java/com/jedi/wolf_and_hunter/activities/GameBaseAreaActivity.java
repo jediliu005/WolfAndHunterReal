@@ -78,6 +78,7 @@ public class GameBaseAreaActivity extends Activity {
     public static MapBaseFrame mapBaseFrame;
     public static BaseCharacterView myCharacter;
     public static FrameLayout baseFrame;
+    PlayerInfo myPlayerInfo;
     SightView mySight;
     public GameHandler gameHandler = new GameHandler();
     Timer timerForAllMoving = new Timer();
@@ -481,7 +482,7 @@ public class GameBaseAreaActivity extends Activity {
 
         allCharacters = new ArrayList<BaseCharacterView>();
         //添加我的角色
-        PlayerInfo myPlayerInfo = playerInfos.get(0);
+        myPlayerInfo = playerInfos.get(0);
         if (myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
             myCharacter = new NormalHunter(this, virtualWindow);
         else {

@@ -3,6 +3,7 @@ package com.jedi.wolf_and_hunter.activities;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.graphics.Color;
 import android.media.MediaPlayer;
@@ -10,6 +11,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
@@ -40,6 +42,9 @@ import com.jedi.wolf_and_hunter.utils.ViewUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -61,7 +66,7 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
     public static int mapWidth = 3000;
     public static int mapHeight = 3000;
 
-    ArrayList<BluetoothDevice> otherPlayerDevicesList=null;
+    ArrayList<BluetoothDevice> otherPlayerDevicesList = null;
 
     private final static int CONTROL_MODE_NORMAL = 0;
     private final static int CONTROL_MODE_MASTER = 1;
@@ -78,6 +83,7 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
     public static MapBaseFrame mapBaseFrame;
     public static BaseCharacterView myCharacter;
     public static FrameLayout baseFrame;
+    PlayerInfo myPlayerInfo;
     SightView mySight;
     public GameHandler gameHandler = new GameHandler();
     Timer timerForAllMoving = new Timer();
@@ -89,8 +95,14 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
     public static MyVirtualWindow virtualWindow;
     private MediaPlayer backGround;
     private int targetKillCount = 10;
-    public boolean isRoomOwner=false;
-
+    public boolean isRoomOwner = false;
+    private BluetoothAdapter bluetoothAdapter;
+    private BluetoothServerSocket bluetoothServerSocket;
+    private BluetoothSocket socket = null;
+    private Thread dealServerDataThread = null;
+    private BluetoothOnlineGameBaseAreaActivity.AcceptThread acceptThread;
+    private BluetoothOnlineGameBaseAreaActivity.ConnectThread connectThread;
+    public boolean isAcceptStop;
 
     private class GameMainTask extends TimerTask {
         @Override
@@ -288,10 +300,9 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
                     }
                     if (mySight != null && mySight.needMove == true) {
                         mySight.normalModeOffsetLRTBParams();
-                    }else if(myCharacter.isLocking){
+                    } else if (myCharacter.isLocking) {
                         myCharacter.dealLocking();
                     }
-
 
 
                 }
@@ -338,11 +349,11 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
             viewRangeLP.topMargin = myCharacter.viewRange.centerY - myCharacter.nowViewRadius;
             myCharacter.viewRange.setLayoutParams(viewRangeLP);
 
-            if(myCharacter.promptView!=null){
+            if (myCharacter.promptView != null) {
                 myCharacter.promptView.centerX = myCharacter.centerX;
                 myCharacter.promptView.centerY = myCharacter.centerY;
-                myCharacter.promptView.layoutParams.leftMargin = myCharacter.promptView.centerX - myCharacter.promptView.viewSize/2;
-                myCharacter.promptView.layoutParams.topMargin = myCharacter.promptView.centerY - myCharacter.promptView.viewSize/2;
+                myCharacter.promptView.layoutParams.leftMargin = myCharacter.promptView.centerX - myCharacter.promptView.viewSize / 2;
+                myCharacter.promptView.layoutParams.topMargin = myCharacter.promptView.centerY - myCharacter.promptView.viewSize / 2;
 
                 myCharacter.promptView.setLayoutParams(myCharacter.promptView.layoutParams);
             }
@@ -418,65 +429,201 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
 
     }
 
-    class BluetoothLoopConnectTask extends TimerTask{
-        private int connectDeviceIndex=0;
-        private BluetoothSocket bluetoothSocket;
-        public BluetoothLoopConnectTask(){
-            BluetoothController.cancelDiscovery();
+    public class AcceptThread extends Thread {
+
+
+        public AcceptThread() {
+            try {
+                BluetoothServerSocket tmp = null;
+                tmp = bluetoothAdapter.listenUsingRfcommWithServiceRecord("BluetoothServer", UUID.fromString(BluetoothController.mUUID));
+                bluetoothServerSocket = tmp;
+            } catch (IOException e) {
+                Log.e("AcceptThread", e.getMessage());
+            }
         }
+
         @Override
         public void run() {
-            InputStream is = null;
+            super.run();
+
+            BluetoothController.cancelDiscovery();
+            //不断监听直到返回连接或者发生异常
             try {
-                BluetoothDevice bluetoothDevice=otherPlayerDevicesList.get(connectDeviceIndex++%4);
-                bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString(BluetoothController.mUUID));
-                //通过socket连接设备，这是一个阻塞操作，知道连接成功或发生异常
-                bluetoothSocket.connect();
-                is = bluetoothSocket.getInputStream();
-                byte[] temp = new byte[10];
-                is.read(temp);
-                gameHandler.sendEmptyMessage(0);
+
+                while (true) {
+                    //据说处于查找状态会影响性能哦
+
+                    //启连接请求，这是一个阻塞方法，必须放在子线程
+//                    if (socket != null) {
+//                        bluetoothServerSocket.close();//根据demo描述，close应该在accept成功后执行，不会影响已链接socket
+//                        bluetoothServerSocket = null;
+//                    }
+                    if(socket!=null&&socket.isConnected()==true){
+                        Thread.sleep(200);
+                    }
+                    socket = bluetoothServerSocket.accept();
+                    if (socket != null) {
+                        dealServerDataThread = new Thread(new AcceptThread.DealServerDataThread(socket));
+                        dealServerDataThread.start();
+                    }
+
+
+//                    manageConnectedSocket(socket);
+                }
+            } catch (IOException e) {
+                Log.e("AcceptThread", e.getMessage());
+
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        /**
+         * 取消正在监听的接口
+         */
+
+
+        class DealServerDataThread implements Runnable {
+            BluetoothSocket socket;
+
+            public DealServerDataThread(BluetoothSocket socket) {
+                this.socket = socket;
+            }
+
+            @Override
+            public void run() {
+
+
+                InputStream is = null;
+                OutputStream os = null;
+                PlayerInfo pi = null;
+                try {
+                    while (true) {
+                        is = socket.getInputStream();
+                        ObjectInputStream ois = new ObjectInputStream(is);
+                        pi = (PlayerInfo) ois.readObject();
+                        Log.e("DealServerDataThread", "personInfoTeamID:" + pi.teamID);
+                        os = socket.getOutputStream();
+                        ObjectOutputStream oos = new ObjectOutputStream(os);
+                        pi.teamID += 10;
+                        oos.writeObject(pi);
+//                        myHandler.sendEmptyMessage(MyHandler.ACCEPT_SUCCESS);
+                    }
+                } catch (ClassNotFoundException e) {
+                    Log.e("DealServerDataThread", e.getMessage());
+                } catch (IOException e) {
+                    Log.e("DealServerDataThread", e.getMessage());
+                }
+            }
+        }
+
+//        public void manageConnectedSocket(BluetoothSocket socket) {
+//            BluetoothSocket socket1 = socket;
+//            dealServerDataThread = new Thread(new DealServerDataThread(socket));
+//            dealServerDataThread.start();
+//
+//        }
+
+    }
+
+
+    class ConnectThread extends Thread {
+        private BluetoothDevice serverDevice;
+
+        public ConnectThread(BluetoothDevice serverDevice) {
+            serverDevice = serverDevice;
+
+            BluetoothSocket tmp = null;
+            try {
+                tmp = serverDevice.createRfcommSocketToServiceRecord(UUID.fromString(BluetoothController.mUUID)); //应该是这里导致Service discovery failed问题
 
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.d("BLUETOOTH_CLIENT", e.getMessage());
+            }
+            socket = tmp;
+        }
+
+        @Override
+        public void run() {
+            super.run();
+            //取消搜索因为搜索会让连接变慢
+            BluetoothController.cancelDiscovery();
+            try {
+//                    bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString(mUUID));
+                //通过socket连接设备，这是一个阻塞操作，知道连接成功或发生异常
+                socket.connect();
+                if (socket != null) {
+                    while (true) {
+                        OutputStream os = null;
+                        InputStream is = null;
+                        PlayerInfo pi = null;
+
+                        os = socket.getOutputStream();
+                        ObjectOutputStream oos = new ObjectOutputStream(os);
+                        pi = new PlayerInfo(true, 1, 1, pi.teamID);
+                        oos.writeObject(pi);
+                        is = socket.getInputStream();
+                        ObjectInputStream ois = new ObjectInputStream(is);
+                        pi = (PlayerInfo) ois.readObject();
+                        Log.e("ConnectThread", "teamId:" + pi.teamID);
+//                        myHandler.sendEmptyMessage(MyHandler.SEND_SUCCESS);
+
+                    }
+                }
+//                byte[] buff = s.getBytes();
+//                os.write(buff);
+//                os.flush();
+//                os.close();
+//                is = socket.getInputStream();
+//                StringBuffer str = new StringBuffer();
+//                buff = new byte[1024];
+//
+//                while (is.read(buff) > 0) {
+//                    str.append(new String(buff, 0, buff.length));
+//                }
+//                Log.i("------client-------", str.toString());
+//                is.close();
+
+            } catch (IOException e) {
+                Log.e("ConnectThread", e.getMessage());
                 //无法连接，关闭socket并且退出
 
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
             } finally {
                 try {
-                    is.close();
-                    bluetoothSocket.close();
+                    socket.close();
                 } catch (IOException e1) {
                     e1.printStackTrace();
                 }
             }
+
+
+            //管理连接(在独立的线程)
+            // manageConnectedSocket(mmSocket);
         }
+
+
     }
 
+    public void initConnection() {
+        try {
+            if (bluetoothServerSocket != null)
+                bluetoothServerSocket.close();
+            if (socket != null)
+                socket.close();
+
+            if (acceptThread != null && acceptThread.getState() != Thread.State.TERMINATED)
+                acceptThread.interrupt();
+            if (connectThread != null && connectThread.getState() != Thread.State.TERMINATED)
+                connectThread.interrupt();
+//            if (dealServerDataThread.getState()!= Thread.State.TERMINATED)
+//                dealServerDataThread.interrupt();
 
 
-
-    private void startBlueToothConnection() {
-        for (int i = 1; i < playerInfos.size(); i++) {
-            PlayerInfo playerInfo = playerInfos.get(i);
-
-            if (playerInfo.isOtherOnlinePlayer == false)
-                continue;
-            otherPlayerDevicesList.add(playerInfo.device);
-            BaseCharacterView otherPlayerCharacter = null;
-            if (playerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER) {
-                otherPlayerCharacter = new NormalHunter(this, virtualWindow);
-            } else if (playerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF) {
-                otherPlayerCharacter = new NormalWolf(this, virtualWindow);
-            }
-            otherPlayerCharacter.gameHandler = gameHandler;
-            otherPlayerCharacter.setTeamID(playerInfo.teamID);
-
-
-            allCharacters.add(otherPlayerCharacter);
-
+        } catch (IOException e) {
+            Log.e("cancel", e.getMessage());
         }
-        Timer timerForBluetooth = new Timer("TimerForBluetooth", true);
-
     }
 
 
@@ -496,7 +643,6 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
         }
 
 
-
         //添加地形
         GameMap map = new GameMap(this);
         mapBaseFrame.addView(map);
@@ -505,14 +651,14 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
 
         allCharacters = new ArrayList<BaseCharacterView>();
         //添加我的角色
-        PlayerInfo myPlayerInfo = playerInfos.get(0);
+        myPlayerInfo = playerInfos.get(0);
         if (myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
             myCharacter = new NormalHunter(this, virtualWindow);
         else {
             myCharacter = new NormalWolf(this, virtualWindow);
-            PromptView promptView=new PromptView(this,myCharacter);
+            PromptView promptView = new PromptView(this, myCharacter);
             mapBaseFrame.addView(promptView);
-            myCharacter.promptView=promptView;
+            myCharacter.promptView = promptView;
         }
         myCharacter.setTeamID(myPlayerInfo.teamID);
 
@@ -539,12 +685,6 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
             mapBaseFrame.addView(mySight);
             mapBaseFrame.mySight = mySight;
         }
-
-        startBlueToothConnection();
-
-
-
-
 
 
         rightAtttackButton = (AttackButton) this.findViewById(R.id.attack_button_right);
@@ -576,7 +716,7 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
 
 
             rabp.leftMargin = rightRocker.getRight() - rightAtttackButton.buttonSize - 10;
-            rabp.topMargin = rightRocker.getTop() - rightAtttackButton.buttonSize +30;
+            rabp.topMargin = rightRocker.getTop() - rightAtttackButton.buttonSize + 30;
         } else if (myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF) {
             rightAtttackButton.reCreateBitmap();
             baseFrame.removeView(rightRocker);
@@ -588,7 +728,7 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
         rightRocker.bringToFront();
         rightAtttackButton.bringToFront();
 
-        if(myCharacter.characterType==BaseCharacterView.CHARACTER_TYPE_HUNTER) {
+        if (myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER) {
             lockingButton = new LockingButton(this);
             int lockingButtonSize = lockingButton.buttonSize;
             lockingButton.bindingCharacter = myCharacter;
@@ -600,8 +740,8 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
             lblp.topMargin = rabp.topMargin;
             lockingButton.setLayoutParams(lblp);
             baseFrame.addView(lockingButton);
-        }else  if(myCharacter.characterType==BaseCharacterView.CHARACTER_TYPE_WOLF) {
-            smellButton= new SmellButton(this);
+        } else if (myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF) {
+            smellButton = new SmellButton(this);
             int smellButtonSize = smellButton.buttonSize;
             smellButton.bindingCharacter = myCharacter;
             FrameLayout.LayoutParams sblp = (FrameLayout.LayoutParams) smellButton.getLayoutParams();
@@ -667,9 +807,9 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
         t3.bringToFront();
         t4.bringToFront();
         t5.bringToFront();
-        if(lockingButton!=null)
+        if (lockingButton != null)
             lockingButton.bringToFront();
-        if(smellButton!=null)
+        if (smellButton != null)
             smellButton.bringToFront();
     }
 
@@ -680,7 +820,7 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
         playerInfos = (ArrayList<PlayerInfo>) getIntent().getExtras().get("playerInfos");
         allTrajectories = new ArrayList<Trajectory>();
         allCharacters = new ArrayList<BaseCharacterView>();
-        otherPlayerDevicesList=new ArrayList<BluetoothDevice>();
+        otherPlayerDevicesList = new ArrayList<BluetoothDevice>();
         isStop = false;
         backGround = MediaPlayer.create(this, R.raw.background);
         ViewUtils.initWindowParams(this);
@@ -765,7 +905,14 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
 
         timerForAllMoving.scheduleAtFixedRate(new GameMainTask(), 1000, 30);
         timerForTrajectory.schedule(new RemoveTrajectoryTask(), 1000, 300);
-
+        if(myPlayerInfo.isServer){
+            acceptThread=new AcceptThread();
+            acceptThread.start();
+        }else{
+            BluetoothDevice serverDevice=bluetoothAdapter.getRemoteDevice(myPlayerInfo.serverMac);
+            connectThread=new ConnectThread(serverDevice);
+            connectThread.start();
+        }
     }
 
     @Override
