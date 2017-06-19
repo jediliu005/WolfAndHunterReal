@@ -17,6 +17,7 @@ import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
@@ -45,6 +46,7 @@ import java.util.TimerTask;
 import java.util.UUID;
 
 public class BluetoothOnlineActivity extends Activity {
+    Button startGameButton;
     String myName;
     String myMac;
     BluetoothOnlineActivity.MyHandler myHandler;
@@ -66,11 +68,12 @@ public class BluetoothOnlineActivity extends Activity {
     boolean isLoopSearching;
     private BluetoothServerSocket bluetoothServerSocket;
     private BluetoothSocket socket = null;
-    private Thread dealServerDataThread = null;
+    private AcceptThread.DealServerDataThread dealServerDataThread = null;
     BluetoothOnlineActivity.AcceptThread acceptThread;
     BluetoothOnlineActivity.ConnectThread connectThread;
     Timer timerForAcceptLoop = new Timer();
     boolean isTimerForAcceptLoopRunning = false;
+    List<PlayerInfo> playerInfos=new ArrayList<PlayerInfo>();
 
     class MyHandler extends Handler {
         /**
@@ -80,7 +83,7 @@ public class BluetoothOnlineActivity extends Activity {
          */
         public static final int REFRESH_PLAYER_LIST_VIEW = 2;
         public static final int ACCEPT_SUCCESS = 0;
-        public static final int SEND_SUCCESS = 1;
+        public static final int CONNECT_SUCCESS = 1;
 
         @Override
         public void handleMessage(Message msg) {
@@ -88,10 +91,12 @@ public class BluetoothOnlineActivity extends Activity {
             int what = msg.what;
             switch (what) {
                 case ACCEPT_SUCCESS:
-                    Toast.makeText(getBaseContext(), "成功接收数据", Toast.LENGTH_SHORT).show();
+                    startGameButton.setVisibility(Button.VISIBLE);
+                    Toast.makeText(getBaseContext(), "成功连上客户机", Toast.LENGTH_SHORT).show();
                     break;
-                case SEND_SUCCESS:
-                    Toast.makeText(getBaseContext(), "成功发出数据", Toast.LENGTH_SHORT).show();
+                case CONNECT_SUCCESS:
+                    startGameButton.setVisibility(Button.INVISIBLE);
+                    Toast.makeText(getBaseContext(), "成功连上主机", Toast.LENGTH_SHORT).show();
                     break;
                 case REFRESH_PLAYER_LIST_VIEW:
                     Toast.makeText(BluetoothOnlineActivity.this, "等待对方设备确认配对。。。", Toast.LENGTH_SHORT);
@@ -391,7 +396,9 @@ public class BluetoothOnlineActivity extends Activity {
         @Override
         public void run() {
             super.run();
-
+            playerInfos.clear();
+            PlayerInfo myPlayerInfo=new PlayerInfo(true,1,BaseCharacterView.CHARACTER_TYPE_HUNTER,1,"",true);
+            playerInfos.add(myPlayerInfo);
             BluetoothController.cancelDiscovery();
             //不断监听直到返回连接或者发生异常
             try {
@@ -409,7 +416,7 @@ public class BluetoothOnlineActivity extends Activity {
 
                     if (socket != null) {
                         if (dealServerDataThread == null || dealServerDataThread.getState() == State.TERMINATED) {
-                            dealServerDataThread = new Thread(new DealServerDataThread(socket));
+                            dealServerDataThread = new DealServerDataThread(socket);
                             dealServerDataThread.start();
                             bluetoothServerSocket.close();
                         } else {
@@ -439,7 +446,7 @@ public class BluetoothOnlineActivity extends Activity {
          */
 
 
-        class DealServerDataThread implements Runnable {
+        class DealServerDataThread extends Thread {
             BluetoothSocket socket;
 
             public DealServerDataThread(BluetoothSocket socket) {
@@ -455,21 +462,24 @@ public class BluetoothOnlineActivity extends Activity {
                 PlayerInfo pi = null;
                 try {
                     while (true) {
-                        is = socket.getInputStream();
-                        ObjectInputStream ois = new ObjectInputStream(is);
-                        pi = (PlayerInfo) ois.readObject();
-                        Log.e("DealServerDataThread", "personInfoTeamID:" + pi.teamID);
                         os = socket.getOutputStream();
-                        ObjectOutputStream oos = new ObjectOutputStream(os);
-                        pi.teamID += 10;
-                        oos.writeObject(pi);
+                        os.write(1);
+                        myHandler.sendEmptyMessage(MyHandler.ACCEPT_SUCCESS);
+                        Thread.sleep(1000);
+//                        is = socket.getInputStream();
+//                        ObjectInputStream ois = new ObjectInputStream(is);
+//                        pi = (PlayerInfo) ois.readObject();
+//                        Log.e("DealServerDataThread", "personInfoTeamID:" + pi.teamID);
+//                        os = socket.getOutputStream();
+//                        ObjectOutputStream oos = new ObjectOutputStream(os);
+//                        pi.teamID += 10;
+//                        oos.writeObject(pi);
 //                        myHandler.sendEmptyMessage(MyHandler.ACCEPT_SUCCESS);
                     }
-                } catch (ClassNotFoundException e) {
-                    Log.e("DealServerDataThread", e.getMessage());
-                } catch (IOException e) {
+                }  catch (Exception e) {
+                    e.printStackTrace();
 //                    Log.e("DealServerDataThread", e.getMessage());
-                } finally {
+                }  finally {
                     initConnection();
                 }
             }
@@ -515,15 +525,19 @@ public class BluetoothOnlineActivity extends Activity {
                         OutputStream os = null;
                         InputStream is = null;
                         PlayerInfo pi = null;
-
-                        os = socket.getOutputStream();
-                        ObjectOutputStream oos = new ObjectOutputStream(os);
-                        pi = new PlayerInfo(true, 1, 1, 1);
-                        oos.writeObject(pi);
                         is = socket.getInputStream();
-                        ObjectInputStream ois = new ObjectInputStream(is);
-                        pi = (PlayerInfo) ois.readObject();
-                        Log.e("ConnectThread", "teamId:" + pi.teamID);
+                        int res=is.read();
+                        if(res==1)
+                            myHandler.sendEmptyMessage(MyHandler.CONNECT_SUCCESS);
+                        Thread.sleep(1000);
+//                        os = socket.getOutputStream();
+//                        ObjectOutputStream oos = new ObjectOutputStream(os);
+//                        pi = new PlayerInfo(true, 1, 1, 1);
+//                        oos.writeObject(pi);
+//                        is = socket.getInputStream();
+//                        ObjectInputStream ois = new ObjectInputStream(is);
+//                        pi = (PlayerInfo) ois.readObject();
+//                        Log.e("ConnectThread", "teamId:" + pi.teamID);
 //                        myHandler.sendEmptyMessage(MyHandler.SEND_SUCCESS);
 
                     }
@@ -547,7 +561,7 @@ public class BluetoothOnlineActivity extends Activity {
                 Log.e("ConnectThread", e.toString());
                 //无法连接，关闭socket并且退出
 
-            } catch (ClassNotFoundException e) {
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             } finally {
                 Log.e("AcceptThread", "他妈的，当个客户端不容易啊，服务器又不理我了。。。。。。。。。。。");
@@ -626,7 +640,7 @@ public class BluetoothOnlineActivity extends Activity {
             Toast.makeText(this, "请先找到配对玩家", Toast.LENGTH_SHORT);
         ArrayList<PlayerInfo> playerInfos = new ArrayList<PlayerInfo>();
         for (BluetoothDevice device : joinedPlayerDeviceSet) {
-            PlayerInfo playerInfo = new PlayerInfo(true, 1, BaseCharacterView.CHARACTER_TYPE_HUNTER, 1, "", "", true);
+            PlayerInfo playerInfo = new PlayerInfo(true, 1, BaseCharacterView.CHARACTER_TYPE_HUNTER, 1,device.getAddress(), true);
             playerInfos.add(playerInfo);
         }
         Intent i = new Intent(this, BluetoothOnlineGameBaseAreaActivity.class);
@@ -650,6 +664,7 @@ public class BluetoothOnlineActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bluetooth_online);
+        startGameButton=(Button)findViewById(R.id.button_start_game);
         discoveredDevices = new HashSet<BluetoothDevice>();
         needToBondDeviceSet = new HashSet<BluetoothDevice>();
         joinedPlayerDeviceSet = new HashSet<BluetoothDevice>();

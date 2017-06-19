@@ -6,56 +6,63 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context="com.jedi.wolf_and_hunter.activities.BluetoothOnlineActivity">
+
     <LinearLayout
-    android:layout_width="match_parent"
-    android:layout_height="0dp"
-    android:layout_weight="2">
-    <Button
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_weight="1"
-    android:text="查找设备"
-    android:onClick="searchDevice"/>
-    <Button
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_weight="1"
-    android:text="接受链接"
-    android:onClick="runAccept"/>
-    <Button
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_weight="1"
-    android:text="发出请求"
-    android:onClick="runConnect"/>
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="2">
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="searchDevice"
+            android:text="查找设备" />
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="runAccept"
+            android:text="成为主机" />
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="runConnect"
+            android:text="发出请求" />
     </LinearLayout>
 
 
     <ListView
-    android:background="#ffff11"
-    android:layout_marginTop="5dp"
-    android:id="@+id/list_view_devices"
-    android:layout_weight="4"
-    android:layout_width="match_parent"
-    android:layout_height="0px">
+        android:id="@+id/list_view_devices"
+        android:layout_width="match_parent"
+        android:layout_height="0px"
+        android:layout_marginTop="5dp"
+        android:layout_weight="4"
+        android:background="#ffff11">
 
 
     </ListView>
+
     <ListView
-    android:background="#11FFFF"
-    android:layout_marginTop="5dp"
-    android:layout_width="match_parent"
-    android:layout_height="0px"
-    android:layout_weight="4"
-    android:id="@+id/list_view_joined_player"
-    >
+        android:id="@+id/list_view_joined_player"
+        android:layout_width="match_parent"
+        android:layout_height="0px"
+        android:layout_marginTop="5dp"
+        android:layout_weight="4"
+        android:background="#11FFFF">
 
 
     </ListView>
+
     <Button
+        android:id="@+id/button_start_game"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="2"
+        android:onClick="startGame"
         android:text="进入游戏"
-        android:onClick="startGame"/>
+        android:visibility="invisible" />
 </LinearLayout>

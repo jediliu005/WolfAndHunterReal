@@ -38,7 +38,7 @@ public class PlayerInfo implements Serializable {
         this.playerID = playerID;
     }
 
-    public PlayerInfo(boolean isAvailable, int playerID, int characterType, int teamID, String serverMac,String mac,boolean isServer) {
+    public PlayerInfo(boolean isAvailable, int playerID, int characterType, int teamID, String mac,boolean isServer) {
         this.isAvailable = isAvailable;
         this.playerID = playerID;
         this.characterType = characterType;
