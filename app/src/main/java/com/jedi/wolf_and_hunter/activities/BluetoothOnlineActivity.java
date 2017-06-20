@@ -46,6 +46,8 @@ import java.util.TimerTask;
 import java.util.UUID;
 
 public class BluetoothOnlineActivity extends Activity {
+    public static final int CONNECT_STATE_WAIT = 1;
+    public static final int CONNECT_STATE_START_GAME = 2;
     Button startGameButton;
     String myName;
     String myMac;
@@ -71,9 +73,10 @@ public class BluetoothOnlineActivity extends Activity {
     private AcceptThread.DealServerDataThread dealServerDataThread = null;
     BluetoothOnlineActivity.AcceptThread acceptThread;
     BluetoothOnlineActivity.ConnectThread connectThread;
-    Timer timerForAcceptLoop = new Timer();
-    boolean isTimerForAcceptLoopRunning = false;
-    List<PlayerInfo> playerInfos=new ArrayList<PlayerInfo>();
+    //    Timer timerForAcceptLoop = new Timer();
+//    boolean isTimerForAcceptLoopRunning = false;
+    ArrayList<PlayerInfo> playerInfos = new ArrayList<PlayerInfo>();
+    boolean isGameStart = false;
 
     class MyHandler extends Handler {
         /**
@@ -81,9 +84,11 @@ public class BluetoothOnlineActivity extends Activity {
          *
          * @param msg
          */
-        public static final int REFRESH_PLAYER_LIST_VIEW = 2;
+
         public static final int ACCEPT_SUCCESS = 0;
         public static final int CONNECT_SUCCESS = 1;
+        public static final int GAME_START = 2;
+        public static final int REFRESH_PLAYER_LIST_VIEW = 3;
 
         @Override
         public void handleMessage(Message msg) {
@@ -97,6 +102,13 @@ public class BluetoothOnlineActivity extends Activity {
                 case CONNECT_SUCCESS:
                     startGameButton.setVisibility(Button.INVISIBLE);
                     Toast.makeText(getBaseContext(), "成功连上主机", Toast.LENGTH_SHORT).show();
+                    break;
+                case GAME_START:
+                    Intent i = new Intent(BluetoothOnlineActivity.this, BluetoothOnlineGameBaseAreaActivity.class);
+                    Bundle bundle = new Bundle();
+                    bundle.putSerializable("playerInfos", playerInfos);
+                    i.putExtras(bundle);
+                    startActivity(i);
                     break;
                 case REFRESH_PLAYER_LIST_VIEW:
                     Toast.makeText(BluetoothOnlineActivity.this, "等待对方设备确认配对。。。", Toast.LENGTH_SHORT);
@@ -397,7 +409,7 @@ public class BluetoothOnlineActivity extends Activity {
         public void run() {
             super.run();
             playerInfos.clear();
-            PlayerInfo myPlayerInfo=new PlayerInfo(true,1,BaseCharacterView.CHARACTER_TYPE_HUNTER,1,"",true);
+            PlayerInfo myPlayerInfo = new PlayerInfo(true, 1, BaseCharacterView.CHARACTER_TYPE_HUNTER, 1, "", true);
             playerInfos.add(myPlayerInfo);
             BluetoothController.cancelDiscovery();
             //不断监听直到返回连接或者发生异常
@@ -460,12 +472,24 @@ public class BluetoothOnlineActivity extends Activity {
                 InputStream is = null;
                 OutputStream os = null;
                 PlayerInfo pi = null;
+                PlayerInfo clientPlayerInfo = new PlayerInfo(true, 1, BaseCharacterView.CHARACTER_TYPE_HUNTER, 1, socket.getRemoteDevice().getAddress(), false);
+
                 try {
                     while (true) {
                         os = socket.getOutputStream();
-                        os.write(1);
-                        myHandler.sendEmptyMessage(MyHandler.ACCEPT_SUCCESS);
-                        Thread.sleep(1000);
+                        if (isGameStart) {
+                            os.write(CONNECT_STATE_START_GAME);
+                            myHandler.sendEmptyMessage(MyHandler.GAME_START);
+                            return;
+                        } else {
+                            if(playerInfos.contains(clientPlayerInfo)==false)
+                                playerInfos.add(clientPlayerInfo);
+                            os.write(CONNECT_STATE_WAIT);
+
+                            myHandler.sendEmptyMessage(MyHandler.ACCEPT_SUCCESS);
+
+                            Thread.sleep(1000);
+                        }
 //                        is = socket.getInputStream();
 //                        ObjectInputStream ois = new ObjectInputStream(is);
 //                        pi = (PlayerInfo) ois.readObject();
@@ -476,11 +500,11 @@ public class BluetoothOnlineActivity extends Activity {
 //                        oos.writeObject(pi);
 //                        myHandler.sendEmptyMessage(MyHandler.ACCEPT_SUCCESS);
                     }
-                }  catch (Exception e) {
+                } catch (Exception e) {
                     e.printStackTrace();
 //                    Log.e("DealServerDataThread", e.getMessage());
-                }  finally {
-                    initConnection();
+                } finally {
+
                 }
             }
         }
@@ -516,20 +540,32 @@ public class BluetoothOnlineActivity extends Activity {
             super.run();
             //取消搜索因为搜索会让连接变慢
             BluetoothController.cancelDiscovery();
+            playerInfos.clear();
+            PlayerInfo myPlayerInfo = new PlayerInfo(true, 1, BaseCharacterView.CHARACTER_TYPE_HUNTER, 1, "", false);
+            playerInfos.add(myPlayerInfo);
             try {
 //                    bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString(mUUID));
                 //通过socket连接设备，这是一个阻塞操作，知道连接成功或发生异常
                 if (socket != null) {
                     socket.connect();
+                    PlayerInfo serverPlayerInfo = new PlayerInfo(true, 1, BaseCharacterView.CHARACTER_TYPE_HUNTER, 1, serverDevice.getAddress(), true);
+
                     while (true) {
                         OutputStream os = null;
                         InputStream is = null;
                         PlayerInfo pi = null;
                         is = socket.getInputStream();
-                        int res=is.read();
-                        if(res==1)
+                        int res = is.read();
+
+                        if (res == CONNECT_STATE_WAIT) {
+                            if (playerInfos.contains(serverPlayerInfo) == false)
+                                playerInfos.add(serverPlayerInfo);
                             myHandler.sendEmptyMessage(MyHandler.CONNECT_SUCCESS);
-                        Thread.sleep(1000);
+                            Thread.sleep(1000);
+                        } else if (res == CONNECT_STATE_START_GAME) {
+                            myHandler.sendEmptyMessage(MyHandler.GAME_START);
+                            return;
+                        }
 //                        os = socket.getOutputStream();
 //                        ObjectOutputStream oos = new ObjectOutputStream(os);
 //                        pi = new PlayerInfo(true, 1, 1, 1);
@@ -558,13 +594,14 @@ public class BluetoothOnlineActivity extends Activity {
 
             } catch (IOException e) {
                 e.printStackTrace();
-                Log.e("ConnectThread", e.toString());
+                Log.e("AcceptThread", "他妈的，当个客户端不容易啊，服务器又不理我了。。。。。。。。。。。");
                 //无法连接，关闭socket并且退出
 
             } catch (InterruptedException e) {
                 e.printStackTrace();
-            } finally {
                 Log.e("AcceptThread", "他妈的，当个客户端不容易啊，服务器又不理我了。。。。。。。。。。。");
+            } finally {
+
             }
 
 
@@ -636,18 +673,7 @@ public class BluetoothOnlineActivity extends Activity {
     }
 
     public void startGame(View view) {
-        if (joinedPlayerDeviceSet == null || joinedPlayerDeviceSet.size() == 0)
-            Toast.makeText(this, "请先找到配对玩家", Toast.LENGTH_SHORT);
-        ArrayList<PlayerInfo> playerInfos = new ArrayList<PlayerInfo>();
-        for (BluetoothDevice device : joinedPlayerDeviceSet) {
-            PlayerInfo playerInfo = new PlayerInfo(true, 1, BaseCharacterView.CHARACTER_TYPE_HUNTER, 1,device.getAddress(), true);
-            playerInfos.add(playerInfo);
-        }
-        Intent i = new Intent(this, BluetoothOnlineGameBaseAreaActivity.class);
-        Bundle bundle = new Bundle();
-        bundle.putSerializable("playerInfos", playerInfos);
-        i.putExtras(bundle);
-        startActivity(i);
+        isGameStart=true;
     }
 
     class RefreshPlayerListViewTask extends TimerTask {
@@ -664,7 +690,7 @@ public class BluetoothOnlineActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bluetooth_online);
-        startGameButton=(Button)findViewById(R.id.button_start_game);
+        startGameButton = (Button) findViewById(R.id.button_start_game);
         discoveredDevices = new HashSet<BluetoothDevice>();
         needToBondDeviceSet = new HashSet<BluetoothDevice>();
         joinedPlayerDeviceSet = new HashSet<BluetoothDevice>();
@@ -725,10 +751,36 @@ public class BluetoothOnlineActivity extends Activity {
         }
 
 
+    }
+
+    /**
+     * Called after {@link #onCreate} &mdash; or after {@link #onRestart} when
+     * the activity had been stopped, but is now again being displayed to the
+     * user.  It will be followed by {@link #onResume}.
+     * <p>
+     * <p><em>Derived classes must call through to the super class's
+     * implementation of this method.  If they do not, an exception will be
+     * thrown.</em></p>
+     *
+     * @see #onCreate
+     * @see #onStop
+     * @see #onResume
+     */
+    @Override
+    protected void onStart() {
+        super.onStart();
         timerForRefreshPlayerListView = new Timer();
         timerForRefreshPlayerListView.schedule(new RefreshPlayerListViewTask(), 100, 1000);
 
+    }
 
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        initConnection();
+//        timerForAcceptLoop.cancel();
+        timerForRefreshPlayerListView.cancel();
     }
 
     @Override
@@ -736,7 +788,7 @@ public class BluetoothOnlineActivity extends Activity {
         super.onDestroy();
         initConnection();
         unregisterReceiver(receiver);
-        timerForAcceptLoop.cancel();
+//        timerForAcceptLoop.cancel();
         timerForRefreshPlayerListView.cancel();
 //        bluetoothController.closeDiscoverableTimeout();
 //        Intent in = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
