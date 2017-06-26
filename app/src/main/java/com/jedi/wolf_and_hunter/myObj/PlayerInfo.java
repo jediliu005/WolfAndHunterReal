@@ -13,7 +13,6 @@ import java.io.Serializable;
 public class PlayerInfo implements Serializable {
     public boolean isOtherOnlinePlayer = false;
     public String mac;
-    public String serverMac;
     public boolean isAvailable = true;
     public int playerID;
     public int characterType = BaseCharacterView.CHARACTER_TYPE_HUNTER;
@@ -45,7 +44,6 @@ public class PlayerInfo implements Serializable {
         this.teamID = teamID;
         this.isOtherOnlinePlayer = true;
         this.mac = mac;
-        this.serverMac = serverMac;
         this.isServer=isServer;
     }
 

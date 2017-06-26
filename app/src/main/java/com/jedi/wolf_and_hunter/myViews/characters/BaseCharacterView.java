@@ -11,6 +11,7 @@ import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.media.MediaPlayer;
+import android.os.Handler;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -107,7 +108,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public volatile boolean isForceToBeSawByMe = false;//注意！这属性只针对本机玩家视觉，对AI判行为无效
     public volatile boolean judgeingAttack = false;
     public volatile boolean isReloadingAttack = false;
-    public GameBaseAreaActivity.GameHandler gameHandler;
+    public Handler gameHandler;
     public volatile HashSet<Integer> seeMeTeamIDs;
     public volatile HashSet<BaseCharacterView> theyDiscoverMe;
     public volatile HashSet<Point> enemiesPositionSet;

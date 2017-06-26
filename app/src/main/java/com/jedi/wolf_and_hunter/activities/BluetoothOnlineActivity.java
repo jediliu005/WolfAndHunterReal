@@ -409,7 +409,7 @@ public class BluetoothOnlineActivity extends Activity {
         public void run() {
             super.run();
             playerInfos.clear();
-            PlayerInfo myPlayerInfo = new PlayerInfo(true, 1, BaseCharacterView.CHARACTER_TYPE_HUNTER, 1, "", true);
+            PlayerInfo myPlayerInfo = new PlayerInfo(true, 1, BaseCharacterView.CHARACTER_TYPE_HUNTER, 1, myMac, true);
             playerInfos.add(myPlayerInfo);
             BluetoothController.cancelDiscovery();
             //不断监听直到返回连接或者发生异常
@@ -541,7 +541,7 @@ public class BluetoothOnlineActivity extends Activity {
             //取消搜索因为搜索会让连接变慢
             BluetoothController.cancelDiscovery();
             playerInfos.clear();
-            PlayerInfo myPlayerInfo = new PlayerInfo(true, 1, BaseCharacterView.CHARACTER_TYPE_HUNTER, 1, "", false);
+            PlayerInfo myPlayerInfo = new PlayerInfo(true, 1, BaseCharacterView.CHARACTER_TYPE_HUNTER, 1, myMac, false);
             playerInfos.add(myPlayerInfo);
             try {
 //                    bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString(mUUID));
@@ -686,6 +686,13 @@ public class BluetoothOnlineActivity extends Activity {
         }
     }
 
+    private  void init(){
+
+
+
+
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -698,20 +705,17 @@ public class BluetoothOnlineActivity extends Activity {
         bluetoothController = new BluetoothController(this);
         bluetoothAdapter = BluetoothController.mBluetoothAdapter;
         myHandler = new BluetoothOnlineActivity.MyHandler();
+        if (bluetoothAdapter.isEnabled()) {
+//            Toast.makeText(this, "蓝牙可用,本设备可见10秒", Toast.LENGTH_LONG).show();
+            Intent in = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+            in.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
+            startActivity(in);
+        } else {
+            Toast.makeText(this, "蓝牙不可用", Toast.LENGTH_LONG).show();
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBtIntent, 1);
+        }
 
-
-        myName = bluetoothAdapter.getName();
-        //6.0以上系统用adapter只会获取到20.00.00.00.00,一下是网上找到的神方法
-
-
-        myMac = android.provider.Settings.Secure.getString(this.getContentResolver(), "bluetooth_address");
-        if (myMac == null)
-            myMac = bluetoothAdapter.getAddress();
-        BluetoothDevice myDevice = bluetoothAdapter.getRemoteDevice(myMac);
-        joinedPlayerDeviceSet.add(myDevice);
-        Map<String, String> myInfoMap = new HashMap<String, String>();
-        myInfoMap.put("name", "（本机）" + myName);
-        myInfoMap.put("mac", myMac);
 
 
         discoverDevicesListView = (ListView) findViewById(R.id.list_view_devices);
@@ -726,7 +730,7 @@ public class BluetoothOnlineActivity extends Activity {
         joinedPlayerListView.setOnItemClickListener(new BluetoothOnlineActivity.JoinedPlayerListViewOnItemClickListener(this));
         joinedPlayerAdapter = new SimpleAdapter(this, joinedPlayerDeviceSetInfoList, R.layout.online_user_list_item, new String[]{"name", "mac"}, new int[]{R.id.device_info_name, R.id.device_info_mac});
         joinedPlayerListView.setAdapter(joinedPlayerAdapter);
-        joinedPlayerDeviceSetInfoList.add(myInfoMap);
+
         joinedPlayerAdapter.notifyDataSetChanged();
 
         IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
@@ -739,18 +743,20 @@ public class BluetoothOnlineActivity extends Activity {
         filter.addAction(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED);
         registerReceiver(receiver, filter);
 
-        if (bluetoothAdapter.isEnabled()) {
-//            Toast.makeText(this, "蓝牙可用,本设备可见10秒", Toast.LENGTH_LONG).show();
-            Intent in = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-            in.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
-            startActivity(in);
-        } else {
-            Toast.makeText(this, "蓝牙不可用", Toast.LENGTH_LONG).show();
-            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBtIntent, 1);
-        }
 
+        myName = bluetoothAdapter.getName();
 
+        //6.0以上系统用adapter只会获取到20.00.00.00.00,一下是网上找到的神方法
+        myMac = android.provider.Settings.Secure.getString(this.getContentResolver(), "bluetooth_address");
+        if (myMac == null)
+            myMac = bluetoothAdapter.getAddress();
+        BluetoothDevice myDevice = bluetoothAdapter.getRemoteDevice(myMac);
+        joinedPlayerDeviceSet.add(myDevice);
+        Map<String, String> myInfoMap = new HashMap<String, String>();
+        myInfoMap.put("name", "（本机）" + myName);
+        myInfoMap.put("mac", myMac);
+
+        joinedPlayerDeviceSetInfoList.add(myInfoMap);
     }
 
     /**

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/baseFrame"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#003300"
+    android:gravity="bottom"
+    tools:context="com.jedi.wolf_and_hunter.activities.BluetoothOnlineGameBaseAreaActivity">
+
+
+
+
+
+    <com.jedi.wolf_and_hunter.myViews.LeftRocker
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:id="@+id/rocker_left"
+    android:layout_gravity="bottom|left"
+    />
+    <com.jedi.wolf_and_hunter.myViews.RightRocker
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/rocker_right"
+        android:layout_gravity="bottom|right"
+        />
+
+    <com.jedi.wolf_and_hunter.myViews.AttackButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/attack_button_right"
+        />
+
+</FrameLayout>

@@ -54,7 +54,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 
-public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
+public class BluetoothOnlineGameBaseAreaActivity extends Activity {
     public TextView t1;
     public TextView t2;
     public TextView t3;
@@ -65,7 +65,7 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
     public BaseAI testingAI;
     public static int mapWidth = 3000;
     public static int mapHeight = 3000;
-
+    public  String serverMac;
     ArrayList<BluetoothDevice> otherPlayerDevicesList = null;
 
     private final static int CONTROL_MODE_NORMAL = 0;
@@ -100,8 +100,8 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
     private BluetoothServerSocket bluetoothServerSocket;
     private BluetoothSocket socket = null;
     private Thread dealServerDataThread = null;
-    private BluetoothOnlineGameBaseAreaActivity.AcceptThread acceptThread;
-    private BluetoothOnlineGameBaseAreaActivity.ConnectThread connectThread;
+    private AcceptThread acceptThread;
+    private ConnectThread connectThread;
     public boolean isAcceptStop;
 
     private class GameMainTask extends TimerTask {
@@ -149,7 +149,7 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
     }
 
 
-    public class GameHandler extends GameBaseAreaActivity.GameHandler {
+    public class GameHandler extends Handler {
         public static final int ADD_TRAJECTORY = 1;
         public static final int REMOVE_TRAJECTORY = 2;
 
@@ -429,6 +429,7 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
 
     }
 
+
     public class AcceptThread extends Thread {
 
 
@@ -438,6 +439,7 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
                 tmp = bluetoothAdapter.listenUsingRfcommWithServiceRecord("BluetoothServer", UUID.fromString(BluetoothController.mUUID));
                 bluetoothServerSocket = tmp;
             } catch (IOException e) {
+                e.printStackTrace();
                 Log.e("AcceptThread", e.getMessage());
             }
         }
@@ -458,23 +460,27 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
 //                        bluetoothServerSocket.close();//根据demo描述，close应该在accept成功后执行，不会影响已链接socket
 //                        bluetoothServerSocket = null;
 //                    }
-                    if(socket!=null&&socket.isConnected()==true){
-                        Thread.sleep(200);
-                    }
+
                     socket = bluetoothServerSocket.accept();
+
                     if (socket != null) {
-                        dealServerDataThread = new Thread(new AcceptThread.DealServerDataThread(socket));
-                        dealServerDataThread.start();
+                        if (dealServerDataThread == null || dealServerDataThread.getState() == State.TERMINATED) {
+                            dealServerDataThread = new AcceptThread.DealServerDataThread(socket);
+                            dealServerDataThread.start();
+                            bluetoothServerSocket.close();
+                        } else {
+                            socket.close();
+                        }
                     }
 
 
 //                    manageConnectedSocket(socket);
                 }
-            } catch (IOException e) {
-                Log.e("AcceptThread", e.getMessage());
-
-            } catch (InterruptedException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
+                Log.e("AcceptThread", "哎呀，当个服务器不容易啊，不知干嘛又挂了。。。。。。。。。。。");
+            } finally {
+
             }
         }
 
@@ -483,7 +489,7 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
          */
 
 
-        class DealServerDataThread implements Runnable {
+        class DealServerDataThread extends Thread {
             BluetoothSocket socket;
 
             public DealServerDataThread(BluetoothSocket socket) {
@@ -496,23 +502,24 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
 
                 InputStream is = null;
                 OutputStream os = null;
-                PlayerInfo pi = null;
+               PlayerInfo remotePlayerInfo;
                 try {
                     while (true) {
+                        os = socket.getOutputStream();
+
                         is = socket.getInputStream();
                         ObjectInputStream ois = new ObjectInputStream(is);
-                        pi = (PlayerInfo) ois.readObject();
-                        Log.e("DealServerDataThread", "personInfoTeamID:" + pi.teamID);
+                        remotePlayerInfo = (PlayerInfo) ois.readObject();
+                        Log.e("DealServerDataThread", "personInfoTeamID:" + remotePlayerInfo.teamID);
                         os = socket.getOutputStream();
                         ObjectOutputStream oos = new ObjectOutputStream(os);
-                        pi.teamID += 10;
-                        oos.writeObject(pi);
-//                        myHandler.sendEmptyMessage(MyHandler.ACCEPT_SUCCESS);
+                        oos.writeObject(myPlayerInfo);
                     }
-                } catch (ClassNotFoundException e) {
-                    Log.e("DealServerDataThread", e.getMessage());
-                } catch (IOException e) {
-                    Log.e("DealServerDataThread", e.getMessage());
+                } catch (Exception e) {
+                    e.printStackTrace();
+//                    Log.e("DealServerDataThread", e.getMessage());
+                } finally {
+                    acceptThread.start();
                 }
             }
         }
@@ -531,7 +538,7 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
         private BluetoothDevice serverDevice;
 
         public ConnectThread(BluetoothDevice serverDevice) {
-            serverDevice = serverDevice;
+            this.serverDevice = serverDevice;
 
             BluetoothSocket tmp = null;
             try {
@@ -551,22 +558,21 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
             try {
 //                    bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString(mUUID));
                 //通过socket连接设备，这是一个阻塞操作，知道连接成功或发生异常
-                socket.connect();
                 if (socket != null) {
+                    socket.connect();
+                    PlayerInfo remotePlayerInfo;
                     while (true) {
                         OutputStream os = null;
                         InputStream is = null;
-                        PlayerInfo pi = null;
-
                         os = socket.getOutputStream();
                         ObjectOutputStream oos = new ObjectOutputStream(os);
-                        pi = new PlayerInfo(true, 1, 1, pi.teamID);
-                        oos.writeObject(pi);
+
+                        oos.writeObject(myPlayerInfo);
                         is = socket.getInputStream();
+
                         ObjectInputStream ois = new ObjectInputStream(is);
-                        pi = (PlayerInfo) ois.readObject();
-                        Log.e("ConnectThread", "teamId:" + pi.teamID);
-//                        myHandler.sendEmptyMessage(MyHandler.SEND_SUCCESS);
+                        remotePlayerInfo = (PlayerInfo) ois.readObject();
+                        Log.e("ConnectThread", "teamId:" + remotePlayerInfo.teamID);
 
                     }
                 }
@@ -585,17 +591,14 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
 //                is.close();
 
             } catch (IOException e) {
-                Log.e("ConnectThread", e.getMessage());
+                e.printStackTrace();
+                Log.e("AcceptThread", "他妈的，当个客户端不容易啊，服务器又不理我了。。。。。。。。。。。");
                 //无法连接，关闭socket并且退出
 
-            } catch (ClassNotFoundException e) {
+            }  catch (ClassNotFoundException e) {
                 e.printStackTrace();
             } finally {
-                try {
-                    socket.close();
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                }
+
             }
 
 
@@ -606,19 +609,32 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
 
     }
 
+    /**
+     * 这方法重要性说你都不信，不重置这些TM的一大堆问题
+     */
     public void initConnection() {
         try {
-            if (bluetoothServerSocket != null)
+            if (bluetoothServerSocket != null) {
                 bluetoothServerSocket.close();
-            if (socket != null)
+                bluetoothServerSocket = null;
+            }
+            if (socket != null) {
                 socket.close();
+                socket = null;
+            }
 
-            if (acceptThread != null && acceptThread.getState() != Thread.State.TERMINATED)
+            if (acceptThread != null && acceptThread.getState() != Thread.State.TERMINATED) {
                 acceptThread.interrupt();
-            if (connectThread != null && connectThread.getState() != Thread.State.TERMINATED)
+                acceptThread = null;
+            }
+            if (connectThread != null && connectThread.getState() != Thread.State.TERMINATED) {
                 connectThread.interrupt();
-//            if (dealServerDataThread.getState()!= Thread.State.TERMINATED)
-//                dealServerDataThread.interrupt();
+                connectThread = null;
+            }
+            if (dealServerDataThread != null && dealServerDataThread.getState() != Thread.State.TERMINATED) {
+                dealServerDataThread.interrupt();
+                dealServerDataThread = null;
+            }
 
 
         } catch (IOException e) {
@@ -815,9 +831,16 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        setContentView(R.layout.activity_game_base_area);
+        setContentView(R.layout.activity_bluetooth_online_game_base_area);
         super.onCreate(savedInstanceState);
         playerInfos = (ArrayList<PlayerInfo>) getIntent().getExtras().get("playerInfos");
+        if (playerInfos != null) {
+            myPlayerInfo = playerInfos.get(0);
+            for(PlayerInfo pi:playerInfos){
+                if(pi.isServer==true)
+                    serverMac=pi.mac;
+            }
+        }
         allTrajectories = new ArrayList<Trajectory>();
         allCharacters = new ArrayList<BaseCharacterView>();
         otherPlayerDevicesList = new ArrayList<BluetoothDevice>();
@@ -891,6 +914,16 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
         baseFrame.addView(gameResult);
 
 
+        bluetoothAdapter=BluetoothController.mBluetoothAdapter;
+        if (myPlayerInfo.isServer) {
+            acceptThread = new AcceptThread();
+            acceptThread.start();
+        } else {
+            BluetoothDevice serverDevice = bluetoothAdapter.getRemoteDevice(serverMac);
+            connectThread = new ConnectThread(serverDevice);
+            connectThread.start();
+        }
+
         virtualWindow = new MyVirtualWindow(this, mapBaseFrame);
         mapBaseFrame.post(new Runnable() {
             @Override
@@ -905,14 +938,9 @@ public class BluetoothOnlineGameBaseAreaActivity extends GameBaseAreaActivity {
 
         timerForAllMoving.scheduleAtFixedRate(new GameMainTask(), 1000, 30);
         timerForTrajectory.schedule(new RemoveTrajectoryTask(), 1000, 300);
-        if(myPlayerInfo.isServer){
-            acceptThread=new AcceptThread();
-            acceptThread.start();
-        }else{
-            BluetoothDevice serverDevice=bluetoothAdapter.getRemoteDevice(myPlayerInfo.serverMac);
-            connectThread=new ConnectThread(serverDevice);
-            connectThread.start();
-        }
+
+
+
     }
 
     @Override
