@@ -83,7 +83,6 @@ public class BluetoothOnlineGameBaseAreaActivity extends Activity {
     public static MapBaseFrame mapBaseFrame;
     public static BaseCharacterView myCharacter;
     public static FrameLayout baseFrame;
-    PlayerInfo myPlayerInfo;
     SightView mySight;
     public GameHandler gameHandler = new GameHandler();
     Timer timerForAllMoving = new Timer();
@@ -152,10 +151,17 @@ public class BluetoothOnlineGameBaseAreaActivity extends Activity {
     public class GameHandler extends Handler {
         public static final int ADD_TRAJECTORY = 1;
         public static final int REMOVE_TRAJECTORY = 2;
+        public static final int UPDATE_OTHER_PLAYER = 3;
 
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
+                case UPDATE_OTHER_PLAYER:
+                    PlayerInfo playerInfo = (PlayerInfo) (msg.obj);
+                    synchronized (playerInfos) {
+                        playerInfos.set(1, playerInfo);
+                    }
+                    break;
                 case ADD_TRAJECTORY:
                     Trajectory trajectory = (Trajectory) (msg.obj);
                     trajectory.addTime = new Date().getTime();
@@ -268,161 +274,177 @@ public class BluetoothOnlineGameBaseAreaActivity extends Activity {
             return;
         boolean isMyCharacterMoving = myCharacter.needMove;
         boolean needChange = false;
-        synchronized (myCharacter) {
+        synchronized (playerInfos) {
+            synchronized (myCharacter) {
 
-            myCharacter.hasUpdatedPosition = false;
-            virtualWindow.hasUpdatedWindowPosition = false;
-            //获得当前位置
-            myCharacter.updateNowPosition();
-            if (mySight != null) {
-                mySight.hasUpdatedPosition = false;
-                mySight.updateNowPosition();
-            }
-            if (myCharacter.isDead == true) {
-                myCharacter.deadReset();
-
-            } else if (myCharacter.judgeingAttack) {
-                myCharacter.keepDirectionAndJump(0, 0, mapBaseFrame.getWidth(), mapBaseFrame.getHeight());
-            } else {
-                if (controlMode == CONTROL_MODE_MASTER) {//CONTROL_MODE_MASTER这种操控方式已经过期，也许有用
-                    if (myCharacter.needMove == true) {
-                        myCharacter.masterModeOffsetLRTBParams();
-                    }
-                    if (mySight != null && mySight.needMove == true) {
-                        mySight.masterModeOffsetLRTBParams(isMyCharacterMoving);
-                    }
-                } else if (controlMode == CONTROL_MODE_NORMAL) {
-                    if (myCharacter.needMove == true) {
-                        if (myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
-                            myCharacter.normalModeOffsetLRTBParams();
-                        else if (myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF)
-                            myCharacter.normalModeOffsetWolfLRTBParams();
-                    }
-                    if (mySight != null && mySight.needMove == true) {
-                        mySight.normalModeOffsetLRTBParams();
-                    } else if (myCharacter.isLocking) {
-                        myCharacter.dealLocking();
-                    }
-
-
+                myCharacter.hasUpdatedPosition = false;
+                virtualWindow.hasUpdatedWindowPosition = false;
+                //获得当前位置
+                myCharacter.updateNowPosition();
+                if (mySight != null) {
+                    mySight.hasUpdatedPosition = false;
+                    mySight.updateNowPosition();
                 }
-            }
-            FrameLayout.LayoutParams mLayoutParams = (FrameLayout.LayoutParams) myCharacter.getLayoutParams();
-            mLayoutParams.leftMargin = myCharacter.nowLeft;
-            mLayoutParams.topMargin = myCharacter.nowTop;
-            myCharacter.setLayoutParams(mLayoutParams);
-            myCharacter.centerX = myCharacter.nowLeft + myCharacter.getWidth() / 2;
-            myCharacter.centerY = myCharacter.nowTop + myCharacter.getHeight() / 2;
-            if (controlMode == CONTROL_MODE_MASTER) {
-                mySight.mLayoutParams.leftMargin = mySight.nowLeft;
-                mySight.mLayoutParams.topMargin = mySight.nowTop;
-                mySight.centerX = mySight.nowLeft + mySight.getWidth() / 2;
-                mySight.centerY = mySight.nowTop + mySight.getHeight() / 2;
-            } else if (controlMode == CONTROL_MODE_NORMAL) {
-                mySight.mLayoutParams.leftMargin = myCharacter.centerX - mySight.getWidth() / 2;
-                mySight.mLayoutParams.topMargin = myCharacter.centerY - mySight.getHeight() / 2;
-                mySight.centerX = myCharacter.centerX;
-                mySight.centerY = myCharacter.centerY;
-            }
+                if (myCharacter.isDead == true) {
+                    myCharacter.deadReset();
 
-            mySight.setLayoutParams(mySight.mLayoutParams);
+                } else if (myCharacter.judgeingAttack) {
+                    myCharacter.keepDirectionAndJump(0, 0, mapBaseFrame.getWidth(), mapBaseFrame.getHeight());
+                } else {
+                    if (controlMode == CONTROL_MODE_MASTER) {//CONTROL_MODE_MASTER这种操控方式已经过期，也许有用
+                        if (myCharacter.needMove == true) {
+                            myCharacter.masterModeOffsetLRTBParams();
+                        }
+                        if (mySight != null && mySight.needMove == true) {
+                            mySight.masterModeOffsetLRTBParams(isMyCharacterMoving);
+                        }
+                    } else if (controlMode == CONTROL_MODE_NORMAL) {
+                        if (myCharacter.needMove == true) {
+                            if (myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
+                                myCharacter.normalModeOffsetLRTBParams();
+                            else if (myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF)
+                                myCharacter.normalModeOffsetWolfLRTBParams();
+                        }
+                        if (mySight != null && mySight.needMove == true) {
+                            mySight.normalModeOffsetLRTBParams();
+                        } else if (myCharacter.isLocking) {
+                            myCharacter.dealLocking();
+                        }
 
 
-            myCharacter.changeThisCharacterOnLandformses();
-            //master模式下nowFacingAngle由sight和Character共同决定；需要在这里调用changeRotate()；
-            //而normal模式下nowFacingAngle在sight的normalModeOffsetLRTBParams()下已经计算获得。
-            if (controlMode == CONTROL_MODE_MASTER) {
-                myCharacter.changeRotate();
-            }
-            myCharacter.attackRange.centerX = myCharacter.centerX;
-            myCharacter.attackRange.centerY = myCharacter.centerY;
-            myCharacter.attackRange.layoutParams.leftMargin = myCharacter.attackRange.centerX - myCharacter.nowAttackRadius;
-            myCharacter.attackRange.layoutParams.topMargin = myCharacter.attackRange.centerY - myCharacter.nowAttackRadius;
+                    }
+                }
+                FrameLayout.LayoutParams mLayoutParams = (FrameLayout.LayoutParams) myCharacter.getLayoutParams();
+                mLayoutParams.leftMargin = myCharacter.nowLeft;
+                mLayoutParams.topMargin = myCharacter.nowTop;
+                myCharacter.setLayoutParams(mLayoutParams);
+                myCharacter.centerX = myCharacter.nowLeft + myCharacter.getWidth() / 2;
+                myCharacter.centerY = myCharacter.nowTop + myCharacter.getHeight() / 2;
+                if (controlMode == CONTROL_MODE_MASTER) {
+                    mySight.mLayoutParams.leftMargin = mySight.nowLeft;
+                    mySight.mLayoutParams.topMargin = mySight.nowTop;
+                    mySight.centerX = mySight.nowLeft + mySight.getWidth() / 2;
+                    mySight.centerY = mySight.nowTop + mySight.getHeight() / 2;
+                } else if (controlMode == CONTROL_MODE_NORMAL) {
+                    mySight.mLayoutParams.leftMargin = myCharacter.centerX - mySight.getWidth() / 2;
+                    mySight.mLayoutParams.topMargin = myCharacter.centerY - mySight.getHeight() / 2;
+                    mySight.centerX = myCharacter.centerX;
+                    mySight.centerY = myCharacter.centerY;
+                }
 
-            myCharacter.attackRange.setLayoutParams(myCharacter.attackRange.layoutParams);
+                mySight.setLayoutParams(mySight.mLayoutParams);
 
-            myCharacter.viewRange.centerX = myCharacter.centerX;
-            myCharacter.viewRange.centerY = myCharacter.centerY;
 
-            FrameLayout.LayoutParams viewRangeLP = (FrameLayout.LayoutParams) myCharacter.viewRange.getLayoutParams();
-            viewRangeLP.leftMargin = myCharacter.viewRange.centerX - myCharacter.nowViewRadius;
-            viewRangeLP.topMargin = myCharacter.viewRange.centerY - myCharacter.nowViewRadius;
-            myCharacter.viewRange.setLayoutParams(viewRangeLP);
+                myCharacter.changeThisCharacterOnLandformses();
+                //master模式下nowFacingAngle由sight和Character共同决定；需要在这里调用changeRotate()；
+                //而normal模式下nowFacingAngle在sight的normalModeOffsetLRTBParams()下已经计算获得。
+                if (controlMode == CONTROL_MODE_MASTER) {
+                    myCharacter.changeRotate();
+                }
+                myCharacter.attackRange.centerX = myCharacter.centerX;
+                myCharacter.attackRange.centerY = myCharacter.centerY;
+                myCharacter.attackRange.layoutParams.leftMargin = myCharacter.attackRange.centerX - myCharacter.nowAttackRadius;
+                myCharacter.attackRange.layoutParams.topMargin = myCharacter.attackRange.centerY - myCharacter.nowAttackRadius;
 
-            if (myCharacter.promptView != null) {
-                myCharacter.promptView.centerX = myCharacter.centerX;
-                myCharacter.promptView.centerY = myCharacter.centerY;
-                myCharacter.promptView.layoutParams.leftMargin = myCharacter.promptView.centerX - myCharacter.promptView.viewSize / 2;
-                myCharacter.promptView.layoutParams.topMargin = myCharacter.promptView.centerY - myCharacter.promptView.viewSize / 2;
+                myCharacter.attackRange.setLayoutParams(myCharacter.attackRange.layoutParams);
 
-                myCharacter.promptView.setLayoutParams(myCharacter.promptView.layoutParams);
-            }
+                myCharacter.viewRange.centerX = myCharacter.centerX;
+                myCharacter.viewRange.centerY = myCharacter.centerY;
+
+                FrameLayout.LayoutParams viewRangeLP = (FrameLayout.LayoutParams) myCharacter.viewRange.getLayoutParams();
+                viewRangeLP.leftMargin = myCharacter.viewRange.centerX - myCharacter.nowViewRadius;
+                viewRangeLP.topMargin = myCharacter.viewRange.centerY - myCharacter.nowViewRadius;
+                myCharacter.viewRange.setLayoutParams(viewRangeLP);
+
+                if (myCharacter.promptView != null) {
+                    myCharacter.promptView.centerX = myCharacter.centerX;
+                    myCharacter.promptView.centerY = myCharacter.centerY;
+                    myCharacter.promptView.layoutParams.leftMargin = myCharacter.promptView.centerX - myCharacter.promptView.viewSize / 2;
+                    myCharacter.promptView.layoutParams.topMargin = myCharacter.promptView.centerY - myCharacter.promptView.viewSize / 2;
+
+                    myCharacter.promptView.setLayoutParams(myCharacter.promptView.layoutParams);
+                }
+
+
+                PlayerInfo myPlayerInfo = playerInfos.get(0);
+                myPlayerInfo.nowSpeed = myCharacter.nowSpeed;
+                myPlayerInfo.attackCount = myCharacter.attackCount;
+                myPlayerInfo.isDead = myCharacter.isDead;
+                myPlayerInfo.judgeingAttack = myCharacter.judgeingAttack;
+                myPlayerInfo.jumpToX = myCharacter.jumpToX;
+                myPlayerInfo.jumpToY = myCharacter.jumpToY;
+                myPlayerInfo.nowFacingAngle = myCharacter.nowFacingAngle;
+                myPlayerInfo.nowForceViewRadius = myCharacter.nowForceViewRadius;
+                myPlayerInfo.nowAttackRadius = myCharacter.nowAttackRadius;
+                myPlayerInfo.nowViewRadius = myCharacter.nowViewRadius;
+
 
 //            myCharacter.viewRange.invalidate();
 
-            mySight.virtualWindowPassiveFollow();
-            myCharacter.startMovingMediaThread();
+                mySight.virtualWindowPassiveFollow();
+                myCharacter.startMovingMediaThread();
 
 //            }
-        }
+            }
 
 
-        for (BaseCharacterView c : allCharacters) {
+            for (BaseCharacterView c : allCharacters) {
 
-            if (c == myCharacter)
-                continue;
-            synchronized (c) {
-                c.updateNowPosition();
-                if (c.isDead == true) {
-                    c.deadReset();
-                    c.invalidate();
+                if (c == myCharacter)
                     continue;
-                }
-                if (c.jumpToX > -99999 && c.jumpToY > -99999) {
-                    c.keepDirectionAndJump(0, 0, mapBaseFrame.getWidth(), mapBaseFrame.getHeight());
-                } else {
-                    if (c.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
-                        c.reactOtherPlayerHunterMove();
-                    else if (c.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF)
-                        c.reactOtherPlayerWolfMove();
-                }
+                PlayerInfo remotePlayerInfo = playerInfos.get(1);
+                synchronized (c) {
+                    c.updateNowPosition();
+                    if (c.isDead == true) {
+                        c.deadReset();
+                        c.invalidate();
+                        continue;
+                    }
+                    if (c.jumpToX > -99999 && c.jumpToY > -99999) {
+                        c.keepDirectionAndJump(0, 0, mapBaseFrame.getWidth(), mapBaseFrame.getHeight());
+                    } else {
+                        if (c.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
+                            c.reactOtherOnlinePlayerHunterMove(remotePlayerInfo);
+                        else if (c.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF)
+                            c.reactOtherOnlinePlayerWolfMove(remotePlayerInfo);
+                    }
 //                        if(c.getTeamID()==2){
 //                            Log.i("Player2 nowLeft",Integer.toString(c.nowLeft));
 //                        }
-                FrameLayout.LayoutParams mLayoutParams = (FrameLayout.LayoutParams) c.getLayoutParams();
-                mLayoutParams.leftMargin = c.nowLeft;
-                mLayoutParams.topMargin = c.nowTop;
-                c.centerX = c.nowLeft + c.getWidth() / 2;
-                c.centerY = c.nowTop + c.getHeight() / 2;
-                c.changeThisCharacterOnLandformses();
-                myCharacter.changeOtherCharacterState(c);
-                c.setLayoutParams(mLayoutParams);
+                    FrameLayout.LayoutParams mLayoutParams = (FrameLayout.LayoutParams) c.getLayoutParams();
+                    mLayoutParams.leftMargin = c.nowLeft;
+                    mLayoutParams.topMargin = c.nowTop;
+                    c.centerX = c.nowLeft + c.getWidth() / 2;
+                    c.centerY = c.nowTop + c.getHeight() / 2;
+                    c.changeThisCharacterOnLandformses();
+                    myCharacter.changeOtherCharacterState(c);
+                    c.setLayoutParams(mLayoutParams);
 
 
-                c.attackRange.centerX = c.centerX;
-                c.attackRange.centerY = c.centerY;
-                c.attackRange.layoutParams.leftMargin = c.attackRange.centerX - c.nowAttackRadius;
-                c.attackRange.layoutParams.topMargin = c.attackRange.centerY - c.nowAttackRadius;
-                c.attackRange.setLayoutParams(c.attackRange.layoutParams);
+                    c.attackRange.centerX = c.centerX;
+                    c.attackRange.centerY = c.centerY;
+                    c.attackRange.layoutParams.leftMargin = c.attackRange.centerX - c.nowAttackRadius;
+                    c.attackRange.layoutParams.topMargin = c.attackRange.centerY - c.nowAttackRadius;
+                    c.attackRange.setLayoutParams(c.attackRange.layoutParams);
 
-                c.viewRange.centerX = c.centerX;
-                c.viewRange.centerY = c.centerY;
-                FrameLayout.LayoutParams viewRangeLP = (FrameLayout.LayoutParams) c.viewRange.getLayoutParams();
-                viewRangeLP.leftMargin = c.viewRange.centerX - c.nowViewRadius;
-                viewRangeLP.topMargin = c.viewRange.centerY - c.nowViewRadius;
-                c.viewRange.setLayoutParams(viewRangeLP);
-                c.viewRange.invalidate();
-                c.hasUpdatedPosition = false;
-                int relateX = myCharacter.centerX - c.centerX;
-                int relateY = myCharacter.centerY - c.centerY;
-                double distance = Math.sqrt(relateX * relateX + relateY * relateY);
-                if (distance < myCharacter.nowHearRadius) {
-                    c.startMovingMediaThread();
+                    c.viewRange.centerX = c.centerX;
+                    c.viewRange.centerY = c.centerY;
+                    FrameLayout.LayoutParams viewRangeLP = (FrameLayout.LayoutParams) c.viewRange.getLayoutParams();
+                    viewRangeLP.leftMargin = c.viewRange.centerX - c.nowViewRadius;
+                    viewRangeLP.topMargin = c.viewRange.centerY - c.nowViewRadius;
+                    c.viewRange.setLayoutParams(viewRangeLP);
+                    c.viewRange.invalidate();
+                    c.hasUpdatedPosition = false;
+                    int relateX = myCharacter.centerX - c.centerX;
+                    int relateY = myCharacter.centerY - c.centerY;
+                    double distance = Math.sqrt(relateX * relateX + relateY * relateY);
+                    if (distance < myCharacter.nowHearRadius) {
+                        c.startMovingMediaThread();
+                    }
+
                 }
-
             }
         }
-
         virtualWindow.reflashWindowPosition();
         mapBaseFrame.invalidate();
 
@@ -510,10 +532,17 @@ public class BluetoothOnlineGameBaseAreaActivity extends Activity {
                         is = socket.getInputStream();
                         ObjectInputStream ois = new ObjectInputStream(is);
                         remotePlayerInfo = (PlayerInfo) ois.readObject();
-                        Log.e("DealServerDataThread", "personInfoTeamID:" + remotePlayerInfo.teamID);
-                        os = socket.getOutputStream();
-                        ObjectOutputStream oos = new ObjectOutputStream(os);
-                        oos.writeObject(myPlayerInfo);
+                        synchronized (playerInfos) {
+                            playerInfos.set(1, remotePlayerInfo);
+                            Log.e("DealServerDataThread", "personInfoTeamID:" + remotePlayerInfo.teamID);
+                            Message message = gameHandler.obtainMessage();
+                            message.what = GameHandler.UPDATE_OTHER_PLAYER;
+                            message.obj = remotePlayerInfo;
+                            gameHandler.sendMessage(message);
+                            os = socket.getOutputStream();
+                            ObjectOutputStream oos = new ObjectOutputStream(os);
+                            oos.writeObject(playerInfos.get(0));
+                        }
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -524,12 +553,6 @@ public class BluetoothOnlineGameBaseAreaActivity extends Activity {
             }
         }
 
-//        public void manageConnectedSocket(BluetoothSocket socket) {
-//            BluetoothSocket socket1 = socket;
-//            dealServerDataThread = new Thread(new DealServerDataThread(socket));
-//            dealServerDataThread.start();
-//
-//        }
 
     }
 
@@ -566,29 +589,21 @@ public class BluetoothOnlineGameBaseAreaActivity extends Activity {
                         InputStream is = null;
                         os = socket.getOutputStream();
                         ObjectOutputStream oos = new ObjectOutputStream(os);
+                        synchronized (playerInfos) {
+                            oos.writeObject(playerInfos.get(0));
+                            is = socket.getInputStream();
 
-                        oos.writeObject(myPlayerInfo);
-                        is = socket.getInputStream();
-
-                        ObjectInputStream ois = new ObjectInputStream(is);
-                        remotePlayerInfo = (PlayerInfo) ois.readObject();
-                        Log.e("ConnectThread", "teamId:" + remotePlayerInfo.teamID);
-
+                            ObjectInputStream ois = new ObjectInputStream(is);
+                            remotePlayerInfo = (PlayerInfo) ois.readObject();
+                            playerInfos.set(1,remotePlayerInfo);
+                            Message message = gameHandler.obtainMessage();
+                            message.what = GameHandler.UPDATE_OTHER_PLAYER;
+                            message.obj = remotePlayerInfo;
+                            gameHandler.sendMessage(message);
+                            Log.e("ConnectThread", "teamId:" + remotePlayerInfo.teamID);
+                        }
                     }
                 }
-//                byte[] buff = s.getBytes();
-//                os.write(buff);
-//                os.flush();
-//                os.close();
-//                is = socket.getInputStream();
-//                StringBuffer str = new StringBuffer();
-//                buff = new byte[1024];
-//
-//                while (is.read(buff) > 0) {
-//                    str.append(new String(buff, 0, buff.length));
-//                }
-//                Log.i("------client-------", str.toString());
-//                is.close();
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -598,7 +613,7 @@ public class BluetoothOnlineGameBaseAreaActivity extends Activity {
             }  catch (ClassNotFoundException e) {
                 e.printStackTrace();
             } finally {
-
+                connectThread.start();
             }
 
 
@@ -667,7 +682,7 @@ public class BluetoothOnlineGameBaseAreaActivity extends Activity {
 
         allCharacters = new ArrayList<BaseCharacterView>();
         //添加我的角色
-        myPlayerInfo = playerInfos.get(0);
+        PlayerInfo myPlayerInfo = playerInfos.get(0);
         if (myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
             myCharacter = new NormalHunter(this, virtualWindow);
         else {
@@ -677,17 +692,13 @@ public class BluetoothOnlineGameBaseAreaActivity extends Activity {
             myCharacter.promptView = promptView;
         }
         myCharacter.setTeamID(myPlayerInfo.teamID);
-
-        allCharacters.add(myCharacter);
         myCharacter.isMyCharacter = true;
         myCharacter.gameHandler = gameHandler;
-//        mapBaseFrame.addView(myCharacter);
+
+        allCharacters.add(myCharacter);
         mapBaseFrame.myCharacter = myCharacter;
 
 
-//        NormalHunter testCharacter = new NormalHunter(this, virtualWindow);
-//        testCharacter.setTeamID(2);
-//        allCharacters.add(testCharacter);
 
         //添加视点
         mySight = new SightView(this);
@@ -771,6 +782,21 @@ public class BluetoothOnlineGameBaseAreaActivity extends Activity {
         }
 
 
+
+        PlayerInfo remotePlayerInfo = playerInfos.get(1);
+        BaseCharacterView otherCharacter;
+        if (remotePlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
+            otherCharacter = new NormalHunter(this, virtualWindow);
+        else {
+            otherCharacter = new NormalWolf(this, virtualWindow);
+        }
+        otherCharacter.setTeamID(remotePlayerInfo.teamID);
+        otherCharacter.isMyCharacter = false;
+        otherCharacter.gameHandler = gameHandler;
+
+        allCharacters.add(otherCharacter);
+
+
         for (BaseCharacterView character : allCharacters) {
 //            int left = -1;
 //            int top = -1;
@@ -835,7 +861,6 @@ public class BluetoothOnlineGameBaseAreaActivity extends Activity {
         super.onCreate(savedInstanceState);
         playerInfos = (ArrayList<PlayerInfo>) getIntent().getExtras().get("playerInfos");
         if (playerInfos != null) {
-            myPlayerInfo = playerInfos.get(0);
             for(PlayerInfo pi:playerInfos){
                 if(pi.isServer==true)
                     serverMac=pi.mac;
@@ -915,7 +940,7 @@ public class BluetoothOnlineGameBaseAreaActivity extends Activity {
 
 
         bluetoothAdapter=BluetoothController.mBluetoothAdapter;
-        if (myPlayerInfo.isServer) {
+        if (playerInfos.get(0).isServer) {
             acceptThread = new AcceptThread();
             acceptThread.start();
         } else {

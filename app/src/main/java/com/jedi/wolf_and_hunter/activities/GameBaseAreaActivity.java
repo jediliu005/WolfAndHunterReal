@@ -272,7 +272,7 @@ public class GameBaseAreaActivity extends Activity {
             } else if (myCharacter.judgeingAttack) {
                 myCharacter.keepDirectionAndJump(0, 0, mapBaseFrame.getWidth(), mapBaseFrame.getHeight());
             } else {
-                if (controlMode == CONTROL_MODE_MASTER) {//CONTROL_MODE_MASTER这种操控方式已经过期，也许有用
+                if (controlMode == CONTROL_MODE_MASTER) {//CONTROL_MODE_MASTER这种操控方式已经过期，也许有用,留着玩儿
                     if (myCharacter.needMove == true) {
                         myCharacter.masterModeOffsetLRTBParams();
                     }
@@ -492,10 +492,10 @@ public class GameBaseAreaActivity extends Activity {
             myCharacter.promptView=promptView;
         }
         myCharacter.setTeamID(myPlayerInfo.teamID);
-
-        allCharacters.add(myCharacter);
         myCharacter.isMyCharacter = true;
         myCharacter.gameHandler = gameHandler;
+
+        allCharacters.add(myCharacter);
 //        mapBaseFrame.addView(myCharacter);
         mapBaseFrame.myCharacter = myCharacter;
 

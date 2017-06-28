@@ -22,6 +22,7 @@ import android.widget.FrameLayout;
 import com.jedi.wolf_and_hunter.R;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
 import com.jedi.wolf_and_hunter.myObj.MyVirtualWindow;
+import com.jedi.wolf_and_hunter.myObj.PlayerInfo;
 import com.jedi.wolf_and_hunter.myViews.AttackRange;
 import com.jedi.wolf_and_hunter.myViews.GameMap;
 import com.jedi.wolf_and_hunter.myViews.JRocker;
@@ -645,7 +646,116 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
     }
 
+    public void reactOtherOnlinePlayerHunterMove(PlayerInfo playerInfo) {
+        int targetCenterX=playerInfo.nowCenterX;
+        int targetCenterY=playerInfo.nowCenterY;
+        int nowOffX = targetCenterX-centerX;
+        int nowOffY = targetCenterY-centerY;
+        if(playerInfo.nowSpeed!=nowSpeed)
+            nowSpeed=playerInfo.nowSpeed;
+        if (nowOffX != 0 || nowOffY != 0) {
+            needMove = true;
+        } else {
+            needMove = false;
+        }
+
+
+        //根据设定速度修正位移量
+        double offDistance = Math.sqrt(nowOffX * nowOffX + nowOffY * nowOffY);
+        float nowMoveSpeed = nowSpeed;
+        if(offDistance<5*nowMoveSpeed) {
+            if(offDistance>2*nowMoveSpeed)
+                 nowMoveSpeed = 2 * nowSpeed;
+            if (offDistance > nowMoveSpeed) {
+                nowOffX = Math.round((float) (nowMoveSpeed * nowOffX / offDistance));
+                nowOffY = Math.round((float) (nowMoveSpeed * nowOffY / offDistance));
+            }
+        }
+
+
+
+        //保证不超出父View边界
+        try {
+            nowOffX = ViewUtils.reviseOffX(this, (View) this.getParent(), nowOffX);
+            nowOffY = ViewUtils.reviseOffY(this, (View) this.getParent(), nowOffY);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        nowLeft = nowLeft + nowOffX;
+        nowTop = nowTop + nowOffY;
+        nowRight = nowLeft + getWidth();
+        nowBottom = nowTop + getHeight();
+
+    }
+
     public void reactOtherPlayerWolfMove() {
+        int nowOffX = offX;
+        int nowOffY = offY;
+        if (nowOffX != 0 || nowOffY != 0) {
+            needMove = true;
+        } else {
+            needMove = false;
+        }
+        if (nowOffX == 0 && nowOffY == 0)
+            return;
+        float realRelateAngle = 0;
+        float targetFacingAngle = 0;
+        targetFacingAngle = MyMathsUtils.getAngleBetweenXAxus(nowOffX, nowOffY);
+        float relateAngle = targetFacingAngle - nowFacingAngle;
+        if (Math.abs(relateAngle) > 180) {//处理旋转最佳方向
+            if (relateAngle > 0)
+                relateAngle = relateAngle - 360;
+
+            else
+                relateAngle = 360 - relateAngle;
+        }
+        if (Math.abs(relateAngle) > nowAngleChangSpeed * 2)
+            realRelateAngle = Math.abs(relateAngle) / relateAngle * nowAngleChangSpeed * 2;
+        else
+            realRelateAngle = relateAngle;
+        nowFacingAngle = nowFacingAngle + realRelateAngle;
+        if (nowFacingAngle < 0)
+            nowFacingAngle = nowFacingAngle + 360;
+        else if (nowFacingAngle > 360)
+            nowFacingAngle = nowFacingAngle - 360;
+
+        if (isStay == false) {
+
+            double offDistance = Math.sqrt(nowOffX * nowOffX + nowOffY * nowOffY);
+            int nowMoveSpeed = nowSpeed;
+
+
+            if (Math.abs(relateAngle) > 45)
+                nowMoveSpeed = nowMoveSpeed / 10;
+            double cosNowFacingAngle = Math.cos(Math.toRadians(nowFacingAngle));
+            nowOffX = (int) Math.round(cosNowFacingAngle * offDistance);
+            nowOffY = (int) Math.round(Math.sqrt(offDistance * offDistance - nowOffX * nowOffX));
+            if (nowFacingAngle > 180)
+                nowOffY = -nowOffY;
+            //根据设定速度修正位移量
+            nowOffX = Math.round((float) (nowMoveSpeed * nowOffX / offDistance));
+            nowOffY = Math.round((float) (nowMoveSpeed * nowOffY / offDistance));
+
+            //保证不超出父View边界
+            try {
+                nowOffX = ViewUtils.reviseOffX(this, (View) this.getParent(), nowOffX);
+
+                nowOffY = ViewUtils.reviseOffY(this, (View) this.getParent(), nowOffY);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+//        }
+            nowLeft = nowLeft + nowOffX;
+            nowTop = nowTop + nowOffY;
+            nowRight = nowLeft + getWidth();
+            nowBottom = nowTop + getHeight();
+        }
+    }
+
+
+    public void reactOtherOnlinePlayerWolfMove(PlayerInfo playerInfo) {
         int nowOffX = offX;
         int nowOffY = offY;
         if (nowOffX != 0 || nowOffY != 0) {
