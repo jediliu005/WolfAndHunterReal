@@ -104,10 +104,12 @@ public class BluetoothOnlineActivity extends Activity {
                     Toast.makeText(getBaseContext(), "成功连上主机", Toast.LENGTH_SHORT).show();
                     break;
                 case GAME_START:
-                    Intent i = new Intent(BluetoothOnlineActivity.this, BluetoothOnlineGameBaseAreaActivity.class);
+                    Intent i = new Intent(BluetoothOnlineActivity.this, GameBaseAreaActivity.class);
                     Bundle bundle = new Bundle();
                     bundle.putSerializable("playerInfos", playerInfos);
+                    bundle.putString("playMode", "bluetooth");
                     i.putExtras(bundle);
+                    startGameButton.setVisibility(Button.INVISIBLE);
                     startActivity(i);
                     break;
                 case REFRESH_PLAYER_LIST_VIEW:
@@ -431,6 +433,7 @@ public class BluetoothOnlineActivity extends Activity {
                             dealServerDataThread = new DealServerDataThread(socket);
                             dealServerDataThread.start();
                             bluetoothServerSocket.close();
+                            break;
                         } else {
                             socket.close();
                         }
@@ -440,6 +443,7 @@ public class BluetoothOnlineActivity extends Activity {
 //                    manageConnectedSocket(socket);
                 }
             } catch (Exception e) {
+                e.printStackTrace();
                 Log.e("AcceptThread", "哎呀，当个服务器不容易啊，不知干嘛又挂了。。。。。。。。。。。");
             } finally {
                 acceptThread = null;
@@ -592,15 +596,12 @@ public class BluetoothOnlineActivity extends Activity {
 //                Log.i("------client-------", str.toString());
 //                is.close();
 
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
                 Log.e("AcceptThread", "他妈的，当个客户端不容易啊，服务器又不理我了。。。。。。。。。。。");
                 //无法连接，关闭socket并且退出
 
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                Log.e("AcceptThread", "他妈的，当个客户端不容易啊，服务器又不理我了。。。。。。。。。。。");
-            } finally {
+            }  finally {
 
             }
 
@@ -647,7 +648,6 @@ public class BluetoothOnlineActivity extends Activity {
 
 
     public void runAccept(View view) {
-
         if (acceptThread != null && acceptThread.getState() != Thread.State.TERMINATED) {
             return;
         }

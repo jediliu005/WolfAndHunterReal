@@ -62,7 +62,6 @@ public class BluetoothOnlineGameBaseAreaActivity extends Activity {
     public TextView t5;
     public TextView t6;
     public TextView gameResult;
-    public BaseAI testingAI;
     public static int mapWidth = 3000;
     public static int mapHeight = 3000;
     public  String serverMac;

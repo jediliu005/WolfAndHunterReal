@@ -1,6 +1,10 @@
 package com.jedi.wolf_and_hunter.activities;
 
 import android.app.Activity;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothServerSocket;
+import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -38,16 +42,23 @@ import com.jedi.wolf_and_hunter.myViews.characters.NormalWolf;
 import com.jedi.wolf_and_hunter.myViews.landform.Landform;
 import com.jedi.wolf_and_hunter.myViews.landform.TallGrassland;
 import com.jedi.wolf_and_hunter.R;
+import com.jedi.wolf_and_hunter.utils.BluetoothController;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 import com.jedi.wolf_and_hunter.utils.ViewUtils;
 
 import org.w3c.dom.Text;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.UUID;
 
 public class GameBaseAreaActivity extends Activity {
     public TextView t1;
@@ -57,12 +68,16 @@ public class GameBaseAreaActivity extends Activity {
     public TextView t5;
     public TextView t6;
     public TextView gameResult;
-    public BaseAI testingAI;
     public static int mapWidth = 3000;
     public static int mapHeight = 3000;
-
-
-
+public String playMode;
+    String serverMac;
+    BluetoothAdapter bluetoothAdapter;
+    BluetoothServerSocket bluetoothServerSocket;
+    BluetoothSocket bluetoothSocket;
+    BluetoothAcceptThread bluetoothAcceptThread;
+    BluetoothConnectThread bluetoothConnectThread;
+    BluetoothAcceptThread.DealBluetoothServerDataThread dealBluetoothServerDataThread;
     private final static int CONTROL_MODE_NORMAL = 0;
     private final static int CONTROL_MODE_MASTER = 1;
     int controlMode = CONTROL_MODE_NORMAL;
@@ -140,6 +155,7 @@ public class GameBaseAreaActivity extends Activity {
     public class GameHandler extends Handler {
         public static final int ADD_TRAJECTORY = 1;
         public static final int REMOVE_TRAJECTORY = 2;
+        public static final int UPDATE_OTHER_ONLINE_PLAYER = 3;
 
         @Override
         public void handleMessage(Message msg) {
@@ -248,7 +264,213 @@ public class GameBaseAreaActivity extends Activity {
 //        virtualWindow.movingLayout.setLayoutParams(movingLayoutParams);
 //
 //    }
+public class BluetoothAcceptThread extends Thread {
 
+
+    public BluetoothAcceptThread() {
+        try {
+            BluetoothServerSocket tmp = null;
+            tmp = bluetoothAdapter.listenUsingRfcommWithServiceRecord("BluetoothServer", UUID.fromString(BluetoothController.mUUID));
+            bluetoothServerSocket = tmp;
+        } catch (IOException e) {
+            e.printStackTrace();
+            Log.e("AcceptThread", e.getMessage());
+        }
+    }
+
+    @Override
+    public void run() {
+        super.run();
+
+        BluetoothController.cancelDiscovery();
+        //不断监听直到返回连接或者发生异常
+        try {
+
+            while (true) {
+                //据说处于查找状态会影响性能哦
+
+                //启连接请求，这是一个阻塞方法，必须放在子线程
+//                    if (bluetoothSocket != null) {
+//                        bluetoothServerSocket.close();//根据demo描述，close应该在accept成功后执行，不会影响已链接bluetoothSocket
+//                        bluetoothServerSocket = null;
+//                    }
+
+                bluetoothSocket = bluetoothServerSocket.accept();
+
+                if (bluetoothSocket != null) {
+                    if (dealBluetoothServerDataThread == null || dealBluetoothServerDataThread.getState() == State.TERMINATED) {
+                        dealBluetoothServerDataThread = new DealBluetoothServerDataThread(bluetoothSocket);
+                        dealBluetoothServerDataThread.start();
+                        bluetoothServerSocket.close();
+                    } else {
+                        bluetoothSocket.close();
+                    }
+                }
+
+
+//                    manageConnectedSocket(bluetoothSocket);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e("AcceptThread", "哎呀，当个服务器不容易啊，不知干嘛又挂了。。。。。。。。。。。");
+        } finally {
+
+        }
+    }
+
+    /**
+     * 取消正在监听的接口
+     */
+
+
+    class DealBluetoothServerDataThread extends Thread {
+        BluetoothSocket bluetoothSocket;
+
+        public DealBluetoothServerDataThread(BluetoothSocket bluetoothSocket) {
+            this.bluetoothSocket = bluetoothSocket;
+        }
+
+        @Override
+        public void run() {
+
+
+            InputStream is = null;
+            OutputStream os = null;
+            PlayerInfo remotePlayerInfo;
+            try {
+                while (true) {
+                    os = bluetoothSocket.getOutputStream();
+
+                    is = bluetoothSocket.getInputStream();
+                    ObjectInputStream ois = new ObjectInputStream(is);
+                    remotePlayerInfo = (PlayerInfo) ois.readObject();
+                    synchronized (playerInfos) {
+                        playerInfos.set(1, remotePlayerInfo);
+                        Log.e("DealServerDataThread", "personInfoTeamID:" + remotePlayerInfo.teamID);
+                        Message message = gameHandler.obtainMessage();
+                        message.what = GameHandler.UPDATE_OTHER_ONLINE_PLAYER;
+                        message.obj = remotePlayerInfo;
+                        gameHandler.sendMessage(message);
+                        os = bluetoothSocket.getOutputStream();
+                        ObjectOutputStream oos = new ObjectOutputStream(os);
+                        oos.writeObject(playerInfos.get(0));
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+//                    Log.e("DealServerDataThread", e.getMessage());
+            } finally {
+                bluetoothAcceptThread.start();
+            }
+        }
+    }
+
+
+}
+
+
+    class BluetoothConnectThread extends Thread {
+        private BluetoothDevice serverDevice;
+
+        public BluetoothConnectThread(BluetoothDevice serverDevice) {
+            this.serverDevice = serverDevice;
+
+            BluetoothSocket tmp = null;
+            try {
+                tmp = serverDevice.createRfcommSocketToServiceRecord(UUID.fromString(BluetoothController.mUUID)); //应该是这里导致Service discovery failed问题
+
+            } catch (IOException e) {
+                Log.d("BLUETOOTH_CLIENT", e.getMessage());
+            }
+            bluetoothSocket = tmp;
+        }
+
+        @Override
+        public void run() {
+            super.run();
+            //取消搜索因为搜索会让连接变慢
+            BluetoothController.cancelDiscovery();
+            try {
+//                    bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString(mUUID));
+                //通过BluetoothSocket连接设备，这是一个阻塞操作，知道连接成功或发生异常
+                if (bluetoothSocket != null) {
+                    bluetoothSocket.connect();
+                    PlayerInfo remotePlayerInfo;
+                    while (true) {
+                        OutputStream os = null;
+                        InputStream is = null;
+                        os = bluetoothSocket.getOutputStream();
+                        ObjectOutputStream oos = new ObjectOutputStream(os);
+                        synchronized (playerInfos) {
+                            oos.writeObject(playerInfos.get(0));
+                            is = bluetoothSocket.getInputStream();
+
+                            ObjectInputStream ois = new ObjectInputStream(is);
+                            remotePlayerInfo = (PlayerInfo) ois.readObject();
+                            playerInfos.set(1,remotePlayerInfo);
+                            Message message = gameHandler.obtainMessage();
+                            message.what = BluetoothOnlineGameBaseAreaActivity.GameHandler.UPDATE_OTHER_PLAYER;
+                            message.obj = remotePlayerInfo;
+                            gameHandler.sendMessage(message);
+                            Log.e("ConnectThread", "teamId:" + remotePlayerInfo.teamID);
+                        }
+                    }
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                Log.e("AcceptThread", "他妈的，当个客户端不容易啊，服务器又不理我了。。。。。。。。。。。");
+                //无法连接，关闭BluetoothSocket并且退出
+
+            }  catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            } finally {
+                bluetoothConnectThread.start();
+            }
+
+
+            //管理连接(在独立的线程)
+            // manageConnectedSocket(mmSocket);
+        }
+
+
+    }
+
+    /**
+     * 这方法重要性说你都不信，不重置这些TM的一大堆问题
+     */
+    public void initBluetoothConnection() {
+        try {
+            if (bluetoothServerSocket != null) {
+                bluetoothServerSocket.close();
+                bluetoothServerSocket = null;
+            }
+            if (bluetoothSocket != null) {
+                bluetoothSocket.close();
+                bluetoothSocket = null;
+            }
+
+            if (bluetoothAcceptThread != null && bluetoothAcceptThread.getState() != Thread.State.TERMINATED) {
+                bluetoothAcceptThread.interrupt();
+                bluetoothAcceptThread = null;
+            }
+            if (bluetoothConnectThread != null && bluetoothConnectThread.getState() != Thread.State.TERMINATED) {
+                bluetoothConnectThread.interrupt();
+                bluetoothConnectThread = null;
+            }
+            if (dealBluetoothServerDataThread != null && dealBluetoothServerDataThread.getState() != Thread.State.TERMINATED) {
+                dealBluetoothServerDataThread.interrupt();
+                dealBluetoothServerDataThread = null;
+            }
+
+
+        } catch (IOException e) {
+            Log.e("cancel", e.getMessage());
+        }
+    }
+    
+    
+    
 
     private synchronized void reflashCharacterState() {
 
@@ -440,9 +662,7 @@ public class GameBaseAreaActivity extends Activity {
             Timer timerForAI = new Timer("AIPlayer1", true);
             timerForAI.schedule(ai, 1000, 30);
             timerForAIList.add(timerForAI);
-            if (i == 2) {
-                testingAI = ai;
-            }
+
         }
 
 
@@ -590,8 +810,23 @@ public class GameBaseAreaActivity extends Activity {
             smellButton.setLayoutParams(sblp);
             baseFrame.addView(smellButton);
         }
-        startAI();
+        if(playMode.equals("single")) {
+            startAI();
+        }else if(playMode.equals("bluetooth")){
+            PlayerInfo remotePlayerInfo = playerInfos.get(1);
+            BaseCharacterView otherCharacter;
+            if (remotePlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
+                otherCharacter = new NormalHunter(this, virtualWindow);
+            else {
+                otherCharacter = new NormalWolf(this, virtualWindow);
+            }
+            otherCharacter.setTeamID(remotePlayerInfo.teamID);
+            otherCharacter.isMyCharacter = false;
+            otherCharacter.gameHandler = gameHandler;
 
+            allCharacters.add(otherCharacter);
+
+        }
         for (BaseCharacterView character : allCharacters) {
 //            int left = -1;
 //            int top = -1;
@@ -655,6 +890,7 @@ public class GameBaseAreaActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_game_base_area);
         playerInfos = (ArrayList<PlayerInfo>) getIntent().getExtras().get("playerInfos");
+        playMode=(String)getIntent().getExtras().get("playMode");
         allTrajectories = new ArrayList<Trajectory>();
         allCharacters = new ArrayList<BaseCharacterView>();
         isStop = false;
@@ -723,8 +959,23 @@ public class GameBaseAreaActivity extends Activity {
         baseFrame.addView(t5);
         baseFrame.addView(t6);
         baseFrame.addView(gameResult);
-
-
+        if(playMode.equals("bluetooth")) {
+            if (playerInfos != null) {
+                for(PlayerInfo pi:playerInfos){
+                    if(pi.isServer==true)
+                        serverMac=pi.mac;
+                }
+            }
+            bluetoothAdapter = BluetoothController.mBluetoothAdapter;
+            if (playerInfos.get(0).isServer) {
+                bluetoothAcceptThread = new BluetoothAcceptThread();
+                bluetoothAcceptThread.start();
+            } else {
+                BluetoothDevice serverDevice = bluetoothAdapter.getRemoteDevice(serverMac);
+                bluetoothConnectThread = new BluetoothConnectThread(serverDevice);
+                bluetoothConnectThread.start();
+            }
+        }
         virtualWindow = new MyVirtualWindow(this, mapBaseFrame);
         mapBaseFrame.post(new Runnable() {
             @Override

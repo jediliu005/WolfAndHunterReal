@@ -70,6 +70,7 @@ public class LoginActivity extends Activity {
         Intent i = new Intent(this, GameBaseAreaActivity.class);
         Bundle bundle=new Bundle();
         bundle.putSerializable("playerInfos", playerInfos);
+        bundle.putString("playMode", "single");
         i.putExtras(bundle);
         startActivity(i);
     }
