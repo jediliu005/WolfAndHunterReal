@@ -104,12 +104,20 @@ public class BluetoothOnlineActivity extends Activity {
                     Toast.makeText(getBaseContext(), "成功连上主机", Toast.LENGTH_SHORT).show();
                     break;
                 case GAME_START:
+
                     Intent i = new Intent(BluetoothOnlineActivity.this, GameBaseAreaActivity.class);
                     Bundle bundle = new Bundle();
                     bundle.putSerializable("playerInfos", playerInfos);
                     bundle.putString("playMode", "bluetooth");
                     i.putExtras(bundle);
                     startGameButton.setVisibility(Button.INVISIBLE);
+
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    initConnection();
                     startActivity(i);
                     break;
                 case REFRESH_PLAYER_LIST_VIEW:
@@ -443,10 +451,10 @@ public class BluetoothOnlineActivity extends Activity {
 //                    manageConnectedSocket(socket);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+               initConnection();
                 Log.e("AcceptThread", "哎呀，当个服务器不容易啊，不知干嘛又挂了。。。。。。。。。。。");
             } finally {
-                acceptThread = null;
+
 //                try {
 //                    if (socket != null)
 //                        socket.close();
@@ -505,9 +513,11 @@ public class BluetoothOnlineActivity extends Activity {
 //                        myHandler.sendEmptyMessage(MyHandler.ACCEPT_SUCCESS);
                     }
                 } catch (Exception e) {
+                    initConnection();
                     e.printStackTrace();
 //                    Log.e("DealServerDataThread", e.getMessage());
                 } finally {
+
 
                 }
             }
@@ -597,9 +607,8 @@ public class BluetoothOnlineActivity extends Activity {
 //                is.close();
 
             } catch (Exception e) {
-                e.printStackTrace();
-                Log.e("AcceptThread", "他妈的，当个客户端不容易啊，服务器又不理我了。。。。。。。。。。。");
-                //无法连接，关闭socket并且退出
+                Log.e("ConnectThread", "他妈的，当个客户端不容易啊，服务器又不理我了。。。。。。。。。。。");
+                initConnection();
 
             }  finally {
 
@@ -697,6 +706,7 @@ public class BluetoothOnlineActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bluetooth_online);
+        initConnection();
         startGameButton = (Button) findViewById(R.id.button_start_game);
         discoveredDevices = new HashSet<BluetoothDevice>();
         needToBondDeviceSet = new HashSet<BluetoothDevice>();

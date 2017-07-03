@@ -311,8 +311,8 @@ public class BluetoothAcceptThread extends Thread {
 //                    manageConnectedSocket(bluetoothSocket);
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            Log.e("AcceptThread", "哎呀，当个服务器不容易啊，不知干嘛又挂了。。。。。。。。。。。");
+            Log.e("BluetoothAcceptThread", "哎呀，当个服务器不容易啊，不知干嘛又挂了。。。。。。。。。。。");
+            finish();
         } finally {
 
         }
@@ -357,10 +357,13 @@ public class BluetoothAcceptThread extends Thread {
                     }
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                initBluetoothConnection();
+                finish();
 //                    Log.e("DealServerDataThread", e.getMessage());
             } finally {
-                bluetoothAcceptThread.start();
+//                bluetoothAcceptThread=new BluetoothAcceptThread();
+//                bluetoothAcceptThread.setDaemon(true);
+//                bluetoothAcceptThread.start();
             }
         }
     }
@@ -417,15 +420,16 @@ public class BluetoothAcceptThread extends Thread {
                     }
                 }
 
-            } catch (IOException e) {
-                e.printStackTrace();
-                Log.e("AcceptThread", "他妈的，当个客户端不容易啊，服务器又不理我了。。。。。。。。。。。");
+            } catch (Exception e) {
+                Log.e("BluetoothConnectThread", "他妈的，当个客户端不容易啊，服务器又不理我了。。。。。。。。。。。");
+                initBluetoothConnection();
+                finish();
                 //无法连接，关闭BluetoothSocket并且退出
 
-            }  catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            } finally {
-                bluetoothConnectThread.start();
+            }   finally {
+//                bluetoothConnectThread=new BluetoothConnectThread(serverDevice);
+//                bluetoothConnectThread.setDaemon(true);
+//                bluetoothConnectThread.start();
             }
 
 
@@ -441,14 +445,7 @@ public class BluetoothAcceptThread extends Thread {
      */
     public void initBluetoothConnection() {
         try {
-            if (bluetoothServerSocket != null) {
-                bluetoothServerSocket.close();
-                bluetoothServerSocket = null;
-            }
-            if (bluetoothSocket != null) {
-                bluetoothSocket.close();
-                bluetoothSocket = null;
-            }
+
 
             if (bluetoothAcceptThread != null && bluetoothAcceptThread.getState() != Thread.State.TERMINATED) {
                 bluetoothAcceptThread.interrupt();
@@ -462,7 +459,14 @@ public class BluetoothAcceptThread extends Thread {
                 dealBluetoothServerDataThread.interrupt();
                 dealBluetoothServerDataThread = null;
             }
-
+            if (bluetoothServerSocket != null) {
+                bluetoothServerSocket.close();
+                bluetoothServerSocket = null;
+            }
+            if (bluetoothSocket != null) {
+                bluetoothSocket.close();
+                bluetoothSocket = null;
+            }
 
         } catch (IOException e) {
             Log.e("cancel", e.getMessage());
@@ -889,6 +893,7 @@ public class BluetoothAcceptThread extends Thread {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_game_base_area);
+        initBluetoothConnection();
         playerInfos = (ArrayList<PlayerInfo>) getIntent().getExtras().get("playerInfos");
         playMode=(String)getIntent().getExtras().get("playMode");
         allTrajectories = new ArrayList<Trajectory>();
@@ -969,10 +974,12 @@ public class BluetoothAcceptThread extends Thread {
             bluetoothAdapter = BluetoothController.mBluetoothAdapter;
             if (playerInfos.get(0).isServer) {
                 bluetoothAcceptThread = new BluetoothAcceptThread();
+                bluetoothAcceptThread.setDaemon(true);
                 bluetoothAcceptThread.start();
             } else {
                 BluetoothDevice serverDevice = bluetoothAdapter.getRemoteDevice(serverMac);
                 bluetoothConnectThread = new BluetoothConnectThread(serverDevice);
+                bluetoothConnectThread.setDaemon(true);
                 bluetoothConnectThread.start();
             }
         }
@@ -1031,7 +1038,7 @@ public class BluetoothAcceptThread extends Thread {
 //   tim
     @Override
     protected void onDestroy() {
-
+        initBluetoothConnection();
         isStop = true;
         timerForTrajectory.cancel();
         backGround.release();
