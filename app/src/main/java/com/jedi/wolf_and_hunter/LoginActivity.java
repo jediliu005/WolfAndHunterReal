@@ -16,6 +16,7 @@ import com.jedi.wolf_and_hunter.activities.BlueToothTestActivity;
 import com.jedi.wolf_and_hunter.activities.BluetoothOnlineActivity;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
 import com.jedi.wolf_and_hunter.activities.MapBaseActivity;
+import com.jedi.wolf_and_hunter.activities.WifiOnlineActivity;
 import com.jedi.wolf_and_hunter.myObj.PlayerInfo;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 import com.jedi.wolf_and_hunter.utils.BluetoothController;
@@ -76,7 +77,7 @@ public class LoginActivity extends Activity {
     }
 
 
-    public void startBlueToothTest(View view) {
+    public void connectWithBluetooth(View view) {
         if(BluetoothController.getBluetoothStatus()==false) {
             BluetoothController.turnOnBluetooth(this, 0);
         }else {
@@ -84,7 +85,12 @@ public class LoginActivity extends Activity {
             startActivity(i);
         }
     }
+    public void connectWithWifi(View view) {
 
+            Intent i = new Intent(this, WifiOnlineActivity.class);
+            startActivity(i);
+
+    }
 
 
     public void onOffPlayer(View view) {

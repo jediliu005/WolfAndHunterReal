@@ -8,6 +8,7 @@ import java.util.List;
 
 
 import android.content.Context;
+import android.content.SyncStatusObserver;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
@@ -31,20 +32,26 @@ public class WifiHotspotController {
      *
      * @param wifiManager Wifi管理器
      * @param config      Wifi配置信息
-     * @param isOpen      true为开启Wifi热点，false为关闭
+     * @param isEnable      true为开启Wifi热点，false为关闭
      * @return 返回开启成功状态，true为成功，false为失败
      */
-    public static boolean createWifiAP(WifiManager wifiManager, WifiConfiguration config, boolean isOpen) {
+    public static boolean createWifiAP(WifiManager wifiManager, WifiConfiguration config, boolean isEnable) {
         // 开启热点前，如果Wifi可用，先关闭Wifi
         if (wifiManager.isWifiEnabled()) {
             wifiManager.setWifiEnabled(false);
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
         Log.i(TAG, "into startWifiAp（） 启动一个Wifi 热点！");
         boolean ret = false;
         try {
             Method method = wifiManager.getClass().getMethod("setWifiApEnabled",
-                    WifiConfiguration.class, boolean.class);
-            ret = (Boolean) method.invoke(wifiManager, config, isOpen);
+                    WifiConfiguration.class, Boolean.TYPE);
+
+            ret = (Boolean) method.invoke(wifiManager,config, isEnable);
         } catch (IllegalArgumentException e) {
             e.printStackTrace();
             Log.d(TAG, "stratWifiAp() IllegalArgumentException e");
@@ -75,7 +82,7 @@ public class WifiHotspotController {
      * @param wifiType    “wifi”为打开普通Wifi连接，“ap”为创建Wifi热点
      * @return
      */
-    public static WifiConfiguration createWifiInfo(WifiManager wifiManager,
+    public static WifiConfiguration createWifiConfiguration(WifiManager wifiManager,
                                                    String ssid, String password, int paramInt, String wifiType) {
         WifiConfiguration Config1 = new WifiConfiguration();
         Config1.allowedAuthAlgorithms.clear();
@@ -204,16 +211,16 @@ public class WifiHotspotController {
      * @param password    热点密码
      * @return
      */
+    @SuppressWarnings(value = "uncheck")
     public static boolean connectHotPointByNameAndPassword(WifiManager wifiManager,
                                                     String wifiName, String password) {
         Method getWifiConfig;
         WifiConfiguration myConfig;
         try {
             getWifiConfig = wifiManager.getClass().getMethod(
-                    "getWifiApConfiguration", null);
+                    "getWifiApConfiguration", new Class[0]);
 
-            myConfig = (WifiConfiguration) getWifiConfig.invoke(wifiManager,
-                    null);
+            myConfig = (WifiConfiguration) getWifiConfig.invoke(wifiManager, new Class[0]);
 
             myConfig.SSID = "\"" + wifiName + "\"";
             myConfig.preSharedKey = "\"" + password + "\"";
@@ -226,8 +233,8 @@ public class WifiHotspotController {
                     "setWifiApEnabled", WifiConfiguration.class, boolean.class);
             enableWifi.invoke(wifiManager, null, false);
             WifiConfiguration newConfiguration = (WifiConfiguration) wifiManager
-                    .getClass().getMethod("getWifiApConfiguration", null)
-                    .invoke(wifiManager, null);
+                    .getClass().getMethod("getWifiApConfiguration", new Class[]{})
+                    .invoke(wifiManager, new Class[]{});
             return (Boolean) enableWifi.invoke(wifiManager, newConfiguration,
                     true);
         } catch (NoSuchMethodException e) {
@@ -283,7 +290,7 @@ public class WifiHotspotController {
      * @param wifiManager Wifi管理器
      * @return 返回关闭状态
      */
-    public static boolean closeWifiHotPoint(WifiManager wifiManager) {
+    public static boolean closeConnection(WifiManager wifiManager) {
         Log.i(TAG, "into closeWifiAp（） 关闭一个Wifi 热点！");
         boolean ret = false;
         if (isWifiApEnabled(wifiManager)) {
@@ -419,8 +426,11 @@ public class WifiHotspotController {
      */
     private static WifiConfiguration isExsits(WifiManager wifiManager,
                                               String paramString) {
-        Iterator<WifiConfiguration> localIterator = wifiManager
-                .getConfiguredNetworks().iterator();
+        Log.e("","");
+        List<WifiConfiguration> configs=wifiManager.getConfiguredNetworks();
+        if(configs==null)
+            return null;
+        Iterator<WifiConfiguration> localIterator = configs.iterator();
         WifiConfiguration localWifiConfiguration;
         do {
             if (!localIterator.hasNext())

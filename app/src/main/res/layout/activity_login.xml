@@ -23,13 +23,13 @@
             android:text="进入地图测试"
             android:textStyle="bold" />
         <Button
-            android:id="@+id/start_blue_tooth_test_button"
+            android:id="@+id/start_connection_button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:layout_weight="1"
-            android:onClick="startBlueToothTest"
-            android:text="蓝牙测试"
+            android:onClick="connectWithWifi"
+            android:text="联    机"
             android:textStyle="bold" />
 
     </LinearLayout>
