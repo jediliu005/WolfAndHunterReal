@@ -1,19 +1,16 @@
 package com.jedi.wolf_and_hunter.utils;
 
+import android.content.Context;
+import android.net.wifi.ScanResult;
+import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiManager;
+import android.util.Log;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.List;
-
-
-import android.content.Context;
-import android.content.SyncStatusObserver;
-import android.net.wifi.ScanResult;
-import android.net.wifi.WifiConfiguration;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
-import android.util.Log;
 
 /**
  * Wifi热点工具类
@@ -40,12 +37,12 @@ public class WifiHotspotController {
         if (wifiManager.isWifiEnabled()) {
             wifiManager.setWifiEnabled(false);
             try {
-                Thread.sleep(3000);
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
-
+        // 马鹿的HTC自己搞了个mWifiApProfile字段存热点数据，TM还要手动适配才能指定热点名称和密码！！
         boolean isHtc = false;
         try {
             isHtc = WifiConfiguration.class
@@ -84,7 +81,7 @@ public class WifiHotspotController {
         return ret;
     }
 
-
+    //给HTC大爷做的setting适配
     public static void setHTCSSID(WifiConfiguration config) {
         try {
             Field mWifiApProfileField = WifiConfiguration.class
@@ -592,27 +589,32 @@ public class WifiHotspotController {
     /**
      * 打开Wifi
      **/
-    public static void OpenWifi() {
+    public static boolean  OpenWifi() {
         if (mWifiManager!=null&&mWifiManager.isWifiEnabled() == false) { //当前wifi不可用
             mWifiManager.setWifiEnabled(true);
         }
+        return false;
     }
 
     /**
      * 关闭Wifi
      **/
-    public static void closeWifi() {
+    public static boolean  closeWifi() {
         if (mWifiManager != null && mWifiManager.isWifiEnabled()) {
             mWifiManager.setWifiEnabled(false);
         }
+        return false;
     }
 
     /**
      * 端口指定id的wifi
      **/
-    public static void disconnectWifi(int paramInt) {
-        if (mWifiManager != null)
-            mWifiManager.disableNetwork(paramInt);
+    public static boolean disconnectWifi(int paramInt) {
+        if (mWifiManager != null){
+           return mWifiManager.disableNetwork(paramInt);
+
+        }
+        return false;
     }
 
     public static WifiManager getWifiManager(Context context) {
