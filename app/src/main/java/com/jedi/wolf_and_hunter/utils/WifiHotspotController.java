@@ -45,6 +45,18 @@ public class WifiHotspotController {
                 e.printStackTrace();
             }
         }
+
+        boolean isHtc = false;
+        try {
+            isHtc = WifiConfiguration.class
+                    .getDeclaredField("mWifiApProfile") != null;
+        } catch (java.lang.NoSuchFieldException e) {
+            isHtc = false;
+        }
+        if (isHtc) {
+            setHTCSSID(config);
+        }
+
         Log.i(TAG, "into startWifiAp（） 启动一个Wifi 热点！");
         boolean ret = false;
         try {
@@ -72,6 +84,43 @@ public class WifiHotspotController {
         return ret;
     }
 
+
+    public static void setHTCSSID(WifiConfiguration config) {
+        try {
+            Field mWifiApProfileField = WifiConfiguration.class
+                    .getDeclaredField("mWifiApProfile");
+            mWifiApProfileField.setAccessible(true);
+            Object hotSpotProfile = mWifiApProfileField.get(config);
+            mWifiApProfileField.setAccessible(false);
+
+
+            if (hotSpotProfile != null) {
+                Field ssidField = hotSpotProfile.getClass().getDeclaredField(
+                        "SSID");
+                ssidField.setAccessible(true);
+                ssidField.set(hotSpotProfile, config.SSID);
+                ssidField.setAccessible(false);
+
+
+                Field localField3 = hotSpotProfile.getClass().getDeclaredField(
+                        "key");
+                localField3.setAccessible(true);
+                localField3.set(hotSpotProfile, config.preSharedKey);
+                localField3.setAccessible(false);
+
+
+                Field localField6 = hotSpotProfile.getClass().getDeclaredField(
+                        "dhcpEnable");
+                localField6.setAccessible(true);
+                localField6.setInt(hotSpotProfile, 1);
+                localField6.setAccessible(false);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
     /**
      * 配置Wifi或者热点信息
      *
@@ -84,96 +133,93 @@ public class WifiHotspotController {
      */
     public static WifiConfiguration createWifiConfiguration(WifiManager wifiManager,
                                                    String ssid, String password, int paramInt, String wifiType) {
-        WifiConfiguration Config1 = new WifiConfiguration();
-        Config1.allowedAuthAlgorithms.clear();
-        Config1.allowedGroupCiphers.clear();
-        Config1.allowedKeyManagement.clear();
-        Config1.allowedPairwiseCiphers.clear();
-        Config1.allowedProtocols.clear();
+        WifiConfiguration newConfig = new WifiConfiguration();
+        newConfig.allowedAuthAlgorithms.clear();
+        newConfig.allowedGroupCiphers.clear();
+        newConfig.allowedKeyManagement.clear();
+        newConfig.allowedPairwiseCiphers.clear();
+        newConfig.allowedProtocols.clear();
+
         if ("wifi".equals(wifiType)) {
-            Config1.SSID = ("\"" + ssid + "\"");
-            WifiConfiguration Config2 = isExsits(wifiManager, ssid);
-            if (Config2 != null) {
+            newConfig.SSID = ("\"" + ssid + "\"");
+            WifiConfiguration nowConfig = isExsits(wifiManager, ssid);
+            if (nowConfig != null) {
                 if (wifiManager != null) {
-                    wifiManager.removeNetwork(Config2.networkId);
+                    wifiManager.removeNetwork(nowConfig.networkId);
                 }
             }
             if (paramInt == 1) {
-                Config1.wepKeys[0] = "";
-                Config1.allowedKeyManagement.set(0);
-                Config1.wepTxKeyIndex = 0;
-                return Config1;
+                newConfig.wepKeys[0] = "";
+                newConfig.allowedKeyManagement.set(0);
+                newConfig.wepTxKeyIndex = 0;
+                return newConfig;
             } else if (paramInt == 2) {
-                Config1.hiddenSSID = true;
-                Config1.wepKeys[0] = ("\"" + password + "\"");
-                return Config1;
+                newConfig.hiddenSSID = false;
+                newConfig.wepKeys[0] = ("\"" + password + "\"");
+                return newConfig;
             } else {
-                Config1.preSharedKey = ("\"" + password + "\"");
-                Config1.hiddenSSID = true;
-                Config1.allowedAuthAlgorithms.set(0);
-                Config1.allowedGroupCiphers.set(2);
-                Config1.allowedKeyManagement.set(1);
-                Config1.allowedPairwiseCiphers.set(1);
-                Config1.allowedGroupCiphers.set(3);
-                Config1.allowedPairwiseCiphers.set(2);
-                return Config1;
+                newConfig.preSharedKey = ( "\"" + password + "\"");
+                newConfig.hiddenSSID = false;
+
+                newConfig.allowedAuthAlgorithms.set(0);
+                newConfig.allowedGroupCiphers.set(2);
+                newConfig.allowedKeyManagement.set(1);
+                newConfig.allowedPairwiseCiphers.set(1);
+                newConfig.allowedGroupCiphers.set(3);
+                newConfig.allowedPairwiseCiphers.set(2);
+                return newConfig;
             }
         } else {
-            WifiConfiguration wifiApConfig = new WifiConfiguration();
-            wifiApConfig.allowedAuthAlgorithms.clear();
-            wifiApConfig.allowedGroupCiphers.clear();
-            wifiApConfig.allowedKeyManagement.clear();
-            wifiApConfig.allowedPairwiseCiphers.clear();
-            wifiApConfig.allowedProtocols.clear();
 
-            wifiApConfig.SSID = ssid;
+            newConfig.SSID = ssid;
+
 
             if (paramInt == 1) // WIFICIPHER_NOPASS 不加密
             {
-                wifiApConfig.wepKeys[0] = "";
-                wifiApConfig.allowedKeyManagement
+                newConfig.wepKeys[0] = "";
+                newConfig.allowedKeyManagement
                         .set(WifiConfiguration.KeyMgmt.NONE);
-                wifiApConfig.wepTxKeyIndex = 0;
-                return wifiApConfig;
+                newConfig.wepTxKeyIndex = 0;
+                return newConfig;
             }
             if (paramInt == 2) // WIFICIPHER_WEP WEP加密
             {
-                wifiApConfig.hiddenSSID = true;
-                wifiApConfig.wepKeys[0] = password;
-                wifiApConfig.allowedAuthAlgorithms
+                newConfig.hiddenSSID = false;
+                newConfig.wepKeys[0] = password;
+                newConfig.allowedAuthAlgorithms
                         .set(WifiConfiguration.AuthAlgorithm.SHARED);
-                wifiApConfig.allowedGroupCiphers
+                newConfig.allowedGroupCiphers
                         .set(WifiConfiguration.GroupCipher.CCMP);
-                wifiApConfig.allowedGroupCiphers
+                newConfig.allowedGroupCiphers
                         .set(WifiConfiguration.GroupCipher.TKIP);
-                wifiApConfig.allowedGroupCiphers
+                newConfig.allowedGroupCiphers
                         .set(WifiConfiguration.GroupCipher.WEP40);
-                wifiApConfig.allowedGroupCiphers
+                newConfig.allowedGroupCiphers
                         .set(WifiConfiguration.GroupCipher.WEP104);
-                wifiApConfig.allowedKeyManagement
+                newConfig.allowedKeyManagement
                         .set(WifiConfiguration.KeyMgmt.NONE);
-                wifiApConfig.wepTxKeyIndex = 0;
-                return wifiApConfig;
+                newConfig.wepTxKeyIndex = 0;
+                return newConfig;
             }
             if (paramInt == 3) // WIFICIPHER_WPA wpa加密
             {
-                wifiApConfig.preSharedKey = password;
-                wifiApConfig.hiddenSSID = true;
-                wifiApConfig.allowedAuthAlgorithms
+                newConfig.preSharedKey = password;
+                newConfig.hiddenSSID = false;
+                newConfig.allowedAuthAlgorithms
                         .set(WifiConfiguration.AuthAlgorithm.OPEN);
-                wifiApConfig.allowedGroupCiphers
+                newConfig.allowedGroupCiphers
                         .set(WifiConfiguration.GroupCipher.TKIP);
-                wifiApConfig.allowedKeyManagement
+                newConfig.allowedKeyManagement
                         .set(WifiConfiguration.KeyMgmt.WPA_PSK);
-                wifiApConfig.allowedPairwiseCiphers
+                newConfig.allowedPairwiseCiphers
                         .set(WifiConfiguration.PairwiseCipher.TKIP);
                 // config.allowedProtocols.set(WifiConfiguration.Protocol.WPA);
-                wifiApConfig.allowedGroupCiphers
+                newConfig.allowedGroupCiphers
                         .set(WifiConfiguration.GroupCipher.CCMP);
-                wifiApConfig.allowedPairwiseCiphers
+                newConfig.allowedPairwiseCiphers
                         .set(WifiConfiguration.PairwiseCipher.CCMP);
-                wifiApConfig.status = WifiConfiguration.Status.ENABLED;
-                return wifiApConfig;
+                newConfig.status = WifiConfiguration.Status.ENABLED;
+                return newConfig;
             }
         }
         return null;
@@ -220,7 +266,7 @@ public class WifiHotspotController {
             getWifiConfig = wifiManager.getClass().getMethod(
                     "getWifiApConfiguration", new Class[0]);
 
-            myConfig = (WifiConfiguration) getWifiConfig.invoke(wifiManager, new Class[0]);
+            myConfig = (WifiConfiguration) getWifiConfig.invoke(wifiManager, new Object[]{});
 
             myConfig.SSID = "\"" + wifiName + "\"";
             myConfig.preSharedKey = "\"" + password + "\"";
@@ -234,7 +280,7 @@ public class WifiHotspotController {
             enableWifi.invoke(wifiManager, null, false);
             WifiConfiguration newConfiguration = (WifiConfiguration) wifiManager
                     .getClass().getMethod("getWifiApConfiguration", new Class[]{})
-                    .invoke(wifiManager, new Class[]{});
+                    .invoke(wifiManager, new Object[]{});
             return (Boolean) enableWifi.invoke(wifiManager, newConfiguration,
                     true);
         } catch (NoSuchMethodException e) {
@@ -477,7 +523,7 @@ public class WifiHotspotController {
                 newWifiConfiguration.allowedKeyManagement.set(0);
                 newWifiConfiguration.wepTxKeyIndex = 0;
             } else if(paramInt == 2) { //简单密码
-                newWifiConfiguration.hiddenSSID = true;
+                newWifiConfiguration.hiddenSSID = false;
                 newWifiConfiguration.wepKeys[0] = ("\"" + password + "\"");
                 newWifiConfiguration.allowedAuthAlgorithms.set(WifiConfiguration.AuthAlgorithm.SHARED);
                 newWifiConfiguration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
@@ -487,7 +533,7 @@ public class WifiHotspotController {
                 newWifiConfiguration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
             } else { //wap加密
                 newWifiConfiguration.preSharedKey = ("\"" + password + "\"");
-                newWifiConfiguration.hiddenSSID = true;
+                newWifiConfiguration.hiddenSSID = false;
                 newWifiConfiguration.allowedAuthAlgorithms.set(WifiConfiguration.AuthAlgorithm.OPEN);
                 newWifiConfiguration.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.TKIP);
                 newWifiConfiguration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
@@ -514,13 +560,13 @@ public class WifiHotspotController {
             newWifiConfiguration.wepTxKeyIndex = 0;
             if (paramInt == 1) {  //没有密码
                 newWifiConfiguration.wepKeys[0] = "";
-                newWifiConfiguration.allowedKeyManagement.set(0);
+                newWifiConfiguration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
                 newWifiConfiguration.wepTxKeyIndex = 0;
             } else if (paramInt == 2) { //简单密码
-                newWifiConfiguration.hiddenSSID = true;//网络上不广播ssid
+                newWifiConfiguration.hiddenSSID = false;//网络上不广播ssid
                 newWifiConfiguration.wepKeys[0] = password;
             } else if (paramInt == 3) {//wap加密
-                newWifiConfiguration.hiddenSSID = true;
+                newWifiConfiguration.hiddenSSID = false;
                 newWifiConfiguration.preSharedKey = password;
                 newWifiConfiguration.allowedAuthAlgorithms
                         .set(WifiConfiguration.AuthAlgorithm.OPEN);
@@ -540,6 +586,8 @@ public class WifiHotspotController {
         }
         return newWifiConfiguration;
     }
+
+
 
     /**
      * 打开Wifi
