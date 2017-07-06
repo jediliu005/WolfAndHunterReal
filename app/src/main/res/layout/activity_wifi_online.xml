@@ -58,11 +58,11 @@
     </ListView>
 
     <Button
-        android:id="@+id/button_start_game"
+        android:id="@+id/button_start_wifi_game"
         android:layout_weight="2"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:onClick="testWifi"
+        android:onClick="startWifiGame"
         android:text="进入游戏"
         />
 </LinearLayout>

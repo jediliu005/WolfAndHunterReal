@@ -7,16 +7,20 @@ import java.util.ArrayList;
  */
 
 public class ThreadBoxes {
+    public static boolean isServerRunning=false;
+    public static boolean isClientRunning=false;
     public static Thread serverConnectThread;
     public static Thread clientConnectThread;
     public static ArrayList<Thread> serverDealDataThreads=new ArrayList<Thread>();
 
     public static void clear(){
-        if(serverConnectThread!=null) {
+        isClientRunning=false;
+        isServerRunning=false;
+        if(serverConnectThread!=null&&serverConnectThread.getState()!= Thread.State.TERMINATED) {
             serverConnectThread.interrupt();
             serverConnectThread=null;
         }
-        if(clientConnectThread!=null) {
+        if(clientConnectThread!=null&&clientConnectThread.getState()!= Thread.State.TERMINATED) {
             clientConnectThread.interrupt();
             clientConnectThread=null;
         }
