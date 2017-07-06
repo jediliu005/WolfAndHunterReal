@@ -38,6 +38,10 @@ import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class WifiOnlineActivity extends Activity {
     public int count = 0;
@@ -138,6 +142,7 @@ public class WifiOnlineActivity extends Activity {
         initWifiParams();
         myRole = CONNECT_ROLE_NONE;
         WifiHotspotController.closeConnection(wifiManager);
+        ThreadBoxes.clear();
     }
 
     public void connectHotSpot(View view) {
@@ -172,10 +177,10 @@ public class WifiOnlineActivity extends Activity {
             int what = msg.what;
             switch (what) {
                 case ACCEPT_SUCCESS:
-                    Toast.makeText(getBaseContext(), "成功接收第" + count + "份客户端数据", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getBaseContext(), "成功接收第" + ++count + "份客户端数据", Toast.LENGTH_SHORT).show();
                     break;
                 case CONNECT_SUCCESS:
-                    Toast.makeText(getBaseContext(), "成功接收第" + count + "份服务器端数据", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getBaseContext(), "成功接收第" + ++count + "份服务器端数据", Toast.LENGTH_SHORT).show();
                     break;
 
 
@@ -192,7 +197,7 @@ public class WifiOnlineActivity extends Activity {
             //不断监听直到返回连接或者发生异常
             ServerSocket serverSocket = null;
             try {
-                serverSocket = new ServerSocket(1357);
+                serverSocket = new ServerSocket(8086);
                 while (true) {
                     Socket socket = serverSocket.accept();
 
@@ -284,10 +289,17 @@ public class WifiOnlineActivity extends Activity {
             Socket socket = null;
             try {
                 DhcpInfo dhcpInfo = wifiManager.getDhcpInfo();
-                int serverIP = dhcpInfo.serverAddress;
-                byte[] ipAddress = BigInteger.valueOf(serverIP).toByteArray();
-                InetAddress ia = InetAddress.getByAddress(ipAddress);
-                socket = new Socket(ia, 1357);
+                int serverIP = dhcpInfo.gateway;
+                //需要翻转数组，别问我为什么不用Formater那个方法，因为过期了
+                byte[] ipAddressArray = BigInteger.valueOf(serverIP).toByteArray();
+                int length=ipAddressArray.length;
+                byte[] reverseIpAddressArray=new byte[length];
+                for(int i=0;i<length;i++){
+                    reverseIpAddressArray[length-1-i]=ipAddressArray[i];
+                }
+                InetAddress ia =  InetAddress.getByAddress(reverseIpAddressArray);
+
+                socket = new Socket(ia, 8086);
 //                    bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString(mUUID));
                 //通过socket连接设备，这是一个阻塞操作，知道连接成功或发生异常
 
@@ -335,7 +347,9 @@ public class WifiOnlineActivity extends Activity {
         if (myRole == CONNECT_ROLE_NONE) {
             Toast.makeText(getBaseContext(), "请先开启热点或连接热点", Toast.LENGTH_SHORT).show();
         } else if (myRole == CONNECT_ROLE_SERVER) {
-            if (ThreadBoxes.serverConnectThread == null && ThreadBoxes.serverConnectThread.getState() == Thread.State.TERMINATED) {
+
+            if (ThreadBoxes.serverConnectThread == null || ThreadBoxes.serverConnectThread.getState() == Thread.State.TERMINATED) {
+                ThreadBoxes.clear();
                 AcceptThread acceptThread = new AcceptThread();
                 acceptThread.start();
                 ThreadBoxes.serverConnectThread = acceptThread;
@@ -344,7 +358,9 @@ public class WifiOnlineActivity extends Activity {
             }
 
         } else if (myRole == CONNECT_ROLE_CLIENT) {
-            if (ThreadBoxes.clientConnectThread == null && ThreadBoxes.clientConnectThread.getState() == Thread.State.TERMINATED) {
+            ThreadBoxes.clear();
+            if (ThreadBoxes.clientConnectThread == null || ThreadBoxes.clientConnectThread.getState() == Thread.State.TERMINATED) {
+                ThreadBoxes.clear();
                 ConnectThread connectThread = new ConnectThread();
                 connectThread.start();
                 ThreadBoxes.clientConnectThread = connectThread;
