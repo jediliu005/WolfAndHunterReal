@@ -3,7 +3,9 @@ package com.jedi.wolf_and_hunter.utils;
 import android.content.Context;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import java.lang.reflect.Field;
@@ -629,5 +631,14 @@ public class WifiHotspotController {
         //获取系统Wifi服务   WIFI_SERVICE
         mWifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
 
+    }
+
+    public static String getCleanSSID(@NonNull WifiManager wifiManager){
+        WifiInfo wifiInfo =wifiManager.getConnectionInfo();
+        String ssid=wifiInfo.getSSID();
+        if(ssid.startsWith("\"")&&ssid.endsWith("\"")){
+            ssid=ssid.substring(1,ssid.length()-1);
+        }
+        return ssid;
     }
 }

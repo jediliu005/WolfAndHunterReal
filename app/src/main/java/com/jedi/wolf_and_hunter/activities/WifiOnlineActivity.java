@@ -5,7 +5,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.net.DhcpInfo;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.net.wifi.WifiConfiguration;
@@ -19,34 +18,36 @@ import android.provider.Settings;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.jedi.wolf_and_hunter.R;
-import com.jedi.wolf_and_hunter.myObj.PlayerInfo;
-import com.jedi.wolf_and_hunter.myObj.ThreadBoxes;
-import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
+import com.jedi.wolf_and_hunter.myObj.ClientScanResult;
+import com.jedi.wolf_and_hunter.myObj.ConnectThreadBox;
 import com.jedi.wolf_and_hunter.utils.WifiHotspotController;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.math.BigInteger;
 import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import static com.jedi.wolf_and_hunter.myObj.ConnectThreadBox.CONNECT_ROLE_CLIENT;
+import static com.jedi.wolf_and_hunter.myObj.ConnectThreadBox.CONNECT_ROLE_SERVER;
+import static com.jedi.wolf_and_hunter.myObj.ConnectThreadBox.nowRole;
 
 public class WifiOnlineActivity extends Activity {
     public int count = 0;
-    static final int CONNECT_ROLE_NONE = 0;
-    static final int CONNECT_ROLE_SERVER = 1;
-    static final int CONNECT_ROLE_CLIENT = 2;
+
     WifiManager wifiManager;
     MyWifiHandler myWifiHandler = null;
-    int myRole = 0;
     String hotSpotSSID = "wifiTest";
     WifiReceiver receiver;
+    Button startGameButton;
+    Timer timerForScanClients;
+    ArrayList<ClientScanResult> clients;
     public class WifiReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -62,14 +63,17 @@ public class WifiOnlineActivity extends Activity {
                 if (info.getState().equals(NetworkInfo.State.DISCONNECTED)) {
 //                    Toast.makeText(WifiOnlineActivity.this, "已断开现有网络", Toast.LENGTH_SHORT).show();
                 } else if (info.getState().equals(NetworkInfo.State.CONNECTED)) {
+                    String ssid = WifiHotspotController.getCleanSSID(wifiManager);
 
-                    boolean result=wifiManager.getConnectionInfo().getSSID().equals("\""+hotSpotSSID+"\"");
+                    boolean result = ssid.equals(hotSpotSSID);
                     if (result) {
-                        Toast.makeText(WifiOnlineActivity.this, "热点链接成功", Toast.LENGTH_SHORT).show();
-                        myRole = CONNECT_ROLE_CLIENT;
+                        Toast.makeText(WifiOnlineActivity.this, "已经链接到指定热点", Toast.LENGTH_SHORT).show();
+                        ConnectThreadBox.nowRole = CONNECT_ROLE_CLIENT;
+                        startGameButton.setEnabled(true);
                     } else {
-                        Toast.makeText(WifiOnlineActivity.this, "热点链接失败", Toast.LENGTH_SHORT).show();
-                        myRole = CONNECT_ROLE_NONE;
+                        Toast.makeText(WifiOnlineActivity.this, "未链接到指定热点", Toast.LENGTH_SHORT).show();
+                        ConnectThreadBox.nowRole = ConnectThreadBox.CONNECT_ROLE_NONE;
+                        startGameButton.setEnabled(false);
                     }
                     //获取当前wifi名称
 //                    Toast.makeText(WifiOnlineActivity.this, "连接到网络 " + wifiInfo.getSSID(), Toast.LENGTH_SHORT).show();
@@ -80,8 +84,10 @@ public class WifiOnlineActivity extends Activity {
                 int wifistate = intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_DISABLED);
 
                 if (wifistate == WifiManager.WIFI_STATE_DISABLED) {
+                    startGameButton.setEnabled(false);
 //                    Toast.makeText(WifiOnlineActivity.this, "wifi已处于关闭状态", Toast.LENGTH_SHORT).show();
                 } else if (wifistate == WifiManager.WIFI_STATE_ENABLED) {
+
 //                    Toast.makeText(WifiOnlineActivity.this, "wifi已经开启", Toast.LENGTH_SHORT).show();
                 }
             }
@@ -97,6 +103,7 @@ public class WifiOnlineActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_wifi_online);
+        startGameButton = (Button) findViewById(R.id.button_start_wifi_game);
         initWifiParams();
         myWifiHandler = new MyWifiHandler();
         IntentFilter filter = new IntentFilter(WifiManager.NETWORK_STATE_CHANGED_ACTION);
@@ -121,10 +128,14 @@ public class WifiOnlineActivity extends Activity {
         boolean result = WifiHotspotController.createWifiAP(wifiManager, wifiConfiguration, true);
         if (result) {
             Toast.makeText(WifiOnlineActivity.this, "热点创建成功", Toast.LENGTH_SHORT).show();
-            myRole = CONNECT_ROLE_SERVER;
+            ConnectThreadBox.nowRole = ConnectThreadBox.CONNECT_ROLE_SERVER;
+            timerForScanClients=new Timer("timerForScanClients");
+            timerForScanClients.schedule(new CheckConnectedResultTask(),0 ,2000);
         } else {
             Toast.makeText(WifiOnlineActivity.this, "热点创建失败:", Toast.LENGTH_SHORT).show();
-            myRole = CONNECT_ROLE_NONE;
+            ConnectThreadBox.nowRole = ConnectThreadBox.CONNECT_ROLE_NONE;
+            if(timerForScanClients!=null)
+                timerForScanClients.cancel();
         }
     }
 
@@ -141,9 +152,16 @@ public class WifiOnlineActivity extends Activity {
 
     public void closeConnection(View view) {
         initWifiParams();
-        myRole = CONNECT_ROLE_NONE;
-        WifiHotspotController.closeConnection(wifiManager);
-        ThreadBoxes.clear();
+        startGameButton.setEnabled(false);
+        ConnectThreadBox.nowRole = ConnectThreadBox.CONNECT_ROLE_NONE;
+        WifiInfo wifiInfo=wifiManager.getConnectionInfo();
+        if(wifiInfo!=null){
+            int id=wifiManager.getConnectionInfo().getNetworkId();
+            WifiHotspotController.disconnectWifi(id);
+        }
+
+        ConnectThreadBox.clear();
+        Toast.makeText(this, "已经断开所有链接", Toast.LENGTH_SHORT).show();
     }
 
     public void connectHotSpot(View view) {
@@ -152,12 +170,25 @@ public class WifiOnlineActivity extends Activity {
         WifiConfiguration wifiConfiguration = WifiHotspotController.createWifiConfiguration(wifiManager, hotSpotSSID, "987654321", 3, "wifi");
         boolean result = WifiHotspotController.connectHotspot(wifiManager, wifiConfiguration);
 
-        if(result==false)
+        if (result == false)
             Toast.makeText(getBaseContext(), "热点链接失败", Toast.LENGTH_SHORT).show();
 
     }
 
-    class MyWifiHandler extends Handler {
+    class CheckConnectedResultTask extends TimerTask{
+
+
+        @Override
+        public void run() {
+            if(ConnectThreadBox.nowRole==CONNECT_ROLE_SERVER) {
+                clients = getConnectedClientScanResult();
+                myWifiHandler.sendEmptyMessage(MyWifiHandler.UPDATE_CLIENT_RESULT);
+
+            }
+        }
+    }
+
+    public class MyWifiHandler extends Handler {
         /**
          * Subclasses must implement this to receive messages.
          *
@@ -169,10 +200,11 @@ public class WifiOnlineActivity extends Activity {
         public static final int ONE_ACCEPT_FAIL = -11;
         public static final int CONNECT_SUCCESS = 2;
         public static final int CONNECT_FAIL = -2;
-        public static final int START_CONNECTING=22;
+        public static final int START_CONNECTING = 22;
         public static final int GAME_START = 666;
         public static final int REFRESH_PLAYER_LIST_VIEW = 7777;
         public static final int CONNECT_WRONG_HOTSPOT = -222;
+        public static final int UPDATE_CLIENT_RESULT = 3;
 
         @Override
         public void handleMessage(Message msg) {
@@ -202,201 +234,37 @@ public class WifiOnlineActivity extends Activity {
                 case START_CONNECTING:
                     Toast.makeText(getBaseContext(), "客户端开始发送数据", Toast.LENGTH_SHORT).show();
                     break;
-
-
-            }
-        }
-    }
-
-    public class AcceptThread extends Thread {
-
-
-        @Override
-        public void run() {
-            super.run();
-            ThreadBoxes.isServerRunning=true;
-            //不断监听直到返回连接或者发生异常
-            ServerSocket serverSocket = null;
-            try {
-                serverSocket = new ServerSocket(8086);
-                while (ThreadBoxes.isServerRunning) {
-                    Socket socket = serverSocket.accept();
-
-                    if (socket != null) {
-                        ServerDealDataThread sddt = new ServerDealDataThread(socket);
-                        sddt.start();
-                        ThreadBoxes.serverDealDataThreads.add(sddt);
+                case UPDATE_CLIENT_RESULT:
+                    if(clients!=null&&clients.size()>0){
+                        startGameButton.setText("开始游戏("+clients.size()+")");
+                        startGameButton.setEnabled(true);
+                    }else{
+                        startGameButton.setText("开始游戏");
+                        startGameButton.setEnabled(false);
                     }
-
-
-//                    manageConnectedSocket(socket);
-                }
-            } catch (Exception e) {
-                myRole=CONNECT_ROLE_NONE;
-                Log.e("AcceptThread", "哎呀，当个服务器不容易啊，不知干嘛又挂了。。。。。。。。。。。");
-                myWifiHandler.sendEmptyMessage(MyWifiHandler.ACCEPT_FAIL);
-            } finally {
-
-                try {
-                    if (serverSocket != null)
-                        serverSocket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                    break;
 
             }
         }
-
-        /**
-         * 取消正在监听的接口
-         */
-
-
-        class ServerDealDataThread extends Thread {
-            Socket socket;
-
-            public ServerDealDataThread(Socket socket) {
-                this.socket = socket;
-            }
-
-            @Override
-            public void run() {
-
-
-                InputStream is = null;
-                OutputStream os = null;
-
-                try {
-                    while (ThreadBoxes.isServerRunning) {
-                        os = socket.getOutputStream();
-                        is = socket.getInputStream();
-                        ObjectInputStream ois = new ObjectInputStream(is);
-                        PlayerInfo pi = (PlayerInfo) ois.readObject();
-                        if (pi != null)
-                            myWifiHandler.sendEmptyMessage(MyWifiHandler.ACCEPT_SUCCESS);
-                        ObjectOutputStream oos = new ObjectOutputStream(os);
-                        PlayerInfo myPlayerInfo = new PlayerInfo(true, 1, BaseCharacterView.CHARACTER_TYPE_HUNTER, 1, "", true);
-                        oos.writeObject(myPlayerInfo);
-                        oos.flush();
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    myWifiHandler.sendEmptyMessage(MyWifiHandler.ONE_ACCEPT_FAIL);
-//                    Log.e("ServerDealDataThread", e.getMessage());
-                } finally {
-
-                }
-            }
-        }
-
-//        public void manageConnectedSocket(BluetoothSocket socket) {
-//            BluetoothSocket socket1 = socket;
-//            dealServerDataThread = new Thread(new ServerDealDataThread(socket));
-//            dealServerDataThread.start();
-//
-//        }
-
-    }
-
-
-    class ConnectThread extends Thread {
-
-
-        @Override
-        public void run() {
-            ThreadBoxes.isClientRunning=true;
-            super.run();
-            //取消搜索因为搜索会让连接变慢
-            OutputStream os = null;
-            InputStream is = null;
-            Socket socket = null;
-            try {
-                DhcpInfo dhcpInfo = wifiManager.getDhcpInfo();
-                WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-                //必须加引号，别问我为什么，api要求
-                if (wifiInfo == null || wifiInfo.getSSID().equals("\""+hotSpotSSID+"\"") == false) {
-                    myWifiHandler.sendEmptyMessage(MyWifiHandler.CONNECT_WRONG_HOTSPOT);
-                    myRole = CONNECT_ROLE_NONE;
-                    return;
-                }
-                int serverIP = dhcpInfo.gateway;
-                //需要翻转数组，别问我为什么不用Formater那个方法，因为过期了
-                byte[] ipAddressArray = BigInteger.valueOf(serverIP).toByteArray();
-                int length = ipAddressArray.length;
-                byte[] reverseIpAddressArray = new byte[length];
-                for (int i = 0; i < length; i++) {
-                    reverseIpAddressArray[length - 1 - i] = ipAddressArray[i];
-                }
-                InetAddress ia = InetAddress.getByAddress(reverseIpAddressArray);
-
-                socket = new Socket(ia, 8086);
-//                    bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString(mUUID));
-                //通过socket连接设备，这是一个阻塞操作，知道连接成功或发生异常
-
-
-                os = socket.getOutputStream();
-                is = socket.getInputStream();
-                while (ThreadBoxes.isClientRunning) {
-                    ObjectOutputStream oos = new ObjectOutputStream(os);
-                    PlayerInfo myPlayerInfo = new PlayerInfo(true, 1, BaseCharacterView.CHARACTER_TYPE_HUNTER, 1, "", false);
-                    oos.writeObject(myPlayerInfo);
-                    oos.flush();
-                    ObjectInputStream ois = new ObjectInputStream(is);
-                    PlayerInfo serverPlayerInfo = (PlayerInfo) ois.readObject();
-                    if (serverPlayerInfo != null)
-                        myWifiHandler.sendEmptyMessage(MyWifiHandler.CONNECT_SUCCESS);
-                }
-
-            } catch (Exception e) {
-                Log.e("ConnectThread", "他妈的，当个客户端不容易啊，服务器又不理我了。。。。。。。。。。。");
-                myWifiHandler.sendEmptyMessage(MyWifiHandler.CONNECT_FAIL);
-
-            } finally {
-                try {
-                    if (is != null)
-                        is.close();
-                    if (os != null)
-                        os.close();
-                    if (socket != null && socket.isClosed() == false)
-                        socket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-            }
-
-
-            //管理连接(在独立的线程)
-            // manageConnectedSocket(mmSocket);
-        }
-
-
     }
 
 
     public void startWifiGame(View view) {
-        if (myRole == CONNECT_ROLE_NONE) {
+        if (ConnectThreadBox.nowRole == ConnectThreadBox.CONNECT_ROLE_NONE) {
             Toast.makeText(getBaseContext(), "请先开启热点或连接热点", Toast.LENGTH_SHORT).show();
-        } else if (myRole == CONNECT_ROLE_SERVER) {
+        } else if (ConnectThreadBox.nowRole == ConnectThreadBox.CONNECT_ROLE_SERVER) {
 
-            if (ThreadBoxes.serverConnectThread == null || ThreadBoxes.serverConnectThread.getState() == Thread.State.TERMINATED) {
-                ThreadBoxes.clear();
-                AcceptThread acceptThread = new AcceptThread();
-                acceptThread.start();
-                ThreadBoxes.serverConnectThread = acceptThread;
-                Toast.makeText(getBaseContext(), "服务器开始接收数据", Toast.LENGTH_SHORT).show();
+            if (ConnectThreadBox.serverConnectThread == null || ConnectThreadBox.serverConnectThread.getState() == Thread.State.TERMINATED) {
+                ConnectThreadBox.clear();
+                ConnectThreadBox.startWifiAcceptThread(this, myWifiHandler, wifiManager);
             } else {
                 Toast.makeText(getBaseContext(), "服务器线程已经启动，无需重复开启", Toast.LENGTH_SHORT).show();
             }
 
-        } else if (myRole == CONNECT_ROLE_CLIENT) {
-            ThreadBoxes.clear();
-            if (ThreadBoxes.clientConnectThread == null || ThreadBoxes.clientConnectThread.getState() == Thread.State.TERMINATED) {
-                ThreadBoxes.clear();
-                ConnectThread connectThread = new ConnectThread();
-                connectThread.start();
-                ThreadBoxes.clientConnectThread = connectThread;
-
+        } else if (ConnectThreadBox.nowRole == CONNECT_ROLE_CLIENT) {
+            if (ConnectThreadBox.clientConnectThread == null || ConnectThreadBox.clientConnectThread.getState() == Thread.State.TERMINATED) {
+                ConnectThreadBox.clear();
+                ConnectThreadBox.startWifiConnectThread(this, myWifiHandler, wifiManager);
             } else {
                 Toast.makeText(getBaseContext(), "客户端线程已经启动，无需重复开启", Toast.LENGTH_SHORT).show();
             }
@@ -404,6 +272,45 @@ public class WifiOnlineActivity extends Activity {
         } else {
             Toast.makeText(getBaseContext(), "请先开启热点或连接热点", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    public ArrayList<ClientScanResult> getConnectedClientScanResult() {
+        BufferedReader br = null;
+        ArrayList<ClientScanResult> result = null;
+
+        try {
+            result = new ArrayList<>();
+            br = new BufferedReader(new FileReader("/proc/net/arp"));//读取这个文件
+            String ss = br.toString();
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] splitted = line.split(" +");//将文件里面的字段分割开来
+                if (splitted.length >= 4) {
+                    // Basic sanity check
+                    String mac = splitted[3];// 文件中分别是IP address  HW type Flags HW address mask Device
+//然后我们拿取HW address  也就是手机的mac地址进行匹配  如果有 就证明是手机
+                    if (mac.matches("..:..:..:..:..:..")) {
+                        boolean isReachable = InetAddress.getByName(splitted[0]).isReachable(1000);
+
+                        if (isReachable) {
+                            result.add(new ClientScanResult(splitted[0], splitted[3], splitted[5], isReachable));//最后如果能匹配 那就证明是连接了热点的手机  加到这个集合里 里面有所有需要的信息
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.e("server", e.getMessage());
+        } finally {
+            try {
+                if (br != null) {
+                    br.close();
+                }
+            } catch (IOException e) {
+                Log.e("server", e.getMessage());
+            }
+            return result;
+        }
+
     }
 
     @Override
@@ -422,8 +329,10 @@ public class WifiOnlineActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if(timerForScanClients!=null)
+            timerForScanClients.cancel();
         unregisterReceiver(receiver);
-        ThreadBoxes.clear();
+        ConnectThreadBox.clear();
         WifiHotspotController.closeConnection(wifiManager);
     }
 
