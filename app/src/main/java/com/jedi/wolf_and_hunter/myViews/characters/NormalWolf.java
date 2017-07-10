@@ -35,10 +35,12 @@ public class NormalWolf extends BaseCharacterView {
     public final static int defaultHearRadius = 600;
     public  final static int defaultForceViewRadius=300;
     public  final static int defaultSmellRadius=2000;
-    public  final static int defaultSmellSpeed=30;
+    public  final static int defaultSmellSpeed=50;
     public final static int defaultWalkWaitTime = 500;
     public final static int defaultRunWaitTime = 200;
     public final static int defaultSpeed = 15;
+    public final static int defaultHealthPoint = 2;
+    public final static int defaultKnockAwayStrength = 100;
     boolean isStop = false;
     Thread attackThread;
     //下面一行控制bitmap是否自适应分辨率，不强制设flase可能出现图片分辨率和draw分辨率不一致
@@ -96,6 +98,9 @@ public class NormalWolf extends BaseCharacterView {
         nowSmellRadius=defaultSmellRadius;
         nowSmellSpeed=defaultSmellSpeed;
         moveMediaPlayer = MediaPlayer.create(getContext(), R.raw.wolf_move);
+        nowHealthPoint=defaultHealthPoint;
+        nowKnockAwayStrength = defaultKnockAwayStrength;
+
         if (this.virtualWindow == null)
             this.virtualWindow = GameBaseAreaActivity.virtualWindow;
         reloadAttackCount();
@@ -189,7 +194,7 @@ public class NormalWolf extends BaseCharacterView {
                 for (BaseCharacterView targetCharacter : GameBaseAreaActivity.allCharacters) {
 
 
-                    if (attackCharacter == targetCharacter || targetCharacter.getTeamID() == attackCharacter.getTeamID())
+                    if (attackCharacter == targetCharacter ||targetCharacter.isDead==true|| targetCharacter.getTeamID() == attackCharacter.getTeamID())
                         continue;
 
                     double distance = MyMathsUtils.getDistance(new Point(centerX, centerY), new Point(targetCharacter.centerX, targetCharacter.centerY));

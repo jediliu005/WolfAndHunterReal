@@ -59,6 +59,9 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public int offY;
     public int jumpToX = -99999;
     public int jumpToY = -99999;
+    public int knockedAwayX = -99999;
+    public int knockedAwayY = -99999;
+    public Thread knockedAwayThread;
     public volatile boolean needMove = false;
     public int nowAngleChangSpeed = 1;
 
@@ -85,6 +88,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public static final int reloadAttackSleepTime = 100;
     public volatile int nowReloadingAttackCount = 0;
     public volatile int nowReloadAttackSpeed;
+    public int nowHealthPoint;
     public int killCount;
     public int dieCount;
     public final int defaultHiddenLevel = HIDDEN_LEVEL_NO_HIDDEN;
@@ -93,6 +97,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public volatile int nowHearRadius = 500;
     public volatile int nowForceViewRadius = 200;
     public volatile int nowSmellRadius = 2000;
+    public volatile  int nowKnockAwayStrength = 100;
     public long lastSmellTime;
     public int nowWalkWaitTime = 600;
     public int nowRunWaitTime = 300;
@@ -105,6 +110,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public int id;
     public MyVirtualWindow virtualWindow;
     public volatile boolean isDead = false;
+    public volatile boolean isKnockedAway = false;
     public long deadTime;
     public volatile boolean isForceToBeSawByMe = false;//注意！这属性只针对本机玩家视觉，对AI判行为无效
     public volatile boolean judgeingAttack = false;
@@ -537,7 +543,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         int nowOffY = offY;
         float realRelateAngle = 0;
         float targetFacingAngle = 0;
-        isSmelling=false;
+        isSmelling = false;
         if (nowOffX == 0 && nowOffY == 0)
             return;
         targetFacingAngle = MyMathsUtils.getAngleBetweenXAxus(nowOffX, nowOffY);
@@ -647,12 +653,12 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     }
 
     public void reactOtherOnlinePlayerHunterMove(PlayerInfo playerInfo) {
-        int targetCenterX=playerInfo.nowCenterX;
-        int targetCenterY=playerInfo.nowCenterY;
-        int nowOffX = targetCenterX-centerX;
-        int nowOffY = targetCenterY-centerY;
-        if(playerInfo.nowSpeed!=nowSpeed)
-            nowSpeed=playerInfo.nowSpeed;
+        int targetCenterX = playerInfo.nowCenterX;
+        int targetCenterY = playerInfo.nowCenterY;
+        int nowOffX = targetCenterX - centerX;
+        int nowOffY = targetCenterY - centerY;
+        if (playerInfo.nowSpeed != nowSpeed)
+            nowSpeed = playerInfo.nowSpeed;
         if (nowOffX != 0 || nowOffY != 0) {
             needMove = true;
         } else {
@@ -663,15 +669,14 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         //根据设定速度修正位移量
         double offDistance = Math.sqrt(nowOffX * nowOffX + nowOffY * nowOffY);
         float nowMoveSpeed = nowSpeed;
-        if(offDistance<5*nowMoveSpeed) {
-            if(offDistance>2*nowMoveSpeed)
-                 nowMoveSpeed = 2 * nowSpeed;
+        if (offDistance < 5 * nowMoveSpeed) {
+            if (offDistance > 2 * nowMoveSpeed)
+                nowMoveSpeed = 2 * nowSpeed;
             if (offDistance > nowMoveSpeed) {
                 nowOffX = Math.round((float) (nowMoveSpeed * nowOffX / offDistance));
                 nowOffY = Math.round((float) (nowMoveSpeed * nowOffY / offDistance));
             }
         }
-
 
 
         //保证不超出父View边界
@@ -1121,7 +1126,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
     public void deadReset() {
 
-
+        enemiesPositionSet.clear();
         long nowTime = new Date().getTime();
         if (nowTime - deadTime > 2000) {
 
@@ -1198,9 +1203,181 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 //
 //    }
 
+    public class KnockedAwayThread implements Runnable {
+
+        Point knockedAwayToPoint;
+
+        public KnockedAwayThread( Point knockedAwayToPoint) {
+            this.knockedAwayToPoint = knockedAwayToPoint;
+        }
+
+        @Override
+        public void run() {
+            isKnockedAway = true;
+            while (GameBaseAreaActivity.isStop == false && isKnockedAway) {
+
+                int nowCenterX = (getLeft() + getRight()) / 2;
+                int nowCenterY = (getTop() + getBottom()) / 2;
+                int nowKnockedAwayToPointOffX = knockedAwayToPoint.x - nowCenterX;
+                int nowKnockedAwayToPointOffY = knockedAwayToPoint.y - nowCenterY;
+                double nowJumpToPointDistance = Math.sqrt(nowKnockedAwayToPointOffX * nowKnockedAwayToPointOffX + nowKnockedAwayToPointOffY * nowKnockedAwayToPointOffY);
+                int jumpSpeed = 6 * nowSpeed;
+                boolean attackSuccess = false;
+                int realOffX = 0;
+                int realOffY = 0;
+                if (nowJumpToPointDistance > jumpSpeed) {
+                    realOffX = (int) (jumpSpeed * nowKnockedAwayToPointOffX / nowJumpToPointDistance);
+                    realOffY = (int) (jumpSpeed * nowKnockedAwayToPointOffY / nowJumpToPointDistance);
+                } else {
+                    realOffX = nowKnockedAwayToPointOffX;
+                    realOffY = nowKnockedAwayToPointOffY;
+                    isKnockedAway = false;
+                }
+
+
+                knockedAwayX = nowCenterX + realOffX;
+                knockedAwayY = nowCenterY + realOffY;
+
+
+                try {
+                    Thread.sleep(30);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            isKnockedAway = false;
+            knockedAwayThread = null;
+        }
+    }
+
+
+    public void knockedAway(int limitLeft, int limitTop, int limitRight, int limitBottom) {
+        judgeingAttack = false;
+        if (knockedAwayX == -99999 || knockedAwayY == -99999)
+            return;
+        centerX = (nowLeft + nowRight) / 2;
+        centerY = (nowTop + nowBottom) / 2;
+
+
+        //注意添加Character本身宽度修正
+        int realLimitLeft = limitLeft + getWidth() / 2;
+        int realLimitTop = limitTop + getHeight() / 2;
+        int realLimitRight = limitRight - getWidth() / 2;
+        int realLimitBottom = limitBottom - getHeight() / 2;
+
+
+        int realRelateLimitLeft = realLimitLeft - centerX;
+        int realRelateLimitTop = realLimitTop - centerY;
+        int realRelateLimitRight = realLimitRight - centerX;
+        int realRelateLimitBottom = realLimitBottom - centerY;
+
+        int resultRelateX = 0;
+        int resultRelateY = 0;
+
+        if (knockedAwayX > realLimitLeft && knockedAwayX < realLimitRight && knockedAwayY > realLimitTop && knockedAwayY < realLimitBottom) {
+            nowLeft = knockedAwayX - characterBodySize / 2;
+            nowTop = knockedAwayY - characterBodySize / 2;
+        } else {
+            isKnockedAway = false;
+
+            int relateX = knockedAwayX - centerX;
+            int relateY = knockedAwayY - centerY;
+
+            if (relateX == 0) {
+                if (relateY > 0)
+                    resultRelateY = realRelateLimitBottom;
+                else {
+                    resultRelateY = realRelateLimitTop;
+                }
+            } else if (relateY == 0) {
+                if (relateX > 0)
+                    resultRelateX = realRelateLimitRight;
+                else {
+                    resultRelateX = realRelateLimitLeft;
+                }
+            } else {
+
+                double tanAlpha = 0;
+                try {
+
+                    tanAlpha = (double) relateY / relateX;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                if (tanAlpha > 0) {
+                    if (relateX > 0) {
+                        //BR
+                        resultRelateY = (int) (tanAlpha * realRelateLimitRight);
+
+                        if (resultRelateY > realRelateLimitBottom) {
+                            resultRelateY = realRelateLimitBottom;
+                            resultRelateX = (int) (realRelateLimitBottom / tanAlpha);
+                        } else {
+                            resultRelateX = realRelateLimitRight;
+                        }
+
+                    } else if (relateX < 0) {
+                        //TL
+                        resultRelateY = (int) (tanAlpha * realRelateLimitLeft);
+
+                        if (resultRelateY < realRelateLimitTop) {
+                            resultRelateY = realRelateLimitTop;
+                            resultRelateX = (int) (realRelateLimitTop / tanAlpha);
+                        } else {
+                            resultRelateX = realRelateLimitLeft;
+                        }
+                    }
+
+                } else if (tanAlpha < 0) {
+                    if (relateX > 0) {
+                        //TR
+                        resultRelateY = (int) (tanAlpha * realRelateLimitRight);
+
+                        if (resultRelateY < realRelateLimitTop) {
+                            resultRelateY = realRelateLimitTop;
+                            resultRelateX = (int) (realRelateLimitTop / tanAlpha);
+                        } else {
+                            resultRelateX = realRelateLimitRight;
+                        }
+                    } else if (relateX < 0) {
+                        //BL
+                        resultRelateY = (int) (tanAlpha * realRelateLimitLeft);
+
+                        if (resultRelateY > realRelateLimitBottom) {
+                            resultRelateY = realRelateLimitBottom;
+                            resultRelateX = (int) (realRelateLimitBottom / tanAlpha);
+                        } else {
+                            resultRelateX = realRelateLimitLeft;
+                        }
+                    }
+
+                }
+//            else {
+//                Log.i("", "");
+//            }
+//            if (resultRelateX == 0 || resultRelateY == 0) {
+//                Log.i("", "");
+//            }
+            }
+            int newCenterX = centerX + resultRelateX;
+            int newCenterY = centerY + resultRelateY;
+//        mLayoutParams.leftMargin=bindingCharacter.centerX+resultRelateX-this.getWidth()/2;
+//        mLayoutParams.topMargin=bindingCharacter.centerY+resultRelateY-this.getHeight()/2;
+
+            nowLeft = newCenterX - getWidth() / 2;
+            nowTop = newCenterY - getHeight() / 2;
+
+        }
+        nowRight = nowLeft + getWidth();
+        nowBottom = nowTop + getHeight();
+        if (isKnockedAway == false) {
+            knockedAwayX = -99999;
+            knockedAwayY = -99999;
+        }
+    }
 
     public void keepDirectionAndJump(int limitLeft, int limitTop, int limitRight, int limitBottom) {
-        if (jumpToX == -99999 && jumpToY == -99999)
+        if (jumpToX == -99999 || jumpToY == -99999)
             return;
         centerX = (nowLeft + nowRight) / 2;
         centerY = (nowTop + nowBottom) / 2;
@@ -1466,15 +1643,15 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 //            }
         }
         nowSmellCount = 0;
-        smellThread = new smellThread(this);
+        smellThread = new SmellThread(this);
         smellThread.setDaemon(true);
         smellThread.start();
     }
 
-    class smellThread extends Thread {
+    class SmellThread extends Thread {
         BaseCharacterView bindingCharacter;
 
-        smellThread(BaseCharacterView bindingCharacter) {
+        SmellThread(BaseCharacterView bindingCharacter) {
             this.bindingCharacter = bindingCharacter;
         }
 
@@ -1488,7 +1665,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                     if (nowSmellCount > smellTotalCount)
                         nowSmellCount = smellTotalCount;
                     if (nowSmellCount == smellTotalCount) {
-                        lastSmellTime=new Date().getTime();
+                        lastSmellTime = new Date().getTime();
                         Point thisCharacterPosition = new Point(bindingCharacter.centerX, bindingCharacter.centerY);
                         for (BaseCharacterView character : GameBaseAreaActivity.allCharacters) {
                             if (character.teamID == bindingCharacter.teamID)

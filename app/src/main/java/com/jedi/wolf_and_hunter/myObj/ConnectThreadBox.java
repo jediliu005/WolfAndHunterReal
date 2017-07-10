@@ -38,6 +38,7 @@ public class ConnectThreadBox {
     public static int nowRole=0;
 
     public static void startWifiConnectThread(Context context, WifiOnlineActivity.MyWifiHandler myWifiHandler,WifiManager wifiManager){
+        clear();
         WifiClientThread clientThread = new WifiClientThread(myWifiHandler,wifiManager);
         clientThread.start();
         clientConnectThread = clientThread;
@@ -45,22 +46,21 @@ public class ConnectThreadBox {
        
     }
 
-    public static void startWifiAcceptThread(Context context, WifiOnlineActivity.MyWifiHandler myWifiHandler,WifiManager wifiManager){
+    public static void startWifiServerThread(Context context, WifiOnlineActivity.MyWifiHandler myWifiHandler,WifiManager wifiManager){
         clear();
-        WifiAcceptThread acceptThread = new WifiAcceptThread(myWifiHandler,wifiManager);
+        WifiServerThread acceptThread = new WifiServerThread(myWifiHandler,wifiManager);
         acceptThread.start();
         serverConnectThread = acceptThread;
         Toast.makeText(context, "服务器开始接收数据", Toast.LENGTH_SHORT).show();
 
     }
 
-
     
-    public static class WifiAcceptThread extends DataExchangeThread {
+    public static class WifiServerThread extends DataExchangeThread {
 
         WifiOnlineActivity.MyWifiHandler myWifiHandler;
         WifiManager wifiManager;
-        public WifiAcceptThread(WifiOnlineActivity.MyWifiHandler wifiHandler, WifiManager wifiManager){
+        public WifiServerThread(WifiOnlineActivity.MyWifiHandler wifiHandler, WifiManager wifiManager){
             this.myWifiHandler=wifiHandler;
             this.wifiManager=wifiManager;
         }
@@ -148,15 +148,184 @@ public class ConnectThreadBox {
             }
         }
 
-//        public void manageConnectedSocket(BluetoothSocket socket) {
-//            BluetoothSocket socket1 = socket;
-//            dealServerDataThread = new Thread(new ServerDealDataThread(socket));
-//            dealServerDataThread.start();
-//
-//        }
 
     }
 
+
+//    public static void startTempServerThread(Context context, WifiOnlineActivity.MyWifiHandler myWifiHandler){
+//        clear();
+//        ServerThread acceptThread = new ServerThread(myWifiHandler);
+//        acceptThread.start();
+//        serverConnectThread = acceptThread;
+//        Toast.makeText(context, "服务器开始接收数据", Toast.LENGTH_SHORT).show();
+//
+//    }
+//    public static void startTempConnectThread(Context context, WifiOnlineActivity.MyWifiHandler myWifiHandler){
+//        clear();
+//        ClientThread clientThread = new ClientThread(myWifiHandler);
+//        clientThread.start();
+//        clientConnectThread = clientThread;
+//        Toast.makeText(context, "开始向服务器发送数据", Toast.LENGTH_SHORT).show();
+//
+//    }
+
+//    public static class ServerThread extends DataExchangeThread {
+//
+//        WifiOnlineActivity.MyWifiHandler myWifiHandler;
+//        public ServerThread(WifiOnlineActivity.MyWifiHandler wifiHandler){
+//            this.myWifiHandler=wifiHandler;
+//        }
+//
+//        @Override
+//        public void run() {
+//            super.run();
+//            isServerRunning=true;
+//            //不断监听直到返回连接或者发生异常
+//            ServerSocket serverSocket = null;
+//            try {
+//                serverSocket = new ServerSocket(8086);
+//                while (isServerRunning) {
+//                    Socket socket = serverSocket.accept();
+//
+//                    if (socket != null) {
+//                        state=STATE_WAITING_FOR_GAME;
+//                        WifiServerDealDataThread sddt = new WifiServerDealDataThread(socket);
+//                        sddt.start();
+//                        serverDealDataThreads.add(sddt);
+//                    }
+//
+//
+////                    manageConnectedSocket(socket);
+//                }
+//            } catch (Exception e) {
+//                nowRole=CONNECT_ROLE_NONE;
+//                Log.e("AcceptThread", "哎呀，当个服务器不容易啊，不知干嘛又挂了。。。。。。。。。。。");
+//                myWifiHandler.sendEmptyMessage(WifiOnlineActivity.MyWifiHandler.ACCEPT_FAIL);
+//            } finally {
+//
+//                try {
+//                    if (serverSocket != null)
+//                        serverSocket.close();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//
+//            }
+//        }
+//
+//        /**
+//         * 取消正在监听的接口
+//         */
+//
+//
+//        class WifiServerDealDataThread extends Thread {
+//            Socket socket;
+//
+//            public WifiServerDealDataThread(Socket socket) {
+//                this.socket = socket;
+//            }
+//
+//            @Override
+//            public void run() {
+//
+//
+//                InputStream is = null;
+//                OutputStream os = null;
+//
+//                try {
+//                    while (isServerRunning) {
+//                        os = socket.getOutputStream();
+//                        is = socket.getInputStream();
+//
+//                        if(state==STATE_WAITING_FOR_GAME){
+//                            is.read();
+//                        }
+//                        ObjectInputStream ois = new ObjectInputStream(is);
+//                        PlayerInfo pi = (PlayerInfo) ois.readObject();
+//                        if (pi != null)
+//                            myWifiHandler.sendEmptyMessage(WifiOnlineActivity.MyWifiHandler.ACCEPT_SUCCESS);
+//                        ObjectOutputStream oos = new ObjectOutputStream(os);
+//                        PlayerInfo myPlayerInfo = new PlayerInfo(true, 1, BaseCharacterView.CHARACTER_TYPE_HUNTER, 1, "", true);
+//                        oos.writeObject(myPlayerInfo);
+//                        oos.flush();
+//                    }
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                    myWifiHandler.sendEmptyMessage(WifiOnlineActivity.MyWifiHandler.ONE_ACCEPT_FAIL);
+////                    Log.e("ServerDealDataThread", e.getMessage());
+//                } finally {
+//
+//                }
+//            }
+//        }
+//
+//
+//
+//    }
+
+//    public static class ClientThread extends Thread {
+//
+//
+//        WifiOnlineActivity.MyWifiHandler myWifiHandler;
+//        public ClientThread(WifiOnlineActivity.MyWifiHandler wifiHandler){
+//            this.myWifiHandler=wifiHandler;
+//        }
+//        @Override
+//        public void run() {
+//            isClientRunning=true;
+//            super.run();
+//            //取消搜索因为搜索会让连接变慢
+//            OutputStream os = null;
+//            InputStream is = null;
+//            Socket socket = null;
+//            try {
+//
+////
+//                InetAddress ia = InetAddress.getByName("192.168.0.104");
+//
+//                socket = new Socket(ia, 8086);
+////                    bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString(mUUID));
+//                //通过socket连接设备，这是一个阻塞操作，知道连接成功或发生异常
+//
+//
+//                os = socket.getOutputStream();
+//                is = socket.getInputStream();
+//                while (isClientRunning) {
+//                    ObjectOutputStream oos = new ObjectOutputStream(os);
+//                    PlayerInfo myPlayerInfo = new PlayerInfo(true, 1, BaseCharacterView.CHARACTER_TYPE_HUNTER, 1, "", false);
+//                    oos.writeObject(myPlayerInfo);
+//                    oos.flush();
+//                    ObjectInputStream ois = new ObjectInputStream(is);
+//                    PlayerInfo serverPlayerInfo = (PlayerInfo) ois.readObject();
+//                    if (serverPlayerInfo != null)
+//                        myWifiHandler.sendEmptyMessage(WifiOnlineActivity.MyWifiHandler.CONNECT_SUCCESS);
+//                }
+//
+//            } catch (Exception e) {
+//                Log.e("ClientThread", "他妈的，当个客户端不容易啊，服务器又不理我了。。。。。。。。。。。");
+//                myWifiHandler.sendEmptyMessage(WifiOnlineActivity.MyWifiHandler.CONNECT_FAIL);
+//
+//            } finally {
+//                try {
+//                    if (is != null)
+//                        is.close();
+//                    if (os != null)
+//                        os.close();
+//                    if (socket != null && socket.isClosed() == false)
+//                        socket.close();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//
+//            }
+//
+//
+//            //管理连接(在独立的线程)
+//            // manageConnectedSocket(mmSocket);
+//        }
+//
+//
+//    }
 
    public static class WifiClientThread extends Thread {
 

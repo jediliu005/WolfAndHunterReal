@@ -119,7 +119,7 @@ public class PromptView extends View {
         super.onDraw(canvas);
         if(bindingCharacter==null||bindingCharacter.enemiesPositionSet==null)
             return;
-        if(new Date().getTime()-bindingCharacter.lastSmellTime>10000){
+        if(new Date().getTime()-bindingCharacter.lastSmellTime>5000){
             bindingCharacter.enemiesPositionSet.clear();
             return;
         }

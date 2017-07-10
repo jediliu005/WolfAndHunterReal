@@ -121,6 +121,28 @@ public class WifiOnlineActivity extends Activity {
 
     }
 
+//    public void runPhoneServer(View view) {
+//
+//            if (ConnectThreadBox.serverConnectThread == null || ConnectThreadBox.serverConnectThread.getState() == Thread.State.TERMINATED) {
+//                ConnectThreadBox.clear();
+//                ConnectThreadBox.startTempServerThread(this, myWifiHandler);
+//            } else {
+//                Toast.makeText(getBaseContext(), "服务器线程已经启动，无需重复开启", Toast.LENGTH_SHORT).show();
+//            }
+//
+//
+//
+//    }
+//    public void runEMClient(View view) {
+//        if (ConnectThreadBox.clientConnectThread == null || ConnectThreadBox.clientConnectThread.getState() == Thread.State.TERMINATED) {
+//            ConnectThreadBox.clear();
+//            ConnectThreadBox.startTempConnectThread(this, myWifiHandler);
+//        } else {
+//            Toast.makeText(getBaseContext(), "客户端线程已经启动，无需重复开启", Toast.LENGTH_SHORT).show();
+//        }
+//
+//    }
+
     public void createHotSpot(View view) {
         initWifiParams();
 
@@ -256,7 +278,7 @@ public class WifiOnlineActivity extends Activity {
 
             if (ConnectThreadBox.serverConnectThread == null || ConnectThreadBox.serverConnectThread.getState() == Thread.State.TERMINATED) {
                 ConnectThreadBox.clear();
-                ConnectThreadBox.startWifiAcceptThread(this, myWifiHandler, wifiManager);
+                ConnectThreadBox.startWifiServerThread(this, myWifiHandler, wifiManager);
             } else {
                 Toast.makeText(getBaseContext(), "服务器线程已经启动，无需重复开启", Toast.LENGTH_SHORT).show();
             }

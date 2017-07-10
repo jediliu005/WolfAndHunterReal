@@ -37,6 +37,10 @@ public class NormalHunter extends BaseCharacterView {
     public final static int defaultRunWaitTime = 300;
     public final static int defaultSpeed = 10;
     public final static int defaultAngleChangSpeed = 3;
+    public final static int defaultHealthPoint = 2;
+    public final static int defaultKnockAwayStrength = 100;
+
+
     private int bolletWidth = 0;
 
 
@@ -75,7 +79,7 @@ public class NormalHunter extends BaseCharacterView {
         characterType = CHARACTER_TYPE_HUNTER;
         Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.normal_hunter, option);
         matrixForCP = new Matrix();
-        matrixForCP.postScale((float)characterBodySize / bitmap.getWidth()*(float) 0.8, (float)characterBodySize /bitmap.getHeight()*(float) 0.8);
+        matrixForCP.postScale((float) characterBodySize / bitmap.getWidth() * (float) 0.8, (float) characterBodySize / bitmap.getHeight() * (float) 0.8);
         characterPic = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrixForCP, true);
 
         reloadMediaPlayer = MediaPlayer.create(getContext(), R.raw.reload_bollet);
@@ -86,32 +90,35 @@ public class NormalHunter extends BaseCharacterView {
         maxAttackCount = defaultMaxAttackCount;
         nowAttackRadius = defaultAttackRadius;
         nowViewRadius = defaultViewRadius;
-        nowViewAngle=defaultViewAngle;
+        nowViewAngle = defaultViewAngle;
         nowHearRadius = defaultHearRadius;
         nowWalkWaitTime = defaultWalkWaitTime;
         nowRunWaitTime = defaultRunWaitTime;
         nowForceViewRadius = defaultForceViewRadius;
         nowSpeed = defaultSpeed;
+        nowHealthPoint = defaultHealthPoint;
+        nowKnockAwayStrength = defaultKnockAwayStrength;
 
-        FrameLayout.LayoutParams viewRangeLP= (FrameLayout.LayoutParams) viewRange.getLayoutParams();
-        viewRangeLP.width=2*defaultViewRadius;
+        FrameLayout.LayoutParams viewRangeLP = (FrameLayout.LayoutParams) viewRange.getLayoutParams();
+        viewRangeLP.width = 2 * defaultViewRadius;
         viewRange.setLayoutParams(viewRangeLP);
 
-        FrameLayout.LayoutParams attackRangeLP= (FrameLayout.LayoutParams) attackRange.getLayoutParams();
-        attackRangeLP.width=2*defaultAttackRadius;
+        FrameLayout.LayoutParams attackRangeLP = (FrameLayout.LayoutParams) attackRange.getLayoutParams();
+        attackRangeLP.width = 2 * defaultAttackRadius;
         attackRange.setLayoutParams(attackRangeLP);
 
         super.nowAngleChangSpeed = defaultAngleChangSpeed;
         if (this.virtualWindow == null)
             this.virtualWindow = GameBaseAreaActivity.virtualWindow;
     }
+
     @Override
     public void initCharacterState() {
         nowAttackRadius = defaultAttackRadius;
         nowViewRadius = defaultViewRadius;
         nowViewAngle = defaultViewAngle;
         nowHearRadius = defaultHearRadius;
-        nowForceViewRadius=defaultForceViewRadius;
+        nowForceViewRadius = defaultForceViewRadius;
         nowSpeed = defaultSpeed;
         nowAngleChangSpeed = defaultAngleChangSpeed;
     }
@@ -125,13 +132,13 @@ public class NormalHunter extends BaseCharacterView {
                 this.nowViewRadius = (int) (1.25 * defaultViewRadius);
                 this.nowForceViewRadius = (int) (2 * defaultForceViewRadius);
                 this.nowViewAngle = (float) (0.5 * defaultViewAngle);
-                this.nowSpeed= (int) (0.5 * defaultSpeed);
+                this.nowSpeed = (int) (0.5 * defaultSpeed);
                 this.nowAngleChangSpeed = (int) (0.5 * defaultAngleChangSpeed);
             } else {
                 this.nowViewRadius = defaultViewRadius;
                 this.nowForceViewRadius = defaultForceViewRadius;
                 this.nowViewAngle = defaultViewAngle;
-                this.nowSpeed= defaultSpeed;
+                this.nowSpeed = defaultSpeed;
                 this.nowAngleChangSpeed = defaultAngleChangSpeed;
             }
         }
@@ -149,17 +156,17 @@ public class NormalHunter extends BaseCharacterView {
                     public void run() {
                         synchronized (this) {
                             isReloadingAttack = true;
-                            lockingCharacter=null;
-                            isLocking=false;
-                            nowSpeed = defaultSpeed/2;
-                            nowViewRadius = defaultViewRadius/2;
-                            nowForceViewRadius = defaultForceViewRadius/2;
-                            nowHearRadius = defaultHearRadius/2;
+                            lockingCharacter = null;
+                            isLocking = false;
+                            nowSpeed = defaultSpeed / 2;
+                            nowViewRadius = defaultViewRadius / 2;
+                            nowForceViewRadius = defaultForceViewRadius / 2;
+                            nowHearRadius = defaultHearRadius / 2;
                         }
-                        while(nowReloadingAttackCount<reloadAttackTotalCount) {
-                            nowReloadingAttackCount+=nowReloadAttackSpeed;
-                            if(nowReloadingAttackCount>reloadAttackTotalCount)
-                                nowReloadingAttackCount=reloadAttackTotalCount;
+                        while (nowReloadingAttackCount < reloadAttackTotalCount) {
+                            nowReloadingAttackCount += nowReloadAttackSpeed;
+                            if (nowReloadingAttackCount > reloadAttackTotalCount)
+                                nowReloadingAttackCount = reloadAttackTotalCount;
                             try {
                                 Thread.sleep(reloadAttackSleepTime);
                             } catch (InterruptedException e) {
@@ -169,9 +176,9 @@ public class NormalHunter extends BaseCharacterView {
 //
                         synchronized (this) {
                             nowSpeed = defaultSpeed;
-                            nowViewRadius = defaultViewRadius ;
-                            nowForceViewRadius =defaultForceViewRadius;
-                            nowHearRadius = defaultHearRadius ;
+                            nowViewRadius = defaultViewRadius;
+                            nowForceViewRadius = defaultForceViewRadius;
+                            nowHearRadius = defaultHearRadius;
                             attackCount = maxAttackCount;
                             nowReloadingAttackCount = 0;
                             isReloadingAttack = false;
@@ -202,7 +209,7 @@ public class NormalHunter extends BaseCharacterView {
 
         for (BaseCharacterView targetCharacter : GameBaseAreaActivity.allCharacters) {
 
-            if (this == targetCharacter || targetCharacter.getTeamID() == this.getTeamID())
+            if (this == targetCharacter || targetCharacter.isDead == true || targetCharacter.getTeamID() == this.getTeamID())
                 continue;
 
 
@@ -220,7 +227,7 @@ public class NormalHunter extends BaseCharacterView {
 
             float angleBetweenXAxus = MyMathsUtils.getAngleBetweenXAxus(relateX, relateY);
             float relateAngle = Math.abs(angleBetweenXAxus - nowFacingAngle);
-            if (relateAngle > 90 && relateAngle < 270) {//这类角度表示目标在此角色身后
+            if (relateAngle > 90 && relateAngle < 270) {//这类角度表示目标在此角色身后,不用考虑
                 continue;
             }
             double pointToLineDistance = 0;
@@ -234,10 +241,38 @@ public class NormalHunter extends BaseCharacterView {
 
             }
             if (pointToLineDistance <= bolletWidth / 2 + targetCharacterSize) {
-                targetCharacter.isDead = true;
-                this.killCount++;
-                targetCharacter.dieCount++;
-                targetCharacter.deadTime = new Date().getTime();
+                float relateFacingAngle = Math.abs(targetCharacter.nowFacingAngle - nowFacingAngle);
+
+                if (relateFacingAngle < 90 || relateFacingAngle > 270) {//背击
+                    targetCharacter.nowHealthPoint -= 2;
+                } else {
+                    targetCharacter.nowHealthPoint -= 1;
+                }
+                if (targetCharacter.nowHealthPoint <= 0) {
+                    targetCharacter.isDead = true;
+                    this.killCount++;
+                    targetCharacter.dieCount++;
+                    targetCharacter.deadTime = new Date().getTime();
+                } else {
+                    if (targetCharacter.knockedAwayThread != null && targetCharacter.knockedAwayThread.getState().equals(Thread.State.TERMINATED) == false) {
+                        targetCharacter.isKnockedAway = false;
+                        targetCharacter.knockedAwayThread.interrupt();
+                    }
+                    double cosAlpha = Math.cos(Math.toRadians(nowFacingAngle));
+                    double endX = cosAlpha * nowKnockAwayStrength;
+
+                    double endY = Math.sqrt(nowKnockAwayStrength * nowKnockAwayStrength - endX * endX);
+                    if (nowFacingAngle >= 180)
+                        endY = -endY;
+                    endX = endX + centerX;
+                    endY = endY + centerY;
+//        Point fromPoint = new Point(centerX, centerY);
+                    Point toPoint = new Point((int) endX, (int) endY);
+                    targetCharacter.knockedAwayThread = new Thread(new KnockedAwayThread(toPoint));
+                    targetCharacter.knockedAwayThread.setDaemon(true);
+                    targetCharacter.knockedAwayThread.start();
+                }
+
             }
 
 
