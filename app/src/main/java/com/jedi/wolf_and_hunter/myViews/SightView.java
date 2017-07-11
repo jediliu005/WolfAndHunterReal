@@ -570,7 +570,7 @@ public class SightView extends SurfaceView implements SurfaceHolder.Callback {
         @Override
         public void run() {
 
-            while (GameBaseAreaActivity.isStop==false&&isStop==false) {
+            while (GameBaseAreaActivity.gameInfo.isStop==false&&isStop==false) {
 
                 Canvas canvas = getHolder().lockCanvas();
                 try {

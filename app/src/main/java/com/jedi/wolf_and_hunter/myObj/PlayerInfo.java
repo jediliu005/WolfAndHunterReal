@@ -20,7 +20,7 @@ public class PlayerInfo implements Serializable {
     public int nowCenterX;
     public int nowCenterY;
     public float nowFacingAngle;
-    public boolean judgeingAttack = false;
+    public boolean isJumping = false;
     public boolean isDead = false;
     public boolean isServer;
     public int jumpToX = -99999;

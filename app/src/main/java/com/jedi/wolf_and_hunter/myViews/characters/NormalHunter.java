@@ -207,7 +207,7 @@ public class NormalHunter extends BaseCharacterView {
 
         attackCount -= 1;
 
-        for (BaseCharacterView targetCharacter : GameBaseAreaActivity.allCharacters) {
+        for (BaseCharacterView targetCharacter : GameBaseAreaActivity.gameInfo.allCharacters) {
 
             if (this == targetCharacter || targetCharacter.isDead == true || targetCharacter.getTeamID() == this.getTeamID())
                 continue;

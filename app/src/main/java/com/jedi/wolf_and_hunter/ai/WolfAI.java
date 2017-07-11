@@ -22,7 +22,7 @@ public class WolfAI extends BaseAI {
     @Override
     public void run() {
 //        addFacingThread();
-        if (GameBaseAreaActivity.isStop)
+        if (GameBaseAreaActivity.gameInfo.isStop)
             return;
 //        addFacingThread();
         decideWhatToDo();
@@ -48,7 +48,7 @@ public class WolfAI extends BaseAI {
 //        if (bindingCharacter == null || bindingCharacter.isDead) {
 //            return;
 //        }
-//        if (GameBaseAreaActivity.isStop == true)
+//        if (GameBaseAreaActivity.gameInfo.isStop == true)
 //            return;
 //        synchronized (bindingCharacter) {
 //            float relateAngle = targetFacingAngle - bindingCharacter.nowFacingAngle;
@@ -231,7 +231,7 @@ public class WolfAI extends BaseAI {
                     reset();
                     return;
                 }
-                if (bindingCharacter.judgeingAttack == true)
+                if (bindingCharacter.isJumping == true)
                     return;
 
                 bindingCharacter.attack();

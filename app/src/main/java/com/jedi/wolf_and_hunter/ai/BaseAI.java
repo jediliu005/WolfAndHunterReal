@@ -4,6 +4,7 @@ import android.graphics.Point;
 import android.widget.FrameLayout;
 
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
+import com.jedi.wolf_and_hunter.myObj.GameInfo;
 import com.jedi.wolf_and_hunter.myViews.Trajectory;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
@@ -66,7 +67,7 @@ public class BaseAI extends TimerTask {
 //                            continue;
 //                        }
 //                        synchronized (bindingCharacter) {
-//                            if (GameBaseAreaActivity.isStop == true)
+//                            if (GameBaseAreaActivity.gameInfo.isStop == true)
 //                                break;
 //
 //
@@ -115,7 +116,7 @@ public class BaseAI extends TimerTask {
     @Override
     public void run() {
 //        addFacingThread();
-        if (GameBaseAreaActivity.isStop)
+        if (GameBaseAreaActivity.gameInfo.isStop)
             return;
 //        addFacingThread();
         decideWhatToDo();
@@ -145,7 +146,7 @@ public class BaseAI extends TimerTask {
         if (bindingCharacter.isDead) {
             reset();
         }
-        for (BaseCharacterView character : GameBaseAreaActivity.allCharacters) {
+        for (BaseCharacterView character : GameBaseAreaActivity.gameInfo.allCharacters) {
             isInViewRange = false;
             if (bindingCharacter == null) {
                 return;

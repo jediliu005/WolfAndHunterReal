@@ -2,7 +2,6 @@ package com.jedi.wolf_and_hunter.myViews.characters;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
@@ -19,8 +18,8 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.widget.FrameLayout;
 
-import com.jedi.wolf_and_hunter.R;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
+import com.jedi.wolf_and_hunter.myObj.GameInfo;
 import com.jedi.wolf_and_hunter.myObj.MyVirtualWindow;
 import com.jedi.wolf_and_hunter.myObj.PlayerInfo;
 import com.jedi.wolf_and_hunter.myViews.AttackRange;
@@ -113,7 +112,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public volatile boolean isKnockedAway = false;
     public long deadTime;
     public volatile boolean isForceToBeSawByMe = false;//注意！这属性只针对本机玩家视觉，对AI判行为无效
-    public volatile boolean judgeingAttack = false;
+    public volatile boolean isJumping=false;
     public volatile boolean isReloadingAttack = false;
     public Handler gameHandler;
     public volatile HashSet<Integer> seeMeTeamIDs;
@@ -156,6 +155,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
     Thread smellThread;
 
+
     public int getTeamID() {
         return teamID;
     }
@@ -173,20 +173,20 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
 
         } else if (teamID == 2) {
-            nowLeft = GameBaseAreaActivity.mapWidth - characterBodySize - 50;
+            nowLeft = GameBaseAreaActivity.gameInfo.mapWidth - characterBodySize - 50;
             nowTop = 50;
             nowFacingAngle = 135;
             normalPaint.setColor(Color.LTGRAY);
             alphaPaint.setColor(Color.LTGRAY);
         } else if (teamID == 3) {
             nowLeft = 50;
-            nowTop = GameBaseAreaActivity.mapHeight - characterBodySize - 50;
+            nowTop = GameBaseAreaActivity.gameInfo.mapHeight - characterBodySize - 50;
             nowFacingAngle = 315;
             normalPaint.setColor(Color.YELLOW);
             alphaPaint.setColor(Color.YELLOW);
         } else if (teamID == 4) {
-            nowLeft = GameBaseAreaActivity.mapWidth - characterBodySize - 50;
-            nowTop = GameBaseAreaActivity.mapHeight - characterBodySize - 50;
+            nowLeft = GameBaseAreaActivity.gameInfo.mapWidth - characterBodySize - 50;
+            nowTop = GameBaseAreaActivity.gameInfo.mapHeight - characterBodySize - 50;
             nowFacingAngle = 225;
             normalPaint.setColor(Color.BLUE);
             alphaPaint.setColor(Color.BLUE);
@@ -366,12 +366,12 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             else
                 return;
         }
-        if (GameBaseAreaActivity.isStop == true || needMove == false || isDead == true)
+        if (GameBaseAreaActivity.gameInfo.isStop == true || needMove == false || isDead == true)
             return;
         movingMediaThread = new Thread(new Runnable() {
             @Override
             public void run() {
-                while (GameBaseAreaActivity.isStop == false && needMove && isDead == false) {
+                while (GameBaseAreaActivity.gameInfo.isStop == false && needMove && isDead == false) {
                     if (isStay) {
                         try {
                             Thread.sleep(200);
@@ -1043,7 +1043,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             if (isMyCharacter == false) {
                 Log.i("", "");
             }
-            while (GameBaseAreaActivity.isStop == false && isStop == false) {
+            while (GameBaseAreaActivity.gameInfo.isStop == false && isStop == false) {
                 SurfaceHolder holder = getHolder();
                 if (holder == null)
                     continue;
@@ -1136,16 +1136,16 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                 nowFacingAngle = 45;
 
             } else if (teamID == 2) {
-                nowLeft = GameBaseAreaActivity.mapWidth - characterBodySize - 50;
+                nowLeft = GameBaseAreaActivity.gameInfo.mapWidth - characterBodySize - 50;
                 nowTop = 50;
                 nowFacingAngle = 135;
             } else if (teamID == 3) {
                 nowLeft = 50;
-                nowTop = GameBaseAreaActivity.mapHeight - characterBodySize - 50;
+                nowTop = GameBaseAreaActivity.gameInfo.mapHeight - characterBodySize - 50;
                 nowFacingAngle = 315;
             } else if (teamID == 4) {
-                nowLeft = GameBaseAreaActivity.mapWidth - characterBodySize - 50;
-                nowTop = GameBaseAreaActivity.mapHeight - characterBodySize - 50;
+                nowLeft = GameBaseAreaActivity.gameInfo.mapWidth - characterBodySize - 50;
+                nowTop = GameBaseAreaActivity.gameInfo.mapHeight - characterBodySize - 50;
                 nowFacingAngle = 225;
             }
             FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) this.getLayoutParams();
@@ -1214,7 +1214,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         @Override
         public void run() {
             isKnockedAway = true;
-            while (GameBaseAreaActivity.isStop == false && isKnockedAway) {
+            while (GameBaseAreaActivity.gameInfo.isStop == false && isKnockedAway) {
 
                 int nowCenterX = (getLeft() + getRight()) / 2;
                 int nowCenterY = (getTop() + getBottom()) / 2;
@@ -1252,7 +1252,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
 
     public void knockedAway(int limitLeft, int limitTop, int limitRight, int limitBottom) {
-        judgeingAttack = false;
+        isJumping = false;
         if (knockedAwayX == -99999 || knockedAwayY == -99999)
             return;
         centerX = (nowLeft + nowRight) / 2;
@@ -1402,7 +1402,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             nowLeft = jumpToX - characterBodySize / 2;
             nowTop = jumpToY - characterBodySize / 2;
         } else {
-            judgeingAttack = false;
+            isJumping = false;
 
             int relateX = jumpToX - centerX;
             int relateY = jumpToY - centerY;
@@ -1494,11 +1494,13 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         }
         nowRight = nowLeft + getWidth();
         nowBottom = nowTop + getHeight();
-        if (judgeingAttack == false) {
+        if (isJumping == false) {
             jumpToX = -99999;
             jumpToY = -99999;
         }
     }
+
+
 
     /**
      * 这方法也是myCharacter专用
@@ -1541,7 +1543,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             }
             return;
         } else {
-            for (BaseCharacterView character : GameBaseAreaActivity.allCharacters) {
+            for (BaseCharacterView character : GameBaseAreaActivity.gameInfo.allCharacters) {
                 if (character.teamID == this.teamID)
                     continue;
                 if (character.isForceToBeSawByMe) {
@@ -1660,14 +1662,14 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             enemiesPositionSet.clear();
             isSmelling = true;
             try {
-                while (GameBaseAreaActivity.isStop == false && isSmelling) {
+                while (GameBaseAreaActivity.gameInfo.isStop == false && isSmelling) {
                     nowSmellCount += nowSmellSpeed;
                     if (nowSmellCount > smellTotalCount)
                         nowSmellCount = smellTotalCount;
                     if (nowSmellCount == smellTotalCount) {
                         lastSmellTime = new Date().getTime();
                         Point thisCharacterPosition = new Point(bindingCharacter.centerX, bindingCharacter.centerY);
-                        for (BaseCharacterView character : GameBaseAreaActivity.allCharacters) {
+                        for (BaseCharacterView character : GameBaseAreaActivity.gameInfo.allCharacters) {
                             if (character.teamID == bindingCharacter.teamID)
                                 continue;
                             Point enemyPosition = new Point(character.centerX, character.centerY);

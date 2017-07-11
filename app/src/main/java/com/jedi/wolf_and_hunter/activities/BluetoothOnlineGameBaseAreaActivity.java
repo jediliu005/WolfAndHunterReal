@@ -17,9 +17,6 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import com.jedi.wolf_and_hunter.R;
-import com.jedi.wolf_and_hunter.ai.BaseAI;
-import com.jedi.wolf_and_hunter.ai.HunterAI;
-import com.jedi.wolf_and_hunter.ai.WolfAI;
 import com.jedi.wolf_and_hunter.myObj.MyVirtualWindow;
 import com.jedi.wolf_and_hunter.myObj.PlayerInfo;
 import com.jedi.wolf_and_hunter.myViews.AttackButton;
@@ -47,9 +44,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Random;
-import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
@@ -64,7 +59,7 @@ public class BluetoothOnlineGameBaseAreaActivity extends Activity {
     public TextView gameResult;
     public static int mapWidth = 3000;
     public static int mapHeight = 3000;
-    public  String serverMac;
+    public String serverMac;
     ArrayList<BluetoothDevice> otherPlayerDevicesList = null;
 
     private final static int CONTROL_MODE_NORMAL = 0;
@@ -287,7 +282,7 @@ public class BluetoothOnlineGameBaseAreaActivity extends Activity {
                 if (myCharacter.isDead == true) {
                     myCharacter.deadReset();
 
-                } else if (myCharacter.judgeingAttack) {
+                } else if (myCharacter.isJumping) {
                     myCharacter.keepDirectionAndJump(0, 0, mapBaseFrame.getWidth(), mapBaseFrame.getHeight());
                 } else {
                     if (controlMode == CONTROL_MODE_MASTER) {//CONTROL_MODE_MASTER这种操控方式已经过期，也许有用
@@ -369,7 +364,7 @@ public class BluetoothOnlineGameBaseAreaActivity extends Activity {
                 myPlayerInfo.nowSpeed = myCharacter.nowSpeed;
                 myPlayerInfo.attackCount = myCharacter.attackCount;
                 myPlayerInfo.isDead = myCharacter.isDead;
-                myPlayerInfo.judgeingAttack = myCharacter.judgeingAttack;
+                myPlayerInfo.isJumping = myCharacter.isJumping;
                 myPlayerInfo.jumpToX = myCharacter.jumpToX;
                 myPlayerInfo.jumpToY = myCharacter.jumpToY;
                 myPlayerInfo.nowFacingAngle = myCharacter.nowFacingAngle;
@@ -523,7 +518,7 @@ public class BluetoothOnlineGameBaseAreaActivity extends Activity {
 
                 InputStream is = null;
                 OutputStream os = null;
-               PlayerInfo remotePlayerInfo;
+                PlayerInfo remotePlayerInfo;
                 try {
                     while (true) {
                         os = socket.getOutputStream();
@@ -594,7 +589,7 @@ public class BluetoothOnlineGameBaseAreaActivity extends Activity {
 
                             ObjectInputStream ois = new ObjectInputStream(is);
                             remotePlayerInfo = (PlayerInfo) ois.readObject();
-                            playerInfos.set(1,remotePlayerInfo);
+                            playerInfos.set(1, remotePlayerInfo);
                             Message message = gameHandler.obtainMessage();
                             message.what = GameHandler.UPDATE_OTHER_PLAYER;
                             message.obj = remotePlayerInfo;
@@ -609,7 +604,7 @@ public class BluetoothOnlineGameBaseAreaActivity extends Activity {
                 Log.e("AcceptThread", "他妈的，当个客户端不容易啊，服务器又不理我了。。。。。。。。。。。");
                 //无法连接，关闭socket并且退出
 
-            }  catch (ClassNotFoundException e) {
+            } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             } finally {
                 connectThread.start();
@@ -677,7 +672,7 @@ public class BluetoothOnlineGameBaseAreaActivity extends Activity {
         GameMap map = new GameMap(this);
         mapBaseFrame.addView(map);
         map.landformses = landformses;
-        map.addLandforms();
+        map.buildLandforms();
 
         allCharacters = new ArrayList<BaseCharacterView>();
         //添加我的角色
@@ -696,7 +691,6 @@ public class BluetoothOnlineGameBaseAreaActivity extends Activity {
 
         allCharacters.add(myCharacter);
         mapBaseFrame.myCharacter = myCharacter;
-
 
 
         //添加视点
@@ -781,7 +775,6 @@ public class BluetoothOnlineGameBaseAreaActivity extends Activity {
         }
 
 
-
         PlayerInfo remotePlayerInfo = playerInfos.get(1);
         BaseCharacterView otherCharacter;
         if (remotePlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
@@ -860,9 +853,9 @@ public class BluetoothOnlineGameBaseAreaActivity extends Activity {
         super.onCreate(savedInstanceState);
         playerInfos = (ArrayList<PlayerInfo>) getIntent().getExtras().get("playerInfos");
         if (playerInfos != null) {
-            for(PlayerInfo pi:playerInfos){
-                if(pi.isServer==true)
-                    serverMac=pi.mac;
+            for (PlayerInfo pi : playerInfos) {
+                if (pi.isServer == true)
+                    serverMac = pi.mac;
             }
         }
         allTrajectories = new ArrayList<Trajectory>();
@@ -938,7 +931,7 @@ public class BluetoothOnlineGameBaseAreaActivity extends Activity {
         baseFrame.addView(gameResult);
 
 
-        bluetoothAdapter=BluetoothController.mBluetoothAdapter;
+        bluetoothAdapter = BluetoothController.mBluetoothAdapter;
         if (playerInfos.get(0).isServer) {
             acceptThread = new AcceptThread();
             acceptThread.start();
@@ -962,7 +955,6 @@ public class BluetoothOnlineGameBaseAreaActivity extends Activity {
 
         timerForAllMoving.scheduleAtFixedRate(new GameMainTask(), 1000, 30);
         timerForTrajectory.schedule(new RemoveTrajectoryTask(), 1000, 300);
-
 
 
     }

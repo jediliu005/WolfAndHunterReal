@@ -71,31 +71,31 @@ public class MyVirtualWindow {
             hasUpdatedWindowPosition = true;
         }
     }
-    public void autoUpdateNowWindowPosition() {
-        synchronized (this) {
-
-            left = -movingLayout.getLeft();
-            top = -movingLayout.getTop();
-            right = left + windowWidth;
-            bottom = top + windowHeight;
-            hasUpdatedWindowPosition = true;
-        }
-    }
+//    public void autoUpdateNowWindowPosition() {
+//        synchronized (this) {
+//
+//            left = -movingLayout.getLeft();
+//            top = -movingLayout.getTop();
+//            right = left + windowWidth;
+//            bottom = top + windowHeight;
+//            hasUpdatedWindowPosition = true;
+//        }
+//    }
 //    public void autoOffsetWindow() {
 //        synchronized (this) {
 //            gameHandler.sendEmptyMessage(GameBaseAreaActivity.GameHandler.REFRESH_WINDOW_POSITION);
 //        }
 //    }
-    public void offsetWindow() {
-        synchronized (this) {
-            FrameLayout.LayoutParams movingLayoutParams = (FrameLayout.LayoutParams) movingLayout.getLayoutParams();
-            int parentNewLeft = -left;
-            int parentNewTop = -top;
-            movingLayoutParams.leftMargin = parentNewLeft;
-            movingLayoutParams.topMargin = parentNewTop;
-            movingLayout.setLayoutParams(movingLayoutParams);
-        }
-    }
+//    public void offsetWindow() {
+//        synchronized (this) {
+//            FrameLayout.LayoutParams movingLayoutParams = (FrameLayout.LayoutParams) movingLayout.getLayoutParams();
+//            int parentNewLeft = -left;
+//            int parentNewTop = -top;
+//            movingLayoutParams.leftMargin = parentNewLeft;
+//            movingLayoutParams.topMargin = parentNewTop;
+//            movingLayout.setLayoutParams(movingLayoutParams);
+//        }
+//    }
     public synchronized void reflashWindowPosition() {
 //        if(true)
 //        return;

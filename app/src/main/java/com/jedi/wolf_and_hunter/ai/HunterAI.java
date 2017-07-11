@@ -27,11 +27,11 @@ public class HunterAI extends BaseAI {
         }
     }
 
-    public void changeFacing(){
+    public void changeFacing() {
         if (bindingCharacter == null || bindingCharacter.isDead) {
             return;
         }
-        if (GameBaseAreaActivity.isStop == true)
+        if (GameBaseAreaActivity.gameInfo.isStop == true)
             return;
         synchronized (bindingCharacter) {
 
@@ -79,7 +79,7 @@ public class HunterAI extends BaseAI {
 //                            continue;
 //                        }
 //                        synchronized (bindingCharacter) {
-//                            if (GameBaseAreaActivity.isStop == true)
+//                            if (GameBaseAreaActivity.gameInfo.isStop == true)
 //                                break;
 //
 //
@@ -128,7 +128,7 @@ public class HunterAI extends BaseAI {
     @Override
     public void run() {
 //        addFacingThread();
-        if (GameBaseAreaActivity.isStop)
+        if (GameBaseAreaActivity.gameInfo.isStop)
             return;
 //        addFacingThread();
         decideWhatToDo();
@@ -159,7 +159,7 @@ public class HunterAI extends BaseAI {
         if (bindingCharacter.isDead) {
             reset();
         }
-        for (BaseCharacterView character : GameBaseAreaActivity.allCharacters) {
+        for (BaseCharacterView character : GameBaseAreaActivity.gameInfo.allCharacters) {
 
             if (bindingCharacter == null) {
                 return;
@@ -264,7 +264,7 @@ public class HunterAI extends BaseAI {
 
     }
 
-    public  void trackTrajectory() {
+    public void trackTrajectory() {
         synchronized (bindingCharacter) {
             if (trackTrajectory == null) {
                 reset();
@@ -299,7 +299,7 @@ public class HunterAI extends BaseAI {
         }
     }
 
-    public  void trackCharacter() {
+    public void trackCharacter() {
         synchronized (bindingCharacter) {
             if (hasDealTrackOnce == false) {
                 if (targetCharacter == null || targetCharacter.isDead == true) {
@@ -345,7 +345,7 @@ public class HunterAI extends BaseAI {
     }
 
 
-    public  void attack() {
+    public void attack() {
         boolean isChance = false;
         synchronized (bindingCharacter) {
             if (targetCharacter == null || targetCharacter.isDead == true) {
@@ -362,8 +362,8 @@ public class HunterAI extends BaseAI {
 
             float relateAngle = targetFacingAngle - bindingCharacter.nowFacingAngle;
             if (Math.abs(relateAngle) > 360 - chanceAngle) {
-                bindingCharacter.offX=0;
-                bindingCharacter.offY=0;
+                bindingCharacter.offX = 0;
+                bindingCharacter.offY = 0;
                 isChance = true;
             } else {
                 float startAngle = relateAngle - chanceAngle;
@@ -378,7 +378,7 @@ public class HunterAI extends BaseAI {
         }
 
         if (isChance) {
-            bindingCharacter.isStay=true;
+            bindingCharacter.isStay = true;
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
@@ -389,16 +389,15 @@ public class HunterAI extends BaseAI {
                     reset();
                     return;
                 }
-                if(bindingCharacter.judgeingAttack==true)
-                    return;
+
                 bindingCharacter.attack();
-                bindingCharacter.isStay=false;
+                bindingCharacter.isStay = false;
             }
 
         }
     }
 
-    public  void hunt() {
+    public void hunt() {
         synchronized (bindingCharacter) {
             if (bindingCharacter.centerX == targetX && bindingCharacter.centerY == targetY) {
                 targetX = -1;
@@ -418,7 +417,7 @@ public class HunterAI extends BaseAI {
         }
     }
 
-    public  void escape() {
+    public void escape() {
 //        synchronized (bindingCharacter) {
         if (bindingCharacter.centerX <= 100) {
             targetX = 500;

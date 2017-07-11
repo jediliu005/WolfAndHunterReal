@@ -5,10 +5,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
-import android.content.Context;
-import android.content.Intent;
 import android.graphics.Color;
-import android.graphics.Point;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
@@ -19,13 +16,14 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
+import com.jedi.wolf_and_hunter.R;
 import com.jedi.wolf_and_hunter.ai.BaseAI;
 import com.jedi.wolf_and_hunter.ai.HunterAI;
 import com.jedi.wolf_and_hunter.ai.WolfAI;
+import com.jedi.wolf_and_hunter.myObj.GameInfo;
 import com.jedi.wolf_and_hunter.myObj.MyVirtualWindow;
 import com.jedi.wolf_and_hunter.myObj.PlayerInfo;
 import com.jedi.wolf_and_hunter.myViews.AttackButton;
-import com.jedi.wolf_and_hunter.myViews.AttackRange;
 import com.jedi.wolf_and_hunter.myViews.GameMap;
 import com.jedi.wolf_and_hunter.myViews.LeftRocker;
 import com.jedi.wolf_and_hunter.myViews.LockingButton;
@@ -35,18 +33,13 @@ import com.jedi.wolf_and_hunter.myViews.RightRocker;
 import com.jedi.wolf_and_hunter.myViews.SightView;
 import com.jedi.wolf_and_hunter.myViews.SmellButton;
 import com.jedi.wolf_and_hunter.myViews.Trajectory;
-import com.jedi.wolf_and_hunter.myViews.ViewRange;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 import com.jedi.wolf_and_hunter.myViews.characters.NormalHunter;
 import com.jedi.wolf_and_hunter.myViews.characters.NormalWolf;
 import com.jedi.wolf_and_hunter.myViews.landform.Landform;
 import com.jedi.wolf_and_hunter.myViews.landform.TallGrassland;
-import com.jedi.wolf_and_hunter.R;
 import com.jedi.wolf_and_hunter.utils.BluetoothController;
-import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 import com.jedi.wolf_and_hunter.utils.ViewUtils;
-
-import org.w3c.dom.Text;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -68,43 +61,31 @@ public class GameBaseAreaActivity extends Activity {
     public TextView t5;
     public TextView t6;
     public TextView gameResult;
-    public static int mapWidth = 3000;
-    public static int mapHeight = 3000;
-public String playMode;
-    String serverMac;
     BluetoothAdapter bluetoothAdapter;
     BluetoothServerSocket bluetoothServerSocket;
     BluetoothSocket bluetoothSocket;
     BluetoothAcceptThread bluetoothAcceptThread;
     BluetoothConnectThread bluetoothConnectThread;
     BluetoothAcceptThread.DealBluetoothServerDataThread dealBluetoothServerDataThread;
-    private final static int CONTROL_MODE_NORMAL = 0;
-    private final static int CONTROL_MODE_MASTER = 1;
-    int controlMode = CONTROL_MODE_NORMAL;
-    public static volatile boolean isStop = false;
+
     LeftRocker leftRocker;
     RightRocker rightRocker;
     //    AttackButton leftAtttackButton;
     AttackButton rightAtttackButton;
     LockingButton lockingButton;
     SmellButton smellButton;
-    public static volatile ArrayList<BaseCharacterView> allCharacters;
     public static ArrayList<Trajectory> allTrajectories;
     public static MapBaseFrame mapBaseFrame;
     public static BaseCharacterView myCharacter;
     public static FrameLayout baseFrame;
-    PlayerInfo myPlayerInfo;
-    SightView mySight;
+    public static GameInfo gameInfo;
+    public static GameMap gameMap;
     public GameHandler gameHandler = new GameHandler();
     Timer timerForAllMoving = new Timer();
     Timer timerForTrajectory = new Timer();
     ArrayList<Timer> timerForAIList = new ArrayList<Timer>();
-    ArrayList<PlayerInfo> playerInfos;
-    Landform[][] landformses;
-    Thread backGroundMusicThread;
     public static MyVirtualWindow virtualWindow;
     private MediaPlayer backGround;
-    private int targetKillCount = 10;
 
 
     private class GameMainTask extends TimerTask {
@@ -120,7 +101,7 @@ public String playMode;
 //                    @Override
 //                    public void run() {
 //
-//                        while (isStop == false) {
+//                        while (gameInfo.isStop == false) {
 //                            if (backGround.isPlaying() == false) {
 //                                backGround.seekTo(0);
 //                                backGround.start();
@@ -184,7 +165,7 @@ public String playMode;
                     int team2KillCount = 0;
                     int team3KillCount = 0;
                     int team4KillCount = 0;
-                    for (BaseCharacterView character : allCharacters) {
+                    for (BaseCharacterView character : gameInfo.allCharacters) {
                         if (character.getTeamID() == 1)
                             team1KillCount += character.killCount;
                         else if (character.getTeamID() == 2)
@@ -194,31 +175,31 @@ public String playMode;
                         else if (character.getTeamID() == 4)
                             team4KillCount += character.killCount;
                     }
-                    if (team1KillCount >= targetKillCount) {
+                    if (team1KillCount >= gameInfo.targetKillCount) {
                         gameResult.setText("1队胜");
-                        isStop = true;
+                        gameInfo.isStop = true;
                     }
-                    if (team2KillCount >= targetKillCount) {
+                    if (team2KillCount >= gameInfo.targetKillCount) {
                         gameResult.setText("2队胜");
-                        isStop = true;
+                        gameInfo.isStop = true;
                     }
-                    if (team3KillCount >= targetKillCount) {
+                    if (team3KillCount >= gameInfo.targetKillCount) {
                         gameResult.setText("3队胜");
-                        isStop = true;
+                        gameInfo.isStop = true;
                     }
-                    if (team4KillCount >= targetKillCount) {
+                    if (team4KillCount >= gameInfo.targetKillCount) {
                         gameResult.setText("4队胜");
-                        isStop = true;
+                        gameInfo.isStop = true;
 
                     }
-                    if (isStop)
+                    if (gameInfo.isStop)
                         return;
                     reflashCharacterState();
             }
 
 
-            for (int i = 0; i < allCharacters.size(); i++) {
-                BaseCharacterView c = allCharacters.get(i);
+            for (int i = 0; i < gameInfo.allCharacters.size(); i++) {
+                BaseCharacterView c = gameInfo.allCharacters.get(i);
                 TextView target = null;
                 if (i == 0)
                     target = t1;
@@ -248,7 +229,7 @@ public String playMode;
 
     }
 
-//    private synchronized void reflashWindowPosition() {
+    //    private synchronized void reflashWindowPosition() {
 //        FrameLayout.LayoutParams movingLayoutParams = (FrameLayout.LayoutParams) virtualWindow.movingLayout.getLayoutParams();
 //        int relateX = virtualWindow.targetLeft - virtualWindow.left;
 //        int relateY = virtualWindow.targetTop - virtualWindow.top;
@@ -264,112 +245,112 @@ public String playMode;
 //        virtualWindow.movingLayout.setLayoutParams(movingLayoutParams);
 //
 //    }
-public class BluetoothAcceptThread extends Thread {
+    public class BluetoothAcceptThread extends Thread {
 
 
-    public BluetoothAcceptThread() {
-        try {
-            BluetoothServerSocket tmp = null;
-            tmp = bluetoothAdapter.listenUsingRfcommWithServiceRecord("BluetoothServer", UUID.fromString(BluetoothController.mUUID));
-            bluetoothServerSocket = tmp;
-        } catch (IOException e) {
-            e.printStackTrace();
-            Log.e("AcceptThread", e.getMessage());
+        public BluetoothAcceptThread() {
+            try {
+                BluetoothServerSocket tmp = null;
+                tmp = bluetoothAdapter.listenUsingRfcommWithServiceRecord("BluetoothServer", UUID.fromString(BluetoothController.mUUID));
+                bluetoothServerSocket = tmp;
+            } catch (IOException e) {
+                e.printStackTrace();
+                Log.e("AcceptThread", e.getMessage());
+            }
         }
-    }
 
-    @Override
-    public void run() {
-        super.run();
+        @Override
+        public void run() {
+            super.run();
 
-        BluetoothController.cancelDiscovery();
-        //不断监听直到返回连接或者发生异常
-        try {
+            BluetoothController.cancelDiscovery();
+            //不断监听直到返回连接或者发生异常
+            try {
 
-            while (true) {
-                //据说处于查找状态会影响性能哦
+                while (true) {
+                    //据说处于查找状态会影响性能哦
 
-                //启连接请求，这是一个阻塞方法，必须放在子线程
+                    //启连接请求，这是一个阻塞方法，必须放在子线程
 //                    if (bluetoothSocket != null) {
 //                        bluetoothServerSocket.close();//根据demo描述，close应该在accept成功后执行，不会影响已链接bluetoothSocket
 //                        bluetoothServerSocket = null;
 //                    }
 
-                bluetoothSocket = bluetoothServerSocket.accept();
+                    bluetoothSocket = bluetoothServerSocket.accept();
 
-                if (bluetoothSocket != null) {
-                    if (dealBluetoothServerDataThread == null || dealBluetoothServerDataThread.getState() == State.TERMINATED) {
-                        dealBluetoothServerDataThread = new DealBluetoothServerDataThread(bluetoothSocket);
-                        dealBluetoothServerDataThread.start();
-                        bluetoothServerSocket.close();
-                    } else {
-                        bluetoothSocket.close();
+                    if (bluetoothSocket != null) {
+                        if (dealBluetoothServerDataThread == null || dealBluetoothServerDataThread.getState() == State.TERMINATED) {
+                            dealBluetoothServerDataThread = new DealBluetoothServerDataThread(bluetoothSocket);
+                            dealBluetoothServerDataThread.start();
+                            bluetoothServerSocket.close();
+                        } else {
+                            bluetoothSocket.close();
+                        }
                     }
-                }
 
 
 //                    manageConnectedSocket(bluetoothSocket);
-            }
-        } catch (Exception e) {
-            Log.e("BluetoothAcceptThread", "哎呀，当个服务器不容易啊，不知干嘛又挂了。。。。。。。。。。。");
-            finish();
-        } finally {
-
-        }
-    }
-
-    /**
-     * 取消正在监听的接口
-     */
-
-
-    class DealBluetoothServerDataThread extends Thread {
-        BluetoothSocket bluetoothSocket;
-
-        public DealBluetoothServerDataThread(BluetoothSocket bluetoothSocket) {
-            this.bluetoothSocket = bluetoothSocket;
-        }
-
-        @Override
-        public void run() {
-
-
-            InputStream is = null;
-            OutputStream os = null;
-            PlayerInfo remotePlayerInfo;
-            try {
-                while (true) {
-                    os = bluetoothSocket.getOutputStream();
-
-                    is = bluetoothSocket.getInputStream();
-                    ObjectInputStream ois = new ObjectInputStream(is);
-                    remotePlayerInfo = (PlayerInfo) ois.readObject();
-                    synchronized (playerInfos) {
-                        playerInfos.set(1, remotePlayerInfo);
-                        Log.e("DealServerDataThread", "personInfoTeamID:" + remotePlayerInfo.teamID);
-                        Message message = gameHandler.obtainMessage();
-                        message.what = GameHandler.UPDATE_OTHER_ONLINE_PLAYER;
-                        message.obj = remotePlayerInfo;
-                        gameHandler.sendMessage(message);
-                        os = bluetoothSocket.getOutputStream();
-                        ObjectOutputStream oos = new ObjectOutputStream(os);
-                        oos.writeObject(playerInfos.get(0));
-                    }
                 }
             } catch (Exception e) {
-                initBluetoothConnection();
+                Log.e("BluetoothAcceptThread", "哎呀，当个服务器不容易啊，不知干嘛又挂了。。。。。。。。。。。");
                 finish();
-//                    Log.e("DealServerDataThread", e.getMessage());
             } finally {
+
+            }
+        }
+
+        /**
+         * 取消正在监听的接口
+         */
+
+
+        class DealBluetoothServerDataThread extends Thread {
+            BluetoothSocket bluetoothSocket;
+
+            public DealBluetoothServerDataThread(BluetoothSocket bluetoothSocket) {
+                this.bluetoothSocket = bluetoothSocket;
+            }
+
+            @Override
+            public void run() {
+
+
+                InputStream is = null;
+                OutputStream os = null;
+                PlayerInfo remotePlayerInfo;
+                try {
+                    while (true) {
+                        os = bluetoothSocket.getOutputStream();
+
+                        is = bluetoothSocket.getInputStream();
+                        ObjectInputStream ois = new ObjectInputStream(is);
+                        remotePlayerInfo = (PlayerInfo) ois.readObject();
+                        synchronized (gameInfo.playerInfos) {
+                            gameInfo.playerInfos.set(1, remotePlayerInfo);
+                            Log.e("DealServerDataThread", "personInfoTeamID:" + remotePlayerInfo.teamID);
+                            Message message = gameHandler.obtainMessage();
+                            message.what = GameHandler.UPDATE_OTHER_ONLINE_PLAYER;
+                            message.obj = remotePlayerInfo;
+                            gameHandler.sendMessage(message);
+                            os = bluetoothSocket.getOutputStream();
+                            ObjectOutputStream oos = new ObjectOutputStream(os);
+                            oos.writeObject(gameInfo.playerInfos.get(0));
+                        }
+                    }
+                } catch (Exception e) {
+                    initBluetoothConnection();
+                    finish();
+//                    Log.e("DealServerDataThread", e.getMessage());
+                } finally {
 //                bluetoothAcceptThread=new BluetoothAcceptThread();
 //                bluetoothAcceptThread.setDaemon(true);
 //                bluetoothAcceptThread.start();
+                }
             }
         }
+
+
     }
-
-
-}
 
 
     class BluetoothConnectThread extends Thread {
@@ -404,13 +385,13 @@ public class BluetoothAcceptThread extends Thread {
                         InputStream is = null;
                         os = bluetoothSocket.getOutputStream();
                         ObjectOutputStream oos = new ObjectOutputStream(os);
-                        synchronized (playerInfos) {
-                            oos.writeObject(playerInfos.get(0));
+                        synchronized (gameInfo.playerInfos) {
+                            oos.writeObject(gameInfo.playerInfos.get(0));
                             is = bluetoothSocket.getInputStream();
 
                             ObjectInputStream ois = new ObjectInputStream(is);
                             remotePlayerInfo = (PlayerInfo) ois.readObject();
-                            playerInfos.set(1,remotePlayerInfo);
+                            gameInfo.playerInfos.set(1, remotePlayerInfo);
                             Message message = gameHandler.obtainMessage();
                             message.what = BluetoothOnlineGameBaseAreaActivity.GameHandler.UPDATE_OTHER_PLAYER;
                             message.obj = remotePlayerInfo;
@@ -426,7 +407,7 @@ public class BluetoothAcceptThread extends Thread {
                 finish();
                 //无法连接，关闭BluetoothSocket并且退出
 
-            }   finally {
+            } finally {
 //                bluetoothConnectThread=new BluetoothConnectThread(serverDevice);
 //                bluetoothConnectThread.setDaemon(true);
 //                bluetoothConnectThread.start();
@@ -472,9 +453,7 @@ public class BluetoothAcceptThread extends Thread {
             Log.e("cancel", e.getMessage());
         }
     }
-    
-    
-    
+
 
     private synchronized void reflashCharacterState() {
 
@@ -488,36 +467,35 @@ public class BluetoothAcceptThread extends Thread {
             virtualWindow.hasUpdatedWindowPosition = false;
             //获得当前位置
             myCharacter.updateNowPosition();
-            if (mySight != null) {
-                mySight.hasUpdatedPosition = false;
-                mySight.updateNowPosition();
+            if (gameInfo.mySight != null) {
+                gameInfo.mySight.hasUpdatedPosition = false;
+                gameInfo.mySight.updateNowPosition();
             }
             if (myCharacter.isDead == true) {
                 myCharacter.deadReset();
 
-            } else if (myCharacter.judgeingAttack) {
+            } else if (myCharacter.isJumping) {
                 myCharacter.keepDirectionAndJump(0, 0, mapBaseFrame.getWidth(), mapBaseFrame.getHeight());
             } else {
-                if (controlMode == CONTROL_MODE_MASTER) {//CONTROL_MODE_MASTER这种操控方式已经过期，也许有用,留着玩儿
+                if (gameInfo.controlMode == GameInfo.CONTROL_MODE_MASTER) {//GameInfo.CONTROL_MODE_MASTER这种操控方式已经过期，也许有用,留着玩儿
                     if (myCharacter.needMove == true) {
                         myCharacter.masterModeOffsetLRTBParams();
                     }
-                    if (mySight != null && mySight.needMove == true) {
-                        mySight.masterModeOffsetLRTBParams(isMyCharacterMoving);
+                    if (gameInfo.mySight != null && gameInfo.mySight.needMove == true) {
+                        gameInfo.mySight.masterModeOffsetLRTBParams(isMyCharacterMoving);
                     }
-                } else if (controlMode == CONTROL_MODE_NORMAL) {
+                } else if (gameInfo.controlMode == GameInfo.CONTROL_MODE_NORMAL) {
                     if (myCharacter.needMove == true) {
                         if (myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
                             myCharacter.normalModeOffsetLRTBParams();
                         else if (myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF)
                             myCharacter.normalModeOffsetWolfLRTBParams();
                     }
-                    if (mySight != null && mySight.needMove == true) {
-                        mySight.normalModeOffsetLRTBParams();
-                    }else if(myCharacter.isLocking){
+                    if (gameInfo.mySight != null && gameInfo.mySight.needMove == true) {
+                        gameInfo.mySight.normalModeOffsetLRTBParams();
+                    } else if (myCharacter.isLocking) {
                         myCharacter.dealLocking();
                     }
-
 
 
                 }
@@ -528,25 +506,25 @@ public class BluetoothAcceptThread extends Thread {
             myCharacter.setLayoutParams(mLayoutParams);
             myCharacter.centerX = myCharacter.nowLeft + myCharacter.getWidth() / 2;
             myCharacter.centerY = myCharacter.nowTop + myCharacter.getHeight() / 2;
-            if (controlMode == CONTROL_MODE_MASTER) {
-                mySight.mLayoutParams.leftMargin = mySight.nowLeft;
-                mySight.mLayoutParams.topMargin = mySight.nowTop;
-                mySight.centerX = mySight.nowLeft + mySight.getWidth() / 2;
-                mySight.centerY = mySight.nowTop + mySight.getHeight() / 2;
-            } else if (controlMode == CONTROL_MODE_NORMAL) {
-                mySight.mLayoutParams.leftMargin = myCharacter.centerX - mySight.getWidth() / 2;
-                mySight.mLayoutParams.topMargin = myCharacter.centerY - mySight.getHeight() / 2;
-                mySight.centerX = myCharacter.centerX;
-                mySight.centerY = myCharacter.centerY;
+            if (gameInfo.controlMode == GameInfo.CONTROL_MODE_MASTER) {
+                gameInfo.mySight.mLayoutParams.leftMargin = gameInfo.mySight.nowLeft;
+                gameInfo.mySight.mLayoutParams.topMargin = gameInfo.mySight.nowTop;
+                gameInfo.mySight.centerX = gameInfo.mySight.nowLeft + gameInfo.mySight.getWidth() / 2;
+                gameInfo.mySight.centerY = gameInfo.mySight.nowTop + gameInfo.mySight.getHeight() / 2;
+            } else if (gameInfo.controlMode == GameInfo.CONTROL_MODE_NORMAL) {
+                gameInfo.mySight.mLayoutParams.leftMargin = myCharacter.centerX - gameInfo.mySight.getWidth() / 2;
+                gameInfo.mySight.mLayoutParams.topMargin = myCharacter.centerY - gameInfo.mySight.getHeight() / 2;
+                gameInfo.mySight.centerX = myCharacter.centerX;
+                gameInfo.mySight.centerY = myCharacter.centerY;
             }
 
-            mySight.setLayoutParams(mySight.mLayoutParams);
+            gameInfo.mySight.setLayoutParams(gameInfo.mySight.mLayoutParams);
 
 
             myCharacter.changeThisCharacterOnLandformses();
             //master模式下nowFacingAngle由sight和Character共同决定；需要在这里调用changeRotate()；
             //而normal模式下nowFacingAngle在sight的normalModeOffsetLRTBParams()下已经计算获得。
-            if (controlMode == CONTROL_MODE_MASTER) {
+            if (gameInfo.controlMode == GameInfo.CONTROL_MODE_MASTER) {
                 myCharacter.changeRotate();
             }
             myCharacter.attackRange.centerX = myCharacter.centerX;
@@ -564,25 +542,25 @@ public class BluetoothAcceptThread extends Thread {
             viewRangeLP.topMargin = myCharacter.viewRange.centerY - myCharacter.nowViewRadius;
             myCharacter.viewRange.setLayoutParams(viewRangeLP);
 
-            if(myCharacter.promptView!=null){
+            if (myCharacter.promptView != null) {
                 myCharacter.promptView.centerX = myCharacter.centerX;
                 myCharacter.promptView.centerY = myCharacter.centerY;
-                myCharacter.promptView.layoutParams.leftMargin = myCharacter.promptView.centerX - myCharacter.promptView.viewSize/2;
-                myCharacter.promptView.layoutParams.topMargin = myCharacter.promptView.centerY - myCharacter.promptView.viewSize/2;
+                myCharacter.promptView.layoutParams.leftMargin = myCharacter.promptView.centerX - myCharacter.promptView.viewSize / 2;
+                myCharacter.promptView.layoutParams.topMargin = myCharacter.promptView.centerY - myCharacter.promptView.viewSize / 2;
 
                 myCharacter.promptView.setLayoutParams(myCharacter.promptView.layoutParams);
             }
 
 //            myCharacter.viewRange.invalidate();
 
-            mySight.virtualWindowPassiveFollow();
+            gameInfo.mySight.virtualWindowPassiveFollow();
             myCharacter.startMovingMediaThread();
 
 //            }
         }
 
 
-        for (BaseCharacterView c : allCharacters) {
+        for (BaseCharacterView c : gameInfo.allCharacters) {
 
             if (c == myCharacter)
                 continue;
@@ -645,8 +623,8 @@ public class BluetoothAcceptThread extends Thread {
     }
 
     private void startAI() {
-        for (int i = 1; i < playerInfos.size(); i++) {
-            PlayerInfo playerInfo = playerInfos.get(i);
+        for (int i = 1; i < gameInfo.playerInfos.size(); i++) {
+            PlayerInfo playerInfo = gameInfo.playerInfos.get(i);
             BaseAI ai = null;
             if (playerInfo.isAvailable == false)
                 continue;
@@ -662,7 +640,7 @@ public class BluetoothAcceptThread extends Thread {
             aiCharacter.setTeamID(playerInfo.teamID);
 
 
-            allCharacters.add(aiCharacter);
+            gameInfo.allCharacters.add(aiCharacter);
             Timer timerForAI = new Timer("AIPlayer1", true);
             timerForAI.schedule(ai, 1000, 30);
             timerForAIList.add(timerForAI);
@@ -678,74 +656,66 @@ public class BluetoothAcceptThread extends Thread {
 
         int widthCount = mapBaseFrame.mapWidth / 100;
         int heightCount = mapBaseFrame.mapHeight / 100;
-        landformses = new Landform[heightCount][widthCount];
+        gameMap.landformses = new Landform[heightCount][widthCount];
         Random r = new Random();
-        for (int i = 0; i < landformses.length; i++) {
-            for (int j = 0; j < landformses[i].length; j++) {
+        for (int i = 0; i < gameMap.landformses.length; i++) {
+            for (int j = 0; j < gameMap.landformses[i].length; j++) {
                 if (r.nextInt(10) > 5) {
-                    landformses[i][j] = new TallGrassland(this);
+                    gameMap.landformses[i][j] = new TallGrassland(this);
                 }
             }
         }
-//        for (int i = 0; i < landformses.length; i++) {
+//        for (int i = 0; i < gameMap.landformses.length; i++) {
 //            if (Math.abs(i) % 3 == 0) {
-//                for (int j = 0; j < landformses[i].length; j++) {
+//                for (int j = 0; j < gameMap.landformses[i].length; j++) {
 //                    if (Math.abs(i - j) % 3 == 0)
-//                        landformses[i][j] = new TallGrassland(this);
+//                        gameMap.landformses[i][j] = new TallGrassland(this);
 //                }
 //            }
 //        }
 
 
-
         //添加地形
-        GameMap map = new GameMap(this);
-        mapBaseFrame.addView(map);
-        map.landformses = landformses;
-        map.addLandforms();
+        gameMap = new GameMap(this);
+        mapBaseFrame.addView(gameMap);
+        gameMap.buildLandforms();
 
-        allCharacters = new ArrayList<BaseCharacterView>();
+        gameInfo.allCharacters = new ArrayList<BaseCharacterView>();
         //添加我的角色
-        myPlayerInfo = playerInfos.get(0);
-        if (myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
+        gameInfo.myPlayerInfo = gameInfo.playerInfos.get(0);
+        if (gameInfo.myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
             myCharacter = new NormalHunter(this, virtualWindow);
         else {
             myCharacter = new NormalWolf(this, virtualWindow);
-            PromptView promptView=new PromptView(this,myCharacter);
+            PromptView promptView = new PromptView(this, myCharacter);
             mapBaseFrame.addView(promptView);
-            myCharacter.promptView=promptView;
+            myCharacter.promptView = promptView;
         }
-        myCharacter.setTeamID(myPlayerInfo.teamID);
+        myCharacter.setTeamID(gameInfo.myPlayerInfo.teamID);
         myCharacter.isMyCharacter = true;
         myCharacter.gameHandler = gameHandler;
 
-        allCharacters.add(myCharacter);
+        gameInfo.allCharacters.add(myCharacter);
 //        mapBaseFrame.addView(myCharacter);
         mapBaseFrame.myCharacter = myCharacter;
 
 
 //        NormalHunter testCharacter = new NormalHunter(this, virtualWindow);
 //        testCharacter.setTeamID(2);
-//        allCharacters.add(testCharacter);
+//        gameInfo.allCharacters.add(testCharacter);
 
         //添加视点
-        mySight = new SightView(this);
-        mySight.virtualWindow = this.virtualWindow;
-        mySight.sightSize = myCharacter.characterBodySize;
-        if (controlMode == CONTROL_MODE_NORMAL)
-            mySight.isHidden = true;
+        gameInfo.mySight = new SightView(this);
+        gameInfo.mySight.virtualWindow = this.virtualWindow;
+        gameInfo.mySight.sightSize = myCharacter.characterBodySize;
+        if (gameInfo.controlMode == GameInfo.CONTROL_MODE_NORMAL)
+            gameInfo.mySight.isHidden = true;
 
-        myCharacter.setSight(mySight);
-        if (mySight.isHidden == false) {
-            mapBaseFrame.addView(mySight);
-            mapBaseFrame.mySight = mySight;
+        myCharacter.setSight(gameInfo.mySight);
+        if (gameInfo.mySight.isHidden == false) {
+            mapBaseFrame.addView(gameInfo.mySight);
+            mapBaseFrame.mySight = gameInfo.mySight;
         }
-
-
-
-
-
-
 
 
         rightAtttackButton = (AttackButton) this.findViewById(R.id.attack_button_right);
@@ -760,7 +730,7 @@ public class BluetoothAcceptThread extends Thread {
         leftRocker.setBindingCharacter(myCharacter);
         mapBaseFrame.leftRocker = leftRocker;
         rightRocker = (RightRocker) this.findViewById(R.id.rocker_right);
-        if (myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER) {
+        if (gameInfo.myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER) {
             rightAtttackButton.reCreateBitmap();
             rightRocker.setBindingCharacter(myCharacter);
             mapBaseFrame.rightRocker = rightRocker;
@@ -777,8 +747,8 @@ public class BluetoothAcceptThread extends Thread {
 
 
             rabp.leftMargin = rightRocker.getRight() - rightAtttackButton.buttonSize - 10;
-            rabp.topMargin = rightRocker.getTop() - rightAtttackButton.buttonSize +30;
-        } else if (myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF) {
+            rabp.topMargin = rightRocker.getTop() - rightAtttackButton.buttonSize + 30;
+        } else if (gameInfo.myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF) {
             rightAtttackButton.reCreateBitmap();
             baseFrame.removeView(rightRocker);
             rabp.leftMargin = MyVirtualWindow.getWindowWidth(this) - rightAtttackButton.buttonSize - 50;
@@ -789,7 +759,7 @@ public class BluetoothAcceptThread extends Thread {
         rightRocker.bringToFront();
         rightAtttackButton.bringToFront();
 
-        if(myCharacter.characterType==BaseCharacterView.CHARACTER_TYPE_HUNTER) {
+        if (myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER) {
             lockingButton = new LockingButton(this);
             int lockingButtonSize = lockingButton.buttonSize;
             lockingButton.bindingCharacter = myCharacter;
@@ -801,8 +771,8 @@ public class BluetoothAcceptThread extends Thread {
             lblp.topMargin = rabp.topMargin;
             lockingButton.setLayoutParams(lblp);
             baseFrame.addView(lockingButton);
-        }else  if(myCharacter.characterType==BaseCharacterView.CHARACTER_TYPE_WOLF) {
-            smellButton= new SmellButton(this);
+        } else if (myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF) {
+            smellButton = new SmellButton(this);
             int smellButtonSize = smellButton.buttonSize;
             smellButton.bindingCharacter = myCharacter;
             FrameLayout.LayoutParams sblp = (FrameLayout.LayoutParams) smellButton.getLayoutParams();
@@ -814,10 +784,10 @@ public class BluetoothAcceptThread extends Thread {
             smellButton.setLayoutParams(sblp);
             baseFrame.addView(smellButton);
         }
-        if(playMode.equals("single")) {
+        if (gameInfo.playMode.equals("single")) {
             startAI();
-        }else if(playMode.equals("bluetooth")){
-            PlayerInfo remotePlayerInfo = playerInfos.get(1);
+        } else if (gameInfo.playMode.equals("bluetooth")) {
+            PlayerInfo remotePlayerInfo = gameInfo.playerInfos.get(1);
             BaseCharacterView otherCharacter;
             if (remotePlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
                 otherCharacter = new NormalHunter(this, virtualWindow);
@@ -828,10 +798,10 @@ public class BluetoothAcceptThread extends Thread {
             otherCharacter.isMyCharacter = false;
             otherCharacter.gameHandler = gameHandler;
 
-            allCharacters.add(otherCharacter);
+            gameInfo.allCharacters.add(otherCharacter);
 
         }
-        for (BaseCharacterView character : allCharacters) {
+        for (BaseCharacterView character : gameInfo.allCharacters) {
 //            int left = -1;
 //            int top = -1;
 //            float facingAngle = -1;
@@ -883,9 +853,9 @@ public class BluetoothAcceptThread extends Thread {
         t3.bringToFront();
         t4.bringToFront();
         t5.bringToFront();
-        if(lockingButton!=null)
+        if (lockingButton != null)
             lockingButton.bringToFront();
-        if(smellButton!=null)
+        if (smellButton != null)
             smellButton.bringToFront();
     }
 
@@ -894,16 +864,16 @@ public class BluetoothAcceptThread extends Thread {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_game_base_area);
         initBluetoothConnection();
-        playerInfos = (ArrayList<PlayerInfo>) getIntent().getExtras().get("playerInfos");
-        playMode=(String)getIntent().getExtras().get("playMode");
+        gameInfo = new GameInfo();
+        gameInfo.playerInfos = (ArrayList<PlayerInfo>) getIntent().getExtras().get("playerInfos");
+        gameInfo.playMode = (String) getIntent().getExtras().get("playMode");
         allTrajectories = new ArrayList<Trajectory>();
-        allCharacters = new ArrayList<BaseCharacterView>();
-        isStop = false;
+        gameInfo.isStop = false;
         backGround = MediaPlayer.create(this, R.raw.background);
         ViewUtils.initWindowParams(this);
         DisplayMetrics dm = ViewUtils.getWindowsDisplayMetrics();
         baseFrame = (FrameLayout) findViewById(R.id.baseFrame);
-        mapBaseFrame = new MapBaseFrame(this, mapWidth, mapHeight);
+        mapBaseFrame = new MapBaseFrame(this, gameInfo.mapWidth, gameInfo.mapHeight);
         baseFrame.addView(mapBaseFrame);
 
 
@@ -964,20 +934,20 @@ public class BluetoothAcceptThread extends Thread {
         baseFrame.addView(t5);
         baseFrame.addView(t6);
         baseFrame.addView(gameResult);
-        if(playMode.equals("bluetooth")) {
-            if (playerInfos != null) {
-                for(PlayerInfo pi:playerInfos){
-                    if(pi.isServer==true)
-                        serverMac=pi.mac;
+        if (gameInfo.playMode.equals("bluetooth")) {
+            if (gameInfo.playerInfos != null) {
+                for (PlayerInfo pi : gameInfo.playerInfos) {
+                    if (pi.isServer == true)
+                        gameInfo.serverMac = pi.mac;
                 }
             }
             bluetoothAdapter = BluetoothController.mBluetoothAdapter;
-            if (playerInfos.get(0).isServer) {
+            if (gameInfo.playerInfos.get(0).isServer) {
                 bluetoothAcceptThread = new BluetoothAcceptThread();
                 bluetoothAcceptThread.setDaemon(true);
                 bluetoothAcceptThread.start();
             } else {
-                BluetoothDevice serverDevice = bluetoothAdapter.getRemoteDevice(serverMac);
+                BluetoothDevice serverDevice = bluetoothAdapter.getRemoteDevice(gameInfo.serverMac);
                 bluetoothConnectThread = new BluetoothConnectThread(serverDevice);
                 bluetoothConnectThread.setDaemon(true);
                 bluetoothConnectThread.start();
@@ -1039,7 +1009,7 @@ public class BluetoothAcceptThread extends Thread {
     @Override
     protected void onDestroy() {
         initBluetoothConnection();
-        isStop = true;
+        gameInfo.isStop = true;
         timerForTrajectory.cancel();
         backGround.release();
 //        try {
@@ -1066,7 +1036,7 @@ public class BluetoothAcceptThread extends Thread {
      */
     @Override
     public void onBackPressed() {
-        isStop = true;
+        gameInfo.isStop = true;
         timerForAllMoving.cancel();
 
         timerForTrajectory.cancel();

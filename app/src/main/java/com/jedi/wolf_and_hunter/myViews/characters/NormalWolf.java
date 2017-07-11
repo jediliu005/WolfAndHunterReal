@@ -11,9 +11,8 @@ import android.util.AttributeSet;
 
 import com.jedi.wolf_and_hunter.R;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
+import com.jedi.wolf_and_hunter.myObj.GameInfo;
 import com.jedi.wolf_and_hunter.myObj.MyVirtualWindow;
-import com.jedi.wolf_and_hunter.myViews.JRocker;
-import com.jedi.wolf_and_hunter.myViews.Trajectory;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 
 import java.util.Date;
@@ -123,7 +122,7 @@ public class NormalWolf extends BaseCharacterView {
                 new Runnable() {
                     @Override
                     public void run() {
-                        while (GameBaseAreaActivity.isStop == false && isStop == false) {
+                        while (GameBaseAreaActivity.gameInfo.isStop == false && isStop == false) {
                             if (attackCount == maxAttackCount) {
                                 if(nowSpeed!=defaultSpeed)
                                     nowSpeed=defaultSpeed;
@@ -170,8 +169,8 @@ public class NormalWolf extends BaseCharacterView {
 
         @Override
         public void run() {
-            judgeingAttack = true;
-            while (GameBaseAreaActivity.isStop == false && judgeingAttack) {
+            isJumping = true;
+            while (GameBaseAreaActivity.gameInfo.isStop == false && isJumping) {
 
                 int nowCenterX = (getLeft() + getRight()) / 2;
                 int nowCenterY = (getTop() + getBottom()) / 2;
@@ -188,10 +187,10 @@ public class NormalWolf extends BaseCharacterView {
                 } else {
                     realOffX = nowJumpToPointOffX;
                     realOffY = nowJumpToPointOffY;
-                    judgeingAttack = false;
+                    isJumping = false;
                 }
 
-                for (BaseCharacterView targetCharacter : GameBaseAreaActivity.allCharacters) {
+                for (BaseCharacterView targetCharacter : GameBaseAreaActivity.gameInfo.allCharacters) {
 
 
                     if (attackCharacter == targetCharacter ||targetCharacter.isDead==true|| targetCharacter.getTeamID() == attackCharacter.getTeamID())
@@ -223,6 +222,7 @@ public class NormalWolf extends BaseCharacterView {
                     }
 
                     if (pointToLineDistance <= characterBodySize / 2 + targetCharacterSize) {
+                        GameBaseAreaActivity.gameInfo.needToBeKilledMap.put(attackCharacter,targetCharacter);
                         targetCharacter.isDead = true;
                         attackCharacter.killCount++;
                         targetCharacter.dieCount++;
@@ -248,7 +248,7 @@ public class NormalWolf extends BaseCharacterView {
                     e.printStackTrace();
                 }
             }
-            judgeingAttack = false;
+            isJumping = false;
             attackThread = null;
         }
     }
@@ -261,7 +261,7 @@ public class NormalWolf extends BaseCharacterView {
 
     @Override
     public void attack() {
-        if (judgeingAttack || attackCount <= 0 || isDead) {
+        if (isJumping || attackCount <= 0 || isDead) {
             return;
         }
         if (attackThread != null&&attackThread.getState()!= Thread.State.TERMINATED) {

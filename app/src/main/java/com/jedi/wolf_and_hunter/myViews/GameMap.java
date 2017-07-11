@@ -35,7 +35,7 @@ public class GameMap extends View {
         super(context, attrs);
     }
 
-    public void addLandforms() {
+    public void buildLandforms() {
         FrameLayout parent = (FrameLayout) getParent();
         for (int y = 0; y < landformses.length; y++) {
             for (int x = 0; x < landformses[y].length; x++) {
