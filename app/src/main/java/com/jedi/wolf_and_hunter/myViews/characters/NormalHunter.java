@@ -18,6 +18,7 @@ import com.jedi.wolf_and_hunter.myViews.Trajectory;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 
 import java.util.Date;
+import java.util.HashMap;
 
 /**
  * Created by Administrator on 2017/4/21.
@@ -38,7 +39,7 @@ public class NormalHunter extends BaseCharacterView {
     public final static int defaultSpeed = 10;
     public final static int defaultAngleChangSpeed = 3;
     public final static int defaultHealthPoint = 2;
-    public final static int defaultKnockAwayStrength = 100;
+    public final static int defaultKnockAwayStrength = 300;
 
 
     private int bolletWidth = 0;
@@ -195,6 +196,8 @@ public class NormalHunter extends BaseCharacterView {
     public void deadReset() {
         super.deadReset();
         attackCount = defaultMaxAttackCount;
+        nowHealthPoint=defaultHealthPoint;
+        isLocking=false;
     }
 
 
@@ -241,37 +244,40 @@ public class NormalHunter extends BaseCharacterView {
 
             }
             if (pointToLineDistance <= bolletWidth / 2 + targetCharacterSize) {
-                float relateFacingAngle = Math.abs(targetCharacter.nowFacingAngle - nowFacingAngle);
-
-                if (relateFacingAngle < 90 || relateFacingAngle > 270) {//背击
-                    targetCharacter.nowHealthPoint -= 2;
-                } else {
-                    targetCharacter.nowHealthPoint -= 1;
-                }
-                if (targetCharacter.nowHealthPoint <= 0) {
-                    targetCharacter.isDead = true;
-                    this.killCount++;
-                    targetCharacter.dieCount++;
-                    targetCharacter.deadTime = new Date().getTime();
-                } else {
-                    if (targetCharacter.knockedAwayThread != null && targetCharacter.knockedAwayThread.getState().equals(Thread.State.TERMINATED) == false) {
-                        targetCharacter.isKnockedAway = false;
-                        targetCharacter.knockedAwayThread.interrupt();
-                    }
-                    double cosAlpha = Math.cos(Math.toRadians(nowFacingAngle));
-                    double endX = cosAlpha * nowKnockAwayStrength;
-
-                    double endY = Math.sqrt(nowKnockAwayStrength * nowKnockAwayStrength - endX * endX);
-                    if (nowFacingAngle >= 180)
-                        endY = -endY;
-                    endX = endX + centerX;
-                    endY = endY + centerY;
-//        Point fromPoint = new Point(centerX, centerY);
-                    Point toPoint = new Point((int) endX, (int) endY);
-                    targetCharacter.knockedAwayThread = new Thread(new KnockedAwayThread(toPoint));
-                    targetCharacter.knockedAwayThread.setDaemon(true);
-                    targetCharacter.knockedAwayThread.start();
-                }
+                HashMap<BaseCharacterView,BaseCharacterView> map=new HashMap<BaseCharacterView,BaseCharacterView>();
+                map.put(this,targetCharacter);
+                GameBaseAreaActivity.gameInfo.beAttackedList.add(map);
+//                float relateFacingAngle = Math.abs(targetCharacter.nowFacingAngle - nowFacingAngle);
+//
+//                if (relateFacingAngle < 90 || relateFacingAngle > 270) {//背击
+//                    targetCharacter.nowHealthPoint -= 2;
+//                } else {
+//                    targetCharacter.nowHealthPoint -= 1;
+//                }
+//                if (targetCharacter.nowHealthPoint <= 0) {
+//                    targetCharacter.isDead = true;
+//                    this.killCount++;
+//                    targetCharacter.dieCount++;
+//                    targetCharacter.deadTime = new Date().getTime();
+//                } else {
+//                    if (targetCharacter.knockedAwayThread != null && targetCharacter.knockedAwayThread.getState().equals(Thread.State.TERMINATED) == false) {
+//                        targetCharacter.isKnockedAway = false;
+//                        targetCharacter.knockedAwayThread.interrupt();
+//                    }
+//                    double cosAlpha = Math.cos(Math.toRadians(nowFacingAngle));
+//                    double endX = cosAlpha * nowKnockAwayStrength;
+//
+//                    double endY = Math.sqrt(nowKnockAwayStrength * nowKnockAwayStrength - endX * endX);
+//                    if (nowFacingAngle >= 180)
+//                        endY = -endY;
+//                    endX = endX + centerX;
+//                    endY = endY + centerY;
+////        Point fromPoint = new Point(centerX, centerY);
+//                    Point toPoint = new Point((int) endX, (int) endY);
+//                    targetCharacter.knockedAwayThread = new Thread(new KnockedAwayThread(toPoint));
+//                    targetCharacter.knockedAwayThread.setDaemon(true);
+//                    targetCharacter.knockedAwayThread.start();
+//                }
 
             }
 

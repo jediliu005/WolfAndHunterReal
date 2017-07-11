@@ -6,16 +6,14 @@ import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.Point;
 import android.media.MediaPlayer;
-import android.os.Message;
 import android.util.AttributeSet;
 
 import com.jedi.wolf_and_hunter.R;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
-import com.jedi.wolf_and_hunter.myObj.GameInfo;
 import com.jedi.wolf_and_hunter.myObj.MyVirtualWindow;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 
-import java.util.Date;
+import java.util.HashMap;
 
 /**
  * Created by Administrator on 2017/4/21.
@@ -39,7 +37,7 @@ public class NormalWolf extends BaseCharacterView {
     public final static int defaultRunWaitTime = 200;
     public final static int defaultSpeed = 15;
     public final static int defaultHealthPoint = 2;
-    public final static int defaultKnockAwayStrength = 100;
+    public final static int defaultKnockAwayStrength = 300;
     boolean isStop = false;
     Thread attackThread;
     //下面一行控制bitmap是否自适应分辨率，不强制设flase可能出现图片分辨率和draw分辨率不一致
@@ -222,11 +220,13 @@ public class NormalWolf extends BaseCharacterView {
                     }
 
                     if (pointToLineDistance <= characterBodySize / 2 + targetCharacterSize) {
-                        GameBaseAreaActivity.gameInfo.needToBeKilledMap.put(attackCharacter,targetCharacter);
-                        targetCharacter.isDead = true;
-                        attackCharacter.killCount++;
-                        targetCharacter.dieCount++;
-                        targetCharacter.deadTime = new Date().getTime();
+                        HashMap<BaseCharacterView,BaseCharacterView> map=new HashMap<BaseCharacterView,BaseCharacterView>();
+                        map.put(attackCharacter,targetCharacter);
+                        GameBaseAreaActivity.gameInfo.beAttackedList.add(map);
+//                        targetCharacter.isDead = true;
+//                        attackCharacter.killCount++;
+//                        targetCharacter.dieCount++;
+//                        targetCharacter.deadTime = new Date().getTime();
                         attackCharacter.jumpToX = targetCharacter.centerX;
                         attackCharacter.jumpToY = targetCharacter.centerY;
                         attackSuccess = true;
@@ -257,6 +257,7 @@ public class NormalWolf extends BaseCharacterView {
     public void deadReset() {
         super.deadReset();
         attackCount=defaultMaxAttackCount;
+        nowHealthPoint=defaultHealthPoint;
     }
 
     @Override

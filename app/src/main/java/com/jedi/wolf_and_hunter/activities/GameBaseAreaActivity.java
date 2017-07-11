@@ -461,6 +461,8 @@ public class GameBaseAreaActivity extends Activity {
             return;
         boolean isMyCharacterMoving = myCharacter.needMove;
         boolean needChange = false;
+        if (gameInfo.beAttackedList.size() > 0)
+            gameInfo.dealNeedToBeKilled();
         synchronized (myCharacter) {
 
             myCharacter.hasUpdatedPosition = false;
@@ -474,6 +476,8 @@ public class GameBaseAreaActivity extends Activity {
             if (myCharacter.isDead == true) {
                 myCharacter.deadReset();
 
+            } else if (myCharacter.isKnockedAway) {
+                myCharacter.beKnockedAway(0, 0, mapBaseFrame.getWidth(), mapBaseFrame.getHeight());
             } else if (myCharacter.isJumping) {
                 myCharacter.keepDirectionAndJump(0, 0, mapBaseFrame.getWidth(), mapBaseFrame.getHeight());
             } else {
@@ -571,7 +575,10 @@ public class GameBaseAreaActivity extends Activity {
                     c.invalidate();
                     continue;
                 }
-                if (c.jumpToX > -99999 && c.jumpToY > -99999) {
+                 if (c.isKnockedAway) {
+                    c.beKnockedAway(0, 0, mapBaseFrame.getWidth(), mapBaseFrame.getHeight());
+                }
+                else if (c.jumpToX > -99999 && c.jumpToY > -99999) {
                     c.keepDirectionAndJump(0, 0, mapBaseFrame.getWidth(), mapBaseFrame.getHeight());
                 } else {
                     if (c.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
@@ -641,6 +648,8 @@ public class GameBaseAreaActivity extends Activity {
 
 
             gameInfo.allCharacters.add(aiCharacter);
+//            if (true)
+//                continue;
             Timer timerForAI = new Timer("AIPlayer1", true);
             timerForAI.schedule(ai, 1000, 30);
             timerForAIList.add(timerForAI);

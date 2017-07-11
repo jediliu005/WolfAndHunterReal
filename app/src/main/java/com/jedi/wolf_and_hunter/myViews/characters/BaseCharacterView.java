@@ -1203,9 +1203,15 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 //
 //    }
 
+    public void startKnockedAwayThread(Point toPoint){
+        knockedAwayThread = new Thread(new KnockedAwayThread(toPoint));
+        knockedAwayThread.setDaemon(true);
+        knockedAwayThread.start();
+    }
+
     public class KnockedAwayThread implements Runnable {
 
-        Point knockedAwayToPoint;
+        public Point knockedAwayToPoint;
 
         public KnockedAwayThread( Point knockedAwayToPoint) {
             this.knockedAwayToPoint = knockedAwayToPoint;
@@ -1221,8 +1227,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                 int nowKnockedAwayToPointOffX = knockedAwayToPoint.x - nowCenterX;
                 int nowKnockedAwayToPointOffY = knockedAwayToPoint.y - nowCenterY;
                 double nowJumpToPointDistance = Math.sqrt(nowKnockedAwayToPointOffX * nowKnockedAwayToPointOffX + nowKnockedAwayToPointOffY * nowKnockedAwayToPointOffY);
-                int jumpSpeed = 6 * nowSpeed;
-                boolean attackSuccess = false;
+                int jumpSpeed = 3 * nowSpeed;
                 int realOffX = 0;
                 int realOffY = 0;
                 if (nowJumpToPointDistance > jumpSpeed) {
@@ -1251,7 +1256,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     }
 
 
-    public void knockedAway(int limitLeft, int limitTop, int limitRight, int limitBottom) {
+    public void beKnockedAway(int limitLeft, int limitTop, int limitRight, int limitBottom) {
         isJumping = false;
         if (knockedAwayX == -99999 || knockedAwayY == -99999)
             return;
@@ -1561,7 +1566,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     }
 
     public void attack() {
-        if (attackMediaPlayer == null)
+        if (attackMediaPlayer == null||GameBaseAreaActivity.gameInfo.isStop==true)
             return;
         if (isMyCharacter == false) {
             BaseCharacterView myCharacter = GameBaseAreaActivity.myCharacter;
