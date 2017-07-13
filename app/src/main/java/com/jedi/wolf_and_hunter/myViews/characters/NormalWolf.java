@@ -74,7 +74,7 @@ public class NormalWolf extends BaseCharacterView {
     public void init() {
         characterType=CHARACTER_TYPE_WOLF;
         Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.normal_wolf, option);
-        matrixForCP = new Matrix();
+        Matrix matrixForCP = new Matrix();
         matrixForCP.postScale((float)characterBodySize / bitmap.getWidth()*(float)0.8 , (float)  characterBodySize /bitmap.getHeight()*(float)0.8 );
         characterPic = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrixForCP, true);
 

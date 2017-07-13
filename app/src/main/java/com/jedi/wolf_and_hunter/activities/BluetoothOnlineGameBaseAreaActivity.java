@@ -672,7 +672,7 @@ public class BluetoothOnlineGameBaseAreaActivity extends Activity {
         GameMap map = new GameMap(this);
         mapBaseFrame.addView(map);
         map.landformses = landformses;
-        map.buildLandforms();
+        map.buildLandforms(this);
 
         allCharacters = new ArrayList<BaseCharacterView>();
         //添加我的角色

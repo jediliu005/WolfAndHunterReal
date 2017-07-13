@@ -143,11 +143,9 @@ public class LockingButton extends View {
                         && lastTouchX > 0 && lastTouchX < getWidth()
                         && lastTouchY > 0 && lastTouchY < getHeight()) {
                     if (bindingCharacter.isLocking == false) {
-                        bindingCharacter.isLocking = true;
                         bindingCharacter.switchLockingState(true);
                     }
                     else {
-                        bindingCharacter.isLocking = false;
                         bindingCharacter.switchLockingState(false);
                     }
                 }

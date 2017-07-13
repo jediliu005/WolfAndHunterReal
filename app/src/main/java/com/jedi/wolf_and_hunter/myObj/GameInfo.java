@@ -6,11 +6,10 @@ import com.jedi.wolf_and_hunter.myViews.SightView;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -19,7 +18,7 @@ import java.util.Set;
  * Created by Administrator on 2017/7/11.
  */
 
-public class GameInfo {
+public class GameInfo implements Serializable{
 
     public final static int CONTROL_MODE_NORMAL = 0;
     public final static int CONTROL_MODE_MASTER = 1;
@@ -28,13 +27,14 @@ public class GameInfo {
     public PlayerInfo myPlayerInfo;
     public SightView mySight;
     public ArrayList<PlayerInfo> playerInfos;
+    public int tallGrasslandDensity=50;
     public List<HashMap<BaseCharacterView, BaseCharacterView>> beAttackedList;
-    public String playMode;
+    public String playMode="single";
     public String serverMac;
     public volatile ArrayList<BaseCharacterView> allCharacters;
     public int targetKillCount = 10;
-    public int mapWidth = 1000;
-    public int mapHeight = 1000;
+    public int mapWidth = 2500;
+    public int mapHeight = 2500;
 
     public GameInfo() {
         isStop = false;
@@ -50,6 +50,8 @@ public class GameInfo {
             for (Map.Entry<BaseCharacterView, BaseCharacterView> entry : entrySet) {
                 BaseCharacterView attackCharacter = entry.getKey();
                 BaseCharacterView beAttackedCharacter = entry.getValue();
+                if (beAttackedCharacter.isInvincible)
+                    break;
                 if (beAttackedCharacter.isDead)
                     break;
                 int relateX = beAttackedCharacter.centerX - attackCharacter.centerX;

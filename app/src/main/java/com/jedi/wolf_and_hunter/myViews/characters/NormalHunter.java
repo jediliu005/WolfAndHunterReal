@@ -37,7 +37,7 @@ public class NormalHunter extends BaseCharacterView {
     public final static int defaultWalkWaitTime = 800;
     public final static int defaultRunWaitTime = 300;
     public final static int defaultSpeed = 10;
-    public final static int defaultAngleChangSpeed = 3;
+    public final static int defaultAngleChangSpeed = 5;
     public final static int defaultHealthPoint = 2;
     public final static int defaultKnockAwayStrength = 300;
 
@@ -79,7 +79,7 @@ public class NormalHunter extends BaseCharacterView {
     public void init() {
         characterType = CHARACTER_TYPE_HUNTER;
         Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.normal_hunter, option);
-        matrixForCP = new Matrix();
+        Matrix matrixForCP = new Matrix();
         matrixForCP.postScale((float) characterBodySize / bitmap.getWidth() * (float) 0.8, (float) characterBodySize / bitmap.getHeight() * (float) 0.8);
         characterPic = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrixForCP, true);
 
@@ -134,7 +134,7 @@ public class NormalHunter extends BaseCharacterView {
                 this.nowForceViewRadius = (int) (2 * defaultForceViewRadius);
                 this.nowViewAngle = (float) (0.5 * defaultViewAngle);
                 this.nowSpeed = (int) (0.5 * defaultSpeed);
-                this.nowAngleChangSpeed = (int) (0.5 * defaultAngleChangSpeed);
+                this.nowAngleChangSpeed = (int) (0.4 * defaultAngleChangSpeed);
             } else {
                 this.nowViewRadius = defaultViewRadius;
                 this.nowForceViewRadius = defaultForceViewRadius;
@@ -197,7 +197,7 @@ public class NormalHunter extends BaseCharacterView {
         super.deadReset();
         attackCount = defaultMaxAttackCount;
         nowHealthPoint=defaultHealthPoint;
-        isLocking=false;
+        switchLockingState(false);
     }
 
 

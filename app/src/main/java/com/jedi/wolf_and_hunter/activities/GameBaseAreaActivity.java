@@ -464,7 +464,7 @@ public class GameBaseAreaActivity extends Activity {
         if (gameInfo.beAttackedList.size() > 0)
             gameInfo.dealNeedToBeKilled();
         synchronized (myCharacter) {
-
+myCharacter.updateInvincibleState();
             myCharacter.hasUpdatedPosition = false;
             virtualWindow.hasUpdatedWindowPosition = false;
             //获得当前位置
@@ -569,6 +569,7 @@ public class GameBaseAreaActivity extends Activity {
             if (c == myCharacter)
                 continue;
             synchronized (c) {
+                c.updateInvincibleState();
                 c.updateNowPosition();
                 if (c.isDead == true) {
                     c.deadReset();
@@ -663,17 +664,8 @@ public class GameBaseAreaActivity extends Activity {
     private void addElementToMap() throws Exception {
 
 
-        int widthCount = mapBaseFrame.mapWidth / 100;
-        int heightCount = mapBaseFrame.mapHeight / 100;
-        gameMap.landformses = new Landform[heightCount][widthCount];
-        Random r = new Random();
-        for (int i = 0; i < gameMap.landformses.length; i++) {
-            for (int j = 0; j < gameMap.landformses[i].length; j++) {
-                if (r.nextInt(10) > 5) {
-                    gameMap.landformses[i][j] = new TallGrassland(this);
-                }
-            }
-        }
+
+
 //        for (int i = 0; i < gameMap.landformses.length; i++) {
 //            if (Math.abs(i) % 3 == 0) {
 //                for (int j = 0; j < gameMap.landformses[i].length; j++) {
@@ -686,8 +678,9 @@ public class GameBaseAreaActivity extends Activity {
 
         //添加地形
         gameMap = new GameMap(this);
+
         mapBaseFrame.addView(gameMap);
-        gameMap.buildLandforms();
+        gameMap.buildLandforms(this);
 
         gameInfo.allCharacters = new ArrayList<BaseCharacterView>();
         //添加我的角色
@@ -873,11 +866,12 @@ public class GameBaseAreaActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_game_base_area);
         initBluetoothConnection();
-        gameInfo = new GameInfo();
-        gameInfo.playerInfos = (ArrayList<PlayerInfo>) getIntent().getExtras().get("playerInfos");
-        gameInfo.playMode = (String) getIntent().getExtras().get("playMode");
-        allTrajectories = new ArrayList<Trajectory>();
+//        gameInfo.playerInfos = (ArrayList<PlayerInfo>) getIntent().getExtras().get("playerInfos");
+        gameInfo = (GameInfo) getIntent().getExtras().get("gameInfo");
+        if(gameInfo==null)
+            finish();
         gameInfo.isStop = false;
+        allTrajectories = new ArrayList<Trajectory>();
         backGround = MediaPlayer.create(this, R.raw.background);
         ViewUtils.initWindowParams(this);
         DisplayMetrics dm = ViewUtils.getWindowsDisplayMetrics();

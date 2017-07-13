@@ -2,6 +2,7 @@ package com.jedi.wolf_and_hunter.myViews.characters;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
@@ -18,6 +19,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.widget.FrameLayout;
 
+import com.jedi.wolf_and_hunter.R;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
 import com.jedi.wolf_and_hunter.myObj.GameInfo;
 import com.jedi.wolf_and_hunter.myObj.MyVirtualWindow;
@@ -34,6 +36,7 @@ import com.jedi.wolf_and_hunter.utils.ViewUtils;
 
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Random;
 
 /**
  * Created by Administrator on 2017/3/13.
@@ -65,6 +68,9 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public int nowAngleChangSpeed = 1;
 
     //以下为角色View基本位置与状态属性
+    public boolean isInvincible=false;
+    public long invincibleStartTime;
+    public long invincibleLastTime;
     public int characterType = 0;
     public boolean hasUpdatedPosition = false;
     public int centerX = -1, centerY = -1;
@@ -136,7 +142,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
     //以下为绘图杂项
     public Bitmap characterPic;
-    public Matrix matrixForCP;
+    public static Bitmap starPic;
     int windowWidth;
     int windowHeight;
     public volatile boolean isStop = false;
@@ -155,6 +161,11 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
     Thread smellThread;
 
+    BitmapFactory.Options option = new BitmapFactory.Options();
+
+    {
+        option.inScaled = false;
+    }
 
     public int getTeamID() {
         return teamID;
@@ -264,6 +275,12 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         mHolder.setFormat(PixelFormat.TRANSLUCENT);
         setZOrderOnTop(true);
 
+        if(starPic==null) {
+            Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.star, option);
+            Matrix matrixForSP = new Matrix();
+            matrixForSP.postScale((float) characterBodySize / bitmap.getWidth() *(float)0.8, (float) characterBodySize / bitmap.getHeight() *(float)0.8);
+            starPic = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrixForSP, true);
+        }
         borderWidth = 5;
         normalPaint = new Paint();
         normalPaint.setStyle(Paint.Style.FILL_AND_STROKE);
@@ -1072,6 +1089,10 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                             canvas.drawCircle(characterBodySize / 2, characterBodySize / 2, characterBodySize / 2 - borderWidth, normalPaint);
                             canvas.drawBitmap(characterPic, (int) (characterBodySize * 0.1), (int) (characterBodySize * 0.1), normalPaint);
                             canvas.rotate(nowFacingAngle, characterBodySize / 2, characterBodySize / 2);
+                            if(isInvincible){
+                                canvas.drawBitmap(starPic, (int) (characterBodySize * 0.1), (int) (characterBodySize * 0.1), normalPaint);
+
+                            }
 //                        canvas.drawRect(0, 0, characterBodySize, characterBodySize, normalPaint);
 //                            canvas.drawBitmap(arrowBitMap, characterBodySize - arrowBitmapWidth, (characterBodySize - arrowBitmapHeight) / 2, normalPaint);
 
@@ -1079,6 +1100,10 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                             canvas.drawCircle(characterBodySize / 2, characterBodySize / 2, characterBodySize / 2 - borderWidth, alphaPaint);
                             canvas.drawBitmap(characterPic, (int) (characterBodySize * 0.1), (int) (characterBodySize * 0.1), alphaPaint);
                             canvas.rotate(nowFacingAngle, characterBodySize / 2, characterBodySize / 2);
+                            if(isInvincible){
+                                canvas.drawBitmap(starPic, (int) (characterBodySize * 0.1), (int) (characterBodySize * 0.1), alphaPaint);
+
+                            }
 //                        canvas.drawRect(0, 0, characterBodySize, characterBodySize, alphaPaint);
 //                            canvas.drawBitmap(arrowBitMap, characterBodySize - arrowBitmapWidth, (characterBodySize - arrowBitmapHeight) / 2, alphaPaint);
 
@@ -1088,6 +1113,10 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                             canvas.drawCircle(characterBodySize / 2, characterBodySize / 2, characterBodySize / 2 - borderWidth, normalPaint);
                             canvas.drawBitmap(characterPic, (int) (characterBodySize * 0.1), (int) (characterBodySize * 0.1), normalPaint);
                             canvas.rotate(nowFacingAngle, characterBodySize / 2, characterBodySize / 2);
+                            if(isInvincible){
+                                canvas.drawBitmap(starPic, (int) (characterBodySize * 0.1), (int) (characterBodySize * 0.1), normalPaint);
+
+                            }
 //                        canvas.drawRect(0, 0, characterBodySize, characterBodySize, normalPaint);
 //                            canvas.drawBitmap(arrowBitMap, characterBodySize - arrowBitmapWidth, (characterBodySize - arrowBitmapHeight) / 2, normalPaint);
                             viewRange.isHidden = false;
@@ -1097,6 +1126,10 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                             canvas.drawCircle(characterBodySize / 2, characterBodySize / 2, characterBodySize / 2 - borderWidth, transparentPaint);
                             canvas.drawBitmap(characterPic, (int) (characterBodySize * 0.1), (int) (characterBodySize * 0.1), transparentPaint);
                             canvas.rotate(nowFacingAngle, characterBodySize / 2, characterBodySize / 2);
+                            if(isInvincible){
+                                canvas.drawBitmap(starPic, (int) (characterBodySize * 0.1), (int) (characterBodySize * 0.1), transparentPaint);
+
+                            }
 //                            canvas.drawBitmap(arrowBitMap, characterBodySize - arrowBitmapWidth, (characterBodySize - arrowBitmapHeight) / 2, transparentPaint);
                             viewRange.isHidden = true;
                             attackRange.isHidden = true;
@@ -1123,29 +1156,46 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         }
     }
 
+    public void updateInvincibleState(){
+        if(isInvincible==true&&new Date().getTime()-invincibleStartTime>invincibleLastTime){
+            isInvincible=false;
+            invincibleStartTime=0;
+            invincibleLastTime=0;
+        }
+    }
 
     public void deadReset() {
-
+        int myBaseWidth=GameBaseAreaActivity.gameInfo.mapWidth/2;
+        int myBaseHeight=GameBaseAreaActivity.gameInfo.mapHeight/2;
+        if(myBaseHeight<characterBodySize||myBaseWidth<characterBodySize){
+            Log.e("deadReset","地图设得这么小，玩毛啊？");
+            return;
+        }
+        Random random=new Random();
+        int offX=random.nextInt(myBaseWidth);
+        int offY=random.nextInt(myBaseHeight);
         enemiesPositionSet.clear();
         long nowTime = new Date().getTime();
-        if (nowTime - deadTime > 2000) {
-
+        if (nowTime - deadTime > 2000&&isInvincible==false) {
+            isInvincible=true;
+            invincibleStartTime=new Date().getTime();
+            invincibleLastTime=3000;
             if (teamID == 1) {
-                nowLeft = 50;
-                nowTop = 50;
+                nowLeft = offX;
+                nowTop = offY;
                 nowFacingAngle = 45;
 
             } else if (teamID == 2) {
-                nowLeft = GameBaseAreaActivity.gameInfo.mapWidth - characterBodySize - 50;
-                nowTop = 50;
+                nowLeft = GameBaseAreaActivity.gameInfo.mapWidth-offX - characterBodySize;
+                nowTop = offY;
                 nowFacingAngle = 135;
             } else if (teamID == 3) {
-                nowLeft = 50;
-                nowTop = GameBaseAreaActivity.gameInfo.mapHeight - characterBodySize - 50;
+                nowLeft = offX;
+                nowTop = GameBaseAreaActivity.gameInfo.mapHeight-offY - characterBodySize ;
                 nowFacingAngle = 315;
             } else if (teamID == 4) {
-                nowLeft = GameBaseAreaActivity.gameInfo.mapWidth - characterBodySize - 50;
-                nowTop = GameBaseAreaActivity.gameInfo.mapHeight - characterBodySize - 50;
+                nowLeft = GameBaseAreaActivity.gameInfo.mapWidth-offX - characterBodySize;
+                nowTop = GameBaseAreaActivity.gameInfo.mapHeight-offY - characterBodySize;
                 nowFacingAngle = 225;
             }
             FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) this.getLayoutParams();
@@ -1204,6 +1254,11 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 //    }
 
     public void startKnockedAwayThread(Point toPoint){
+        if(isJumping==true) {
+            isJumping = false;
+            jumpToX = -99999;
+            jumpToY = -99999;
+        }
         knockedAwayThread = new Thread(new KnockedAwayThread(toPoint));
         knockedAwayThread.setDaemon(true);
         knockedAwayThread.start();
@@ -1227,12 +1282,12 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                 int nowKnockedAwayToPointOffX = knockedAwayToPoint.x - nowCenterX;
                 int nowKnockedAwayToPointOffY = knockedAwayToPoint.y - nowCenterY;
                 double nowJumpToPointDistance = Math.sqrt(nowKnockedAwayToPointOffX * nowKnockedAwayToPointOffX + nowKnockedAwayToPointOffY * nowKnockedAwayToPointOffY);
-                int jumpSpeed = 3 * nowSpeed;
+                int knockedSpeed = 5 * nowSpeed;
                 int realOffX = 0;
                 int realOffY = 0;
-                if (nowJumpToPointDistance > jumpSpeed) {
-                    realOffX = (int) (jumpSpeed * nowKnockedAwayToPointOffX / nowJumpToPointDistance);
-                    realOffY = (int) (jumpSpeed * nowKnockedAwayToPointOffY / nowJumpToPointDistance);
+                if (nowJumpToPointDistance > knockedSpeed) {
+                    realOffX = (int) (knockedSpeed * nowKnockedAwayToPointOffX / nowJumpToPointDistance);
+                    realOffY = (int) (knockedSpeed * nowKnockedAwayToPointOffY / nowJumpToPointDistance);
                 } else {
                     realOffX = nowKnockedAwayToPointOffX;
                     realOffY = nowKnockedAwayToPointOffY;
@@ -1257,7 +1312,11 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
 
     public void beKnockedAway(int limitLeft, int limitTop, int limitRight, int limitBottom) {
-        isJumping = false;
+        if(isJumping==true) {
+            isJumping = false;
+            jumpToX = -99999;
+            jumpToY = -99999;
+        }
         if (knockedAwayX == -99999 || knockedAwayY == -99999)
             return;
         centerX = (nowLeft + nowRight) / 2;
@@ -1562,7 +1621,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
 
     public void switchLockingState(Boolean isLocking) {
-
+        this.isLocking=isLocking;
     }
 
     public void attack() {
@@ -1592,7 +1651,11 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                 leftVol = 1;
             if (rightVol > 1)
                 rightVol = 1;
-            attackMediaPlayer.setVolume(leftVol, rightVol);
+            try {
+                attackMediaPlayer.setVolume(leftVol, rightVol);
+            }catch (Exception e){
+                attackMediaPlayer.release();
+            }
 
         }
         attackMediaPlayer.seekTo(0);

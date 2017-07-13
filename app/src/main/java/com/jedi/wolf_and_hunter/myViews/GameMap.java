@@ -12,9 +12,12 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.widget.FrameLayout;
 
+import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
 import com.jedi.wolf_and_hunter.myViews.landform.Landform;
 import com.jedi.wolf_and_hunter.myViews.landform.TallGrassland;
 import com.jedi.wolf_and_hunter.R;
+
+import java.util.Random;
 
 /**
  * 为什么要加这个View且这个View与角色等其他组件并列呢？
@@ -26,7 +29,6 @@ import com.jedi.wolf_and_hunter.R;
 
 public class GameMap extends View {
     public static Landform[][] landformses;
-    MapBaseFrame mapBaseFrame;
     public GameMap(Context context) {
         super(context);
     }
@@ -35,7 +37,18 @@ public class GameMap extends View {
         super(context, attrs);
     }
 
-    public void buildLandforms() {
+    public void buildLandforms(Context context) {
+        int widthCount = GameBaseAreaActivity.gameInfo.mapWidth / 100;
+        int heightCount = GameBaseAreaActivity.gameInfo.mapHeight / 100;
+        landformses = new Landform[heightCount][widthCount];
+        Random r = new Random();
+        for (int i = 0; i < landformses.length; i++) {
+            for (int j = 0; j < landformses[i].length; j++) {
+                if (r.nextInt(100) < GameBaseAreaActivity.gameInfo.tallGrasslandDensity) {
+                    landformses[i][j] = new TallGrassland(context);
+                }
+            }
+        }
         FrameLayout parent = (FrameLayout) getParent();
         for (int y = 0; y < landformses.length; y++) {
             for (int x = 0; x < landformses[y].length; x++) {
