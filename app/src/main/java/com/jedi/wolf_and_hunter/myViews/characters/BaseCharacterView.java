@@ -21,9 +21,9 @@ import android.widget.FrameLayout;
 
 import com.jedi.wolf_and_hunter.R;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
-import com.jedi.wolf_and_hunter.myObj.GameInfo;
-import com.jedi.wolf_and_hunter.myObj.MyVirtualWindow;
-import com.jedi.wolf_and_hunter.myObj.PlayerInfo;
+import com.jedi.wolf_and_hunter.myObj.gameObj.CharacterPosition;
+import com.jedi.wolf_and_hunter.myObj.gameObj.MyVirtualWindow;
+import com.jedi.wolf_and_hunter.myObj.gameObj.PlayerInfo;
 import com.jedi.wolf_and_hunter.myViews.AttackRange;
 import com.jedi.wolf_and_hunter.myViews.GameMap;
 import com.jedi.wolf_and_hunter.myViews.JRocker;
@@ -36,7 +36,10 @@ import com.jedi.wolf_and_hunter.utils.ViewUtils;
 
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Random;
+import java.util.Set;
+import java.util.Vector;
 
 /**
  * Created by Administrator on 2017/3/13.
@@ -91,6 +94,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public static final int smellSleepTime = 100;
     public static final int reloadAttackTotalCount = 1000;
     public static final int reloadAttackSleepTime = 100;
+    public volatile int nowExtraAttackRevise=10;
     public volatile int nowReloadingAttackCount = 0;
     public volatile int nowReloadAttackSpeed;
     public int nowHealthPoint;
@@ -103,7 +107,6 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public volatile int nowForceViewRadius = 200;
     public volatile int nowSmellRadius = 2000;
     public volatile  int nowKnockAwayStrength = 100;
-    public long lastSmellTime;
     public int nowWalkWaitTime = 600;
     public int nowRunWaitTime = 300;
     public volatile int nowSpeed = 10;
@@ -123,7 +126,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public Handler gameHandler;
     public volatile HashSet<Integer> seeMeTeamIDs;
     public volatile HashSet<BaseCharacterView> theyDiscoverMe;
-    public volatile HashSet<Point> enemiesPositionSet;
+    public volatile Vector<CharacterPosition> enemiesPositionSet;
 
     public Thread movingMediaThread;
     public int runOrWalk = 0;
@@ -262,7 +265,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
     //sight仅对玩家操控角色有意义，不在这里统一创建
     private void init() {
-        enemiesPositionSet = new HashSet<Point>();
+        enemiesPositionSet = new Vector<CharacterPosition>();
         nowReloadingAttackCount = 0;
         theyDiscoverMe = new HashSet<BaseCharacterView>();
         seeMeTeamIDs = new HashSet<Integer>();
@@ -436,7 +439,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                         else
                             Thread.sleep(nowRunWaitTime);
                         moveMediaPlayer.seekTo(0);
-                    } catch (InterruptedException e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
@@ -1076,11 +1079,11 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                     canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);//清除屏幕
                     i++;
 
-                    if (isDead) {
-                        canvas.drawColor(Color.RED);
-
-                        continue;
-                    }
+//                    if (isDead) {
+//                        canvas.drawColor(Color.RED);
+//
+//                        continue;
+//                    }
 
 
                     //这对象是myCharacter或队友情况下
@@ -1093,6 +1096,11 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                                 canvas.drawBitmap(starPic, (int) (characterBodySize * 0.1), (int) (characterBodySize * 0.1), normalPaint);
 
                             }
+                            if (isDead) {
+                                canvas.drawARGB(255,255,0,0);
+
+                                continue;
+                            }
 //                        canvas.drawRect(0, 0, characterBodySize, characterBodySize, normalPaint);
 //                            canvas.drawBitmap(arrowBitMap, characterBodySize - arrowBitmapWidth, (characterBodySize - arrowBitmapHeight) / 2, normalPaint);
 
@@ -1103,6 +1111,11 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                             if(isInvincible){
                                 canvas.drawBitmap(starPic, (int) (characterBodySize * 0.1), (int) (characterBodySize * 0.1), alphaPaint);
 
+                            }
+                            if (isDead) {
+                                canvas.drawARGB(128,255,0,0);
+
+                                continue;
                             }
 //                        canvas.drawRect(0, 0, characterBodySize, characterBodySize, alphaPaint);
 //                            canvas.drawBitmap(arrowBitMap, characterBodySize - arrowBitmapWidth, (characterBodySize - arrowBitmapHeight) / 2, alphaPaint);
@@ -1117,6 +1130,11 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                                 canvas.drawBitmap(starPic, (int) (characterBodySize * 0.1), (int) (characterBodySize * 0.1), normalPaint);
 
                             }
+                            if (isDead) {
+                                canvas.drawARGB(255,255,0,0);
+
+                                continue;
+                            }
 //                        canvas.drawRect(0, 0, characterBodySize, characterBodySize, normalPaint);
 //                            canvas.drawBitmap(arrowBitMap, characterBodySize - arrowBitmapWidth, (characterBodySize - arrowBitmapHeight) / 2, normalPaint);
                             viewRange.isHidden = false;
@@ -1129,6 +1147,11 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                             if(isInvincible){
                                 canvas.drawBitmap(starPic, (int) (characterBodySize * 0.1), (int) (characterBodySize * 0.1), transparentPaint);
 
+                            }
+                            if (isDead) {
+                                canvas.drawARGB(0,255,0,0);
+
+                                continue;
                             }
 //                            canvas.drawBitmap(arrowBitMap, characterBodySize - arrowBitmapWidth, (characterBodySize - arrowBitmapHeight) / 2, transparentPaint);
                             viewRange.isHidden = true;
@@ -1165,6 +1188,12 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     }
 
     public void deadReset() {
+        isKnockedAway=false;
+        knockedAwayX=-99999;
+        knockedAwayY=-99999;
+        isJumping=false;
+        jumpToX=-99999;
+        jumpToY=-99999;
         int myBaseWidth=GameBaseAreaActivity.gameInfo.mapWidth/2;
         int myBaseHeight=GameBaseAreaActivity.gameInfo.mapHeight/2;
         if(myBaseHeight<characterBodySize||myBaseWidth<characterBodySize){
@@ -1657,6 +1686,17 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                 attackMediaPlayer.release();
             }
 
+            Point nowPosition=new Point(centerX,centerY);
+            CharacterPosition characterPosition=new CharacterPosition(nowPosition,this,new Date().getTime(),3000);
+            Vector<CharacterPosition> enemiesPositionSet=GameBaseAreaActivity.myCharacter.enemiesPositionSet;
+            Iterator<CharacterPosition> iterator=enemiesPositionSet.iterator();
+            if(iterator.hasNext()){
+                CharacterPosition oldPosition=iterator.next();
+                if(oldPosition.character==this){
+                    iterator.remove();
+                }
+            }
+            GameBaseAreaActivity.myCharacter.enemiesPositionSet.add(characterPosition);
         }
         attackMediaPlayer.seekTo(0);
         attackMediaPlayer.start();
@@ -1735,15 +1775,17 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                     if (nowSmellCount > smellTotalCount)
                         nowSmellCount = smellTotalCount;
                     if (nowSmellCount == smellTotalCount) {
-                        lastSmellTime = new Date().getTime();
+                        long nowTime = new Date().getTime();
                         Point thisCharacterPosition = new Point(bindingCharacter.centerX, bindingCharacter.centerY);
                         for (BaseCharacterView character : GameBaseAreaActivity.gameInfo.allCharacters) {
                             if (character.teamID == bindingCharacter.teamID)
                                 continue;
-                            Point enemyPosition = new Point(character.centerX, character.centerY);
-                            double distance = MyMathsUtils.getDistance(enemyPosition, thisCharacterPosition);
+
+                            Point positionPoint = new Point(character.centerX, character.centerY);
+                            CharacterPosition characterPosition=new CharacterPosition(positionPoint,character,nowTime,3000);
+                            double distance = MyMathsUtils.getDistance(positionPoint, thisCharacterPosition);
                             if (distance <= nowSmellRadius) {
-                                enemiesPositionSet.add(enemyPosition);
+                                enemiesPositionSet.add(characterPosition);
                             }
                         }
                         break;

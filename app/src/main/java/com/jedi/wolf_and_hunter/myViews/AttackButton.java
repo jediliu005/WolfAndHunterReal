@@ -7,26 +7,19 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.Point;
 import android.graphics.RectF;
 import android.support.annotation.Nullable;
 import android.text.TextPaint;
 import android.util.AttributeSet;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
 import com.jedi.wolf_and_hunter.R;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
-import com.jedi.wolf_and_hunter.myObj.MyVirtualWindow;
-import com.jedi.wolf_and_hunter.myObj.PlayerInfo;
+import com.jedi.wolf_and_hunter.myObj.gameObj.MyVirtualWindow;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
-import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
-import com.jedi.wolf_and_hunter.utils.ViewUtils;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Date;
 
 /**
@@ -84,7 +77,7 @@ public class AttackButton extends View {
 
         int windowWidth = MyVirtualWindow.getWindowWidth(getContext());
         int windowHeight = MyVirtualWindow.getWindowHeight(getContext());
-        buttonSize = (int) (windowWidth / 8);
+        buttonSize = (int) (windowWidth / 10);
 
         normalPaint = new Paint();
 
@@ -151,7 +144,7 @@ public class AttackButton extends View {
                 }
                 if (isHolding)
                     bindingCharacter.attack();
-                isHolding=false;
+                isHolding = false;
                 break;
 
             case MotionEvent.ACTION_MOVE:
@@ -194,9 +187,9 @@ public class AttackButton extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        if(isHolding) {
+        if (isHolding) {
             canvas.drawBitmap(attackBitmap, bitmapLeft, bitmapTop, alphaPaint);
-        }else{
+        } else {
             canvas.drawBitmap(attackBitmap, bitmapLeft, bitmapTop, normalPaint);
         }
         if (bindingCharacter == null) {

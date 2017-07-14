@@ -10,7 +10,7 @@ import android.util.AttributeSet;
 
 import com.jedi.wolf_and_hunter.R;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
-import com.jedi.wolf_and_hunter.myObj.MyVirtualWindow;
+import com.jedi.wolf_and_hunter.myObj.gameObj.MyVirtualWindow;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 
 import java.util.HashMap;
@@ -22,6 +22,7 @@ import java.util.HashMap;
 public class NormalWolf extends BaseCharacterView {
     private static final String TAG = "NormalHunter";
     private final static String characterName = "普通狼";
+    private final static int defaultExtraAttackRevise = 10;
     private final static int defaultMaxAttackCount = 3;
     private final static int defauleReloadAttackSpeed = 50;
     public final static int defaultAngleChangSpeed = 2;
@@ -83,6 +84,7 @@ public class NormalWolf extends BaseCharacterView {
         super.nowReloadAttackSpeed = defauleReloadAttackSpeed;
         attackCount = defaultMaxAttackCount;
         maxAttackCount = defaultMaxAttackCount;
+        nowExtraAttackRevise=defaultExtraAttackRevise;
         nowAttackRadius = defaultAttackRadius;
         nowViewRadius = defaultViewRadius;
         nowViewAngle = defaultViewAngle;
@@ -219,7 +221,7 @@ public class NormalWolf extends BaseCharacterView {
 
                     }
 
-                    if (pointToLineDistance <= characterBodySize / 2 + targetCharacterSize) {
+                    if (pointToLineDistance <= characterBodySize / 2 + targetCharacterSize+nowExtraAttackRevise) {
                         HashMap<BaseCharacterView,BaseCharacterView> map=new HashMap<BaseCharacterView,BaseCharacterView>();
                         map.put(attackCharacter,targetCharacter);
                         GameBaseAreaActivity.gameInfo.beAttackedList.add(map);

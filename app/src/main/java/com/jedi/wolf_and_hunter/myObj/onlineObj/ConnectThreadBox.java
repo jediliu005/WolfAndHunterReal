@@ -1,4 +1,4 @@
-package com.jedi.wolf_and_hunter.myObj;
+package com.jedi.wolf_and_hunter.myObj.onlineObj;
 
 import android.content.Context;
 import android.net.DhcpInfo;
@@ -8,8 +8,8 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.jedi.wolf_and_hunter.activities.WifiOnlineActivity;
+import com.jedi.wolf_and_hunter.myObj.gameObj.PlayerInfo;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
-import com.jedi.wolf_and_hunter.utils.WifiHotspotController;
 
 import java.io.IOException;
 import java.io.InputStream;

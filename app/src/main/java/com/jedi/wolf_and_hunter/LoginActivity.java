@@ -4,10 +4,8 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -16,17 +14,16 @@ import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.jedi.wolf_and_hunter.activities.BlueToothTestActivity;
 import com.jedi.wolf_and_hunter.activities.BluetoothOnlineActivity;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
-import com.jedi.wolf_and_hunter.activities.MapBaseActivity;
 import com.jedi.wolf_and_hunter.activities.WifiOnlineActivity;
-import com.jedi.wolf_and_hunter.myObj.GameInfo;
-import com.jedi.wolf_and_hunter.myObj.PlayerInfo;
+import com.jedi.wolf_and_hunter.myObj.gameObj.GameInfo;
+import com.jedi.wolf_and_hunter.myObj.gameObj.PlayerInfo;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 import com.jedi.wolf_and_hunter.utils.BluetoothController;
 
 import java.util.ArrayList;
+import java.util.Vector;
 
 /**
  * A login screen that offers login via email/password.
@@ -49,7 +46,6 @@ public class LoginActivity extends Activity {
      * Keep track of the login task to ensure we can cancel it if requested.
      */
 
-    ArrayList<PlayerInfo> playerInfos;
     GameInfo gameInfo;
 
     // UI references.
@@ -100,13 +96,13 @@ public class LoginActivity extends Activity {
         tableLayout = (TableLayout) findViewById(R.id.player_info_table);
         tallGrasslandEditText=(EditText)findViewById(R.id.edit_tallgrassland_density);
        tallGrasslandEditText.addTextChangedListener(new MyTextChangeListener());
-        playerInfos = new ArrayList<PlayerInfo>();
+
         gameInfo=new GameInfo();
         gameInfo.playMode="single";
-        gameInfo.playerInfos=playerInfos;
+        gameInfo.playerInfos=new Vector<PlayerInfo>();
         for (int i = 0; i < 4; i++) {
             PlayerInfo playerInfo = new PlayerInfo(i + 1);
-            playerInfos.add(playerInfo);
+            gameInfo.playerInfos.add(playerInfo);
             playerInfo.teamID = i + 1;
         }
 
@@ -145,7 +141,7 @@ public class LoginActivity extends Activity {
         TextView textView = (TextView) view;
         TableRow row = (TableRow) view.getParent();
         int playerID = Integer.parseInt((String) view.getTag());
-        PlayerInfo playerInfo = playerInfos.get(playerID - 1);
+        PlayerInfo playerInfo = gameInfo.playerInfos.get(playerID - 1);
         if (playerInfo.isAvailable == true) {
             playerInfo.isAvailable = false;
             textView.setTextColor(Color.GRAY);
@@ -164,7 +160,7 @@ public class LoginActivity extends Activity {
         Button button = (Button) view;
         TableRow row = (TableRow) view.getParent();
         int playerID = Integer.parseInt((String) view.getTag());
-        PlayerInfo playerInfo = playerInfos.get(playerID - 1);
+        PlayerInfo playerInfo = gameInfo.playerInfos.get(playerID - 1);
         if (playerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER) {
             playerInfo.characterType = BaseCharacterView.CHARACTER_TYPE_WOLF;
             button.setText("狼");
@@ -179,7 +175,7 @@ public class LoginActivity extends Activity {
         Button button = (Button) view;
         TableRow row = (TableRow) view.getParent();
         int playerID = Integer.parseInt((String) view.getTag());
-        PlayerInfo playerInfo = playerInfos.get(playerID - 1);
+        PlayerInfo playerInfo = gameInfo.playerInfos.get(playerID - 1);
         if (playerInfo.teamID < 4) {
             playerInfo.teamID = playerInfo.teamID + 1;
             button.setText(playerInfo.teamID + "队");

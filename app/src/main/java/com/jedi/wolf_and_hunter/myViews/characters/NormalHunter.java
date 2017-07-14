@@ -6,18 +6,16 @@ import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.Point;
 import android.media.MediaPlayer;
-import android.os.Bundle;
 import android.os.Message;
 import android.util.AttributeSet;
 import android.widget.FrameLayout;
 
 import com.jedi.wolf_and_hunter.R;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
-import com.jedi.wolf_and_hunter.myObj.MyVirtualWindow;
+import com.jedi.wolf_and_hunter.myObj.gameObj.MyVirtualWindow;
 import com.jedi.wolf_and_hunter.myViews.Trajectory;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 
-import java.util.Date;
 import java.util.HashMap;
 
 /**
@@ -27,6 +25,7 @@ import java.util.HashMap;
 public class NormalHunter extends BaseCharacterView {
     private static final String TAG = "NormalHunter";
     private final static String characterName = "普通猎人";
+    private final static int defaultExtraAttackRevise = 0;
     private final static int defaultMaxAttackCount = 2;
     private final static int defauleReloadAttackSpeed = 25;
     public final static int defaultAttackRadius = 700;
@@ -42,7 +41,6 @@ public class NormalHunter extends BaseCharacterView {
     public final static int defaultKnockAwayStrength = 300;
 
 
-    private int bolletWidth = 0;
 
 
     //下面一行控制bitmap是否自适应分辨率，不强制设flase可能出现图片分辨率和draw分辨率不一致
@@ -89,6 +87,7 @@ public class NormalHunter extends BaseCharacterView {
         super.nowReloadAttackSpeed = defauleReloadAttackSpeed;
         attackCount = defaultMaxAttackCount;
         maxAttackCount = defaultMaxAttackCount;
+        nowExtraAttackRevise=defaultExtraAttackRevise;
         nowAttackRadius = defaultAttackRadius;
         nowViewRadius = defaultViewRadius;
         nowViewAngle = defaultViewAngle;
@@ -243,7 +242,7 @@ public class NormalHunter extends BaseCharacterView {
                 pointToLineDistance = MyMathsUtils.getPointToLineDistance(new Point(relateX, relateY), k, 0);
 
             }
-            if (pointToLineDistance <= bolletWidth / 2 + targetCharacterSize) {
+            if (pointToLineDistance <=  targetCharacterSize+nowExtraAttackRevise) {
                 HashMap<BaseCharacterView,BaseCharacterView> map=new HashMap<BaseCharacterView,BaseCharacterView>();
                 map.put(this,targetCharacter);
                 GameBaseAreaActivity.gameInfo.beAttackedList.add(map);

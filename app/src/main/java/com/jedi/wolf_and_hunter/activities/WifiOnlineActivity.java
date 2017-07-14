@@ -22,8 +22,8 @@ import android.widget.Button;
 import android.widget.Toast;
 
 import com.jedi.wolf_and_hunter.R;
-import com.jedi.wolf_and_hunter.myObj.ClientScanResult;
-import com.jedi.wolf_and_hunter.myObj.ConnectThreadBox;
+import com.jedi.wolf_and_hunter.myObj.onlineObj.ClientScanResult;
+import com.jedi.wolf_and_hunter.myObj.onlineObj.ConnectThreadBox;
 import com.jedi.wolf_and_hunter.utils.WifiHotspotController;
 
 import java.io.BufferedReader;
@@ -34,9 +34,8 @@ import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static com.jedi.wolf_and_hunter.myObj.ConnectThreadBox.CONNECT_ROLE_CLIENT;
-import static com.jedi.wolf_and_hunter.myObj.ConnectThreadBox.CONNECT_ROLE_SERVER;
-import static com.jedi.wolf_and_hunter.myObj.ConnectThreadBox.nowRole;
+import static com.jedi.wolf_and_hunter.myObj.onlineObj.ConnectThreadBox.CONNECT_ROLE_CLIENT;
+import static com.jedi.wolf_and_hunter.myObj.onlineObj.ConnectThreadBox.CONNECT_ROLE_SERVER;
 
 public class WifiOnlineActivity extends Activity {
     public int count = 0;

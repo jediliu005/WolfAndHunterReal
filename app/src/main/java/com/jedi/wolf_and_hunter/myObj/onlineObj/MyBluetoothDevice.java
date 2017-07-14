@@ -1,9 +1,7 @@
-package com.jedi.wolf_and_hunter.myObj;
+package com.jedi.wolf_and_hunter.myObj.onlineObj;
 
 import android.bluetooth.BluetoothDevice;
 import android.support.annotation.NonNull;
-
-import com.jedi.wolf_and_hunter.utils.BluetoothController;
 
 /**
  * Created by Administrator on 2017/6/14.

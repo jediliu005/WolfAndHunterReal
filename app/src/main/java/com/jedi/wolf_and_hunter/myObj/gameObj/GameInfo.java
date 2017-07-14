@@ -1,8 +1,9 @@
-package com.jedi.wolf_and_hunter.myObj;
+package com.jedi.wolf_and_hunter.myObj.gameObj;
 
 import android.graphics.Point;
 
 import com.jedi.wolf_and_hunter.myViews.SightView;
+import com.jedi.wolf_and_hunter.myViews.Trajectory;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 
@@ -13,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Vector;
 
 /**
  * Created by Administrator on 2017/7/11.
@@ -26,7 +28,8 @@ public class GameInfo implements Serializable{
     public volatile boolean isStop = false;
     public PlayerInfo myPlayerInfo;
     public SightView mySight;
-    public ArrayList<PlayerInfo> playerInfos;
+    public Vector<PlayerInfo> playerInfos;
+    public static Vector<Trajectory> allTrajectories;
     public int tallGrasslandDensity=50;
     public List<HashMap<BaseCharacterView, BaseCharacterView>> beAttackedList;
     public String playMode="single";
@@ -39,7 +42,7 @@ public class GameInfo implements Serializable{
     public GameInfo() {
         isStop = false;
         beAttackedList = new ArrayList<HashMap<BaseCharacterView, BaseCharacterView>>();
-        playerInfos = new ArrayList<PlayerInfo>();
+        playerInfos = new Vector<PlayerInfo>();
         allCharacters = new ArrayList<BaseCharacterView>();
     }
 

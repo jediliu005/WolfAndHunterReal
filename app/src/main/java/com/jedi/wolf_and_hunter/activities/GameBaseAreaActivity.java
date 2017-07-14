@@ -20,11 +20,12 @@ import com.jedi.wolf_and_hunter.R;
 import com.jedi.wolf_and_hunter.ai.BaseAI;
 import com.jedi.wolf_and_hunter.ai.HunterAI;
 import com.jedi.wolf_and_hunter.ai.WolfAI;
-import com.jedi.wolf_and_hunter.myObj.GameInfo;
-import com.jedi.wolf_and_hunter.myObj.MyVirtualWindow;
-import com.jedi.wolf_and_hunter.myObj.PlayerInfo;
+import com.jedi.wolf_and_hunter.myObj.gameObj.GameInfo;
+import com.jedi.wolf_and_hunter.myObj.gameObj.MyVirtualWindow;
+import com.jedi.wolf_and_hunter.myObj.gameObj.PlayerInfo;
 import com.jedi.wolf_and_hunter.myViews.AttackButton;
 import com.jedi.wolf_and_hunter.myViews.GameMap;
+import com.jedi.wolf_and_hunter.myViews.JRocker;
 import com.jedi.wolf_and_hunter.myViews.LeftRocker;
 import com.jedi.wolf_and_hunter.myViews.LockingButton;
 import com.jedi.wolf_and_hunter.myViews.MapBaseFrame;
@@ -36,8 +37,6 @@ import com.jedi.wolf_and_hunter.myViews.Trajectory;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 import com.jedi.wolf_and_hunter.myViews.characters.NormalHunter;
 import com.jedi.wolf_and_hunter.myViews.characters.NormalWolf;
-import com.jedi.wolf_and_hunter.myViews.landform.Landform;
-import com.jedi.wolf_and_hunter.myViews.landform.TallGrassland;
 import com.jedi.wolf_and_hunter.utils.BluetoothController;
 import com.jedi.wolf_and_hunter.utils.ViewUtils;
 
@@ -48,10 +47,10 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
+import java.util.Vector;
 
 public class GameBaseAreaActivity extends Activity {
     public TextView t1;
@@ -74,7 +73,6 @@ public class GameBaseAreaActivity extends Activity {
     AttackButton rightAtttackButton;
     LockingButton lockingButton;
     SmellButton smellButton;
-    public static ArrayList<Trajectory> allTrajectories;
     public static MapBaseFrame mapBaseFrame;
     public static BaseCharacterView myCharacter;
     public static FrameLayout baseFrame;
@@ -144,20 +142,20 @@ public class GameBaseAreaActivity extends Activity {
                 case ADD_TRAJECTORY:
                     Trajectory trajectory = (Trajectory) (msg.obj);
                     trajectory.addTime = new Date().getTime();
-                    allTrajectories.add(trajectory);
+                    gameInfo.allTrajectories.add(trajectory);
                     trajectory.addTrajectory(mapBaseFrame);
                     break;
                 case REMOVE_TRAJECTORY:
                     long nowTime = new Date().getTime();
                     ArrayList<Trajectory> removeTrajectories = new ArrayList<Trajectory>();
-                    for (Trajectory t : allTrajectories) {
+                    for (Trajectory t : gameInfo.allTrajectories) {
                         if (nowTime - t.addTime > 1000) {
                             removeTrajectories.add(t);
                             t.parent.removeView(t);
                         }
                     }
                     for (Trajectory removeTarjectory : removeTrajectories) {
-                        allTrajectories.remove(removeTarjectory);
+                        gameInfo.allTrajectories.remove(removeTarjectory);
                     }
                     break;
                 default:
@@ -689,10 +687,11 @@ myCharacter.updateInvincibleState();
             myCharacter = new NormalHunter(this, virtualWindow);
         else {
             myCharacter = new NormalWolf(this, virtualWindow);
-            PromptView promptView = new PromptView(this, myCharacter);
-            mapBaseFrame.addView(promptView);
-            myCharacter.promptView = promptView;
         }
+        PromptView promptView = new PromptView(this, myCharacter);
+        mapBaseFrame.addView(promptView);
+        myCharacter.promptView = promptView;
+
         myCharacter.setTeamID(gameInfo.myPlayerInfo.teamID);
         myCharacter.isMyCharacter = true;
         myCharacter.gameHandler = gameHandler;
@@ -732,36 +731,18 @@ myCharacter.updateInvincibleState();
         leftRocker.setBindingCharacter(myCharacter);
         mapBaseFrame.leftRocker = leftRocker;
         rightRocker = (RightRocker) this.findViewById(R.id.rocker_right);
+
         if (gameInfo.myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER) {
             rightAtttackButton.reCreateBitmap();
             rightRocker.setBindingCharacter(myCharacter);
             mapBaseFrame.rightRocker = rightRocker;
+            FrameLayout.LayoutParams rrlp=(FrameLayout.LayoutParams) rightRocker.getLayoutParams();
+            rrlp.rightMargin=rightAtttackButton.buttonSize-JRocker.rockerRadius;
 
-//        leftAtttackButton = (AttackButton) this.findViewById(R.id.attack_button_left);
-//        leftAtttackButton.bindingCharacter = myCharacter;
-//        FrameLayout.LayoutParams labp = (FrameLayout.LayoutParams) leftAtttackButton.getLayoutParams();
-//        if (labp == null) {
-//            labp = new FrameLayout.LayoutParams(buttonSize, buttonSize);
-//        }
-//        labp.leftMargin = leftRocker.getRight() - buttonSize;
-//        labp.topMargin = leftRocker.getTop();
-//        leftAtttackButton.setLayoutParams(labp);
+            rabp.leftMargin = MyVirtualWindow.getWindowWidth(this) - rightAtttackButton.buttonSize;
+            rabp.topMargin = rightRocker.getTop()+rightRocker.getHeight()/2 -rightAtttackButton.buttonSize;
 
 
-            rabp.leftMargin = rightRocker.getRight() - rightAtttackButton.buttonSize - 10;
-            rabp.topMargin = rightRocker.getTop() - rightAtttackButton.buttonSize + 30;
-        } else if (gameInfo.myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF) {
-            rightAtttackButton.reCreateBitmap();
-            baseFrame.removeView(rightRocker);
-            rabp.leftMargin = MyVirtualWindow.getWindowWidth(this) - rightAtttackButton.buttonSize - 50;
-            rabp.topMargin = MyVirtualWindow.getWindowHeight(this) - (leftRocker.getHeight() / 2 + rightAtttackButton.buttonSize / 2);
-        }
-        rightAtttackButton.setLayoutParams(rabp);
-        leftRocker.bringToFront();
-        rightRocker.bringToFront();
-        rightAtttackButton.bringToFront();
-
-        if (myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER) {
             lockingButton = new LockingButton(this);
             int lockingButtonSize = lockingButton.buttonSize;
             lockingButton.bindingCharacter = myCharacter;
@@ -769,11 +750,19 @@ myCharacter.updateInvincibleState();
             if (lblp == null) {
                 lblp = new FrameLayout.LayoutParams(lockingButtonSize, lockingButtonSize);
             }
-            lblp.leftMargin = rabp.leftMargin - lockingButtonSize;
-            lblp.topMargin = rabp.topMargin;
+            lblp.leftMargin = rabp.leftMargin;
+            lblp.topMargin = rightRocker.getTop()+rightRocker.getHeight()/2+10;
             lockingButton.setLayoutParams(lblp);
             baseFrame.addView(lockingButton);
-        } else if (myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF) {
+
+
+        } else if (gameInfo.myPlayerInfo.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF) {
+            rightAtttackButton.reCreateBitmap();
+            baseFrame.removeView(rightRocker);
+            rightAtttackButton.buttonSize=(int)(rightAtttackButton.buttonSize*5/4);
+            rightAtttackButton.reCreateBitmap();
+            rabp.leftMargin = MyVirtualWindow.getWindowWidth(this) - rightAtttackButton.buttonSize - 50;
+            rabp.topMargin = MyVirtualWindow.getWindowHeight(this) - (leftRocker.getHeight() / 2 + rightAtttackButton.buttonSize / 2);
             smellButton = new SmellButton(this);
             int smellButtonSize = smellButton.buttonSize;
             smellButton.bindingCharacter = myCharacter;
@@ -786,6 +775,16 @@ myCharacter.updateInvincibleState();
             smellButton.setLayoutParams(sblp);
             baseFrame.addView(smellButton);
         }
+        rightAtttackButton.setLayoutParams(rabp);
+        leftRocker.bringToFront();
+        rightRocker.bringToFront();
+        rightAtttackButton.bringToFront();
+//
+//        if (myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER) {
+//
+//        } else if (myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF) {
+//
+//        }
         if (gameInfo.playMode.equals("single")) {
             startAI();
         } else if (gameInfo.playMode.equals("bluetooth")) {
@@ -871,7 +870,7 @@ myCharacter.updateInvincibleState();
         if(gameInfo==null)
             finish();
         gameInfo.isStop = false;
-        allTrajectories = new ArrayList<Trajectory>();
+        gameInfo.allTrajectories = new Vector<Trajectory>();
         backGround = MediaPlayer.create(this, R.raw.background);
         ViewUtils.initWindowParams(this);
         DisplayMetrics dm = ViewUtils.getWindowsDisplayMetrics();

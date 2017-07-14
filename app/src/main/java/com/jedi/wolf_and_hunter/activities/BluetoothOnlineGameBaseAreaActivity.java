@@ -17,8 +17,8 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import com.jedi.wolf_and_hunter.R;
-import com.jedi.wolf_and_hunter.myObj.MyVirtualWindow;
-import com.jedi.wolf_and_hunter.myObj.PlayerInfo;
+import com.jedi.wolf_and_hunter.myObj.gameObj.MyVirtualWindow;
+import com.jedi.wolf_and_hunter.myObj.gameObj.PlayerInfo;
 import com.jedi.wolf_and_hunter.myViews.AttackButton;
 import com.jedi.wolf_and_hunter.myViews.GameMap;
 import com.jedi.wolf_and_hunter.myViews.LeftRocker;

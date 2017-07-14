@@ -240,7 +240,7 @@ public class HunterAI extends BaseAI {
         }
         if (intent == INTENT_HUNT && trackTrajectory == null) {
             double minDistance = -1;
-            for (Trajectory trajectory : GameBaseAreaActivity.allTrajectories) {
+            for (Trajectory trajectory : GameBaseAreaActivity.gameInfo.allTrajectories) {
                 if (trajectory.createCharacter.getTeamID() == bindingCharacter.getTeamID())
                     continue;
                 double distance = MyMathsUtils.getDistance(trajectory.fromPointRelateParent, new Point(bindingCharacter.centerX, bindingCharacter.centerY));

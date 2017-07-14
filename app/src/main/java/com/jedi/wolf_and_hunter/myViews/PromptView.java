@@ -17,6 +17,7 @@ import android.widget.FrameLayout;
 
 import com.jedi.wolf_and_hunter.R;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
+import com.jedi.wolf_and_hunter.myObj.gameObj.CharacterPosition;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 
@@ -119,12 +120,14 @@ public class PromptView extends View {
         super.onDraw(canvas);
         if(bindingCharacter==null||bindingCharacter.enemiesPositionSet==null)
             return;
-        if(new Date().getTime()-bindingCharacter.lastSmellTime>5000){
-            bindingCharacter.enemiesPositionSet.clear();
-            return;
-        }
+//        if(new Date().getTime()-bindingCharacter.lastSmellTime>5000){
+//            bindingCharacter.enemiesPositionSet.clear();
+//            return;
+//        }
+        CharacterPosition.removeOverdue(bindingCharacter.enemiesPositionSet);
 
-        for(Point position: bindingCharacter.enemiesPositionSet){
+        for(CharacterPosition characterPosition: bindingCharacter.enemiesPositionSet){
+            Point position=characterPosition.position;
             canvas.save();
             int relateX=position.x-bindingCharacter.centerX;
             int relateY=position.y-bindingCharacter.centerY;

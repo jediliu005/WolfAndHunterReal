@@ -1,4 +1,4 @@
-package com.jedi.wolf_and_hunter.myObj;
+package com.jedi.wolf_and_hunter.myObj.onlineObj;
 
 /**
  * Created by Administrator on 2017/7/7.

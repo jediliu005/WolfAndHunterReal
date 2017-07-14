@@ -1,15 +1,12 @@
 package com.jedi.wolf_and_hunter.ai;
 
 import android.graphics.Point;
-import android.widget.FrameLayout;
 
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
-import com.jedi.wolf_and_hunter.myObj.GameInfo;
 import com.jedi.wolf_and_hunter.myViews.Trajectory;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 
-import java.util.Random;
 import java.util.TimerTask;
 
 /**
@@ -227,7 +224,7 @@ public class BaseAI extends TimerTask {
         }
         if (intent == INTENT_HUNT && trackTrajectory == null) {
             double minDistance = -1;
-            for (Trajectory trajectory : GameBaseAreaActivity.allTrajectories) {
+            for (Trajectory trajectory : GameBaseAreaActivity.gameInfo.allTrajectories) {
                 if (trajectory.createCharacter.getTeamID() == bindingCharacter.getTeamID())
                     continue;
                 double distance = MyMathsUtils.getDistance(trajectory.fromPointRelateParent, new Point(bindingCharacter.centerX, bindingCharacter.centerY));

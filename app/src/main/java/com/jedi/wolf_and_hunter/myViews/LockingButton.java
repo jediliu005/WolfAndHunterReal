@@ -7,20 +7,16 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.RectF;
 import android.support.annotation.Nullable;
 import android.text.TextPaint;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
 import com.jedi.wolf_and_hunter.R;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
-import com.jedi.wolf_and_hunter.myObj.MyVirtualWindow;
+import com.jedi.wolf_and_hunter.myObj.gameObj.MyVirtualWindow;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
-
-import java.util.Date;
 
 /**
  * Created by Administrator on 2017/5/10.
@@ -76,7 +72,7 @@ public class LockingButton extends View {
 
         int windowWidth = MyVirtualWindow.getWindowWidth(getContext());
         int windowHeight = MyVirtualWindow.getWindowHeight(getContext());
-        buttonSize = (int) (windowWidth / 8);
+        buttonSize = (int) (windowWidth / 10);
 
         backgroundPaint = new Paint();
 

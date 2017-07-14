@@ -1,4 +1,4 @@
-package com.jedi.wolf_and_hunter.myObj;
+package com.jedi.wolf_and_hunter.myObj.gameObj;
 
 import android.bluetooth.BluetoothDevice;
 
