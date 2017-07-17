@@ -287,10 +287,14 @@ public class GameMainEngine {
     private class GameMainTask extends TimerTask {
         @Override
         public void run() {
-            if (backGroundMediaPlayer.isPlaying() == false) {
-                backGroundMediaPlayer.setLooping(true);
-                backGroundMediaPlayer.seekTo(0);
-                backGroundMediaPlayer.start();
+            try {
+                if (backGroundMediaPlayer.isPlaying() == false) {
+                    backGroundMediaPlayer.setLooping(true);
+                    backGroundMediaPlayer.seekTo(0);
+                    backGroundMediaPlayer.start();
+                }
+            }catch (Exception e){
+                e.printStackTrace();
             }
 //            if (backGroundMusicThread == null) {
 //                backGroundMusicThread = new Thread(new Runnable() {
