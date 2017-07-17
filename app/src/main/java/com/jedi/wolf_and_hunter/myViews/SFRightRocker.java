@@ -7,6 +7,7 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
+import com.jedi.wolf_and_hunter.engine.GameMainEngine;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 import com.jedi.wolf_and_hunter.utils.ViewUtils;
 
@@ -17,7 +18,7 @@ import com.jedi.wolf_and_hunter.utils.ViewUtils;
 public class SFRightRocker extends SFJRocker  {
 
 
-    public GameBaseAreaActivity.GameHandler gameHandler;
+    public GameMainEngine.GameHandler gameHandler;
     boolean isStop=false;
 
 

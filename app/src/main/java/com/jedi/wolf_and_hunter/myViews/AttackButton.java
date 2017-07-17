@@ -130,7 +130,7 @@ public class AttackButton extends View {
             case MotionEvent.ACTION_DOWN:
 
                 lastTouchTime = new Date().getTime();
-                if (GameBaseAreaActivity.myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF) {
+                if (GameBaseAreaActivity.myCharacter!=null&&GameBaseAreaActivity.myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF) {
                     bindingCharacter.isStay = true;
                 }
                 isHolding = true;
@@ -139,7 +139,7 @@ public class AttackButton extends View {
 
             case MotionEvent.ACTION_UP:
                 lastTouchTime = 0;
-                if (GameBaseAreaActivity.myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF) {
+                if (GameBaseAreaActivity.myCharacter!=null&&GameBaseAreaActivity.myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF) {
                     bindingCharacter.isStay = false;
                 }
                 if (isHolding)
@@ -149,8 +149,8 @@ public class AttackButton extends View {
 
             case MotionEvent.ACTION_MOVE:
 
-                if (new Date().getTime() - lastTouchTime > 800) {
-                    if (bindingCharacter.attackCount < bindingCharacter.maxAttackCount && GameBaseAreaActivity.myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER) {
+                if (new Date().getTime() - lastTouchTime > 300) {
+                    if (bindingCharacter.attackCount < bindingCharacter.maxAttackCount &&GameBaseAreaActivity.myCharacter!=null&& GameBaseAreaActivity.myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER) {
                         bindingCharacter.reloadAttackCount();
                     }
                 }

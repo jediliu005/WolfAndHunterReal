@@ -22,6 +22,7 @@ import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 
 import java.util.Date;
+import java.util.Iterator;
 
 
 /**
@@ -125,8 +126,9 @@ public class PromptView extends View {
 //            return;
 //        }
         CharacterPosition.removeOverdue(bindingCharacter.enemiesPositionSet);
-
-        for(CharacterPosition characterPosition: bindingCharacter.enemiesPositionSet){
+        Iterator<CharacterPosition> iterator= bindingCharacter.enemiesPositionSet.iterator();
+        while(iterator.hasNext()){
+            CharacterPosition characterPosition=iterator.next();
             Point position=characterPosition.position;
             canvas.save();
             int relateX=position.x-bindingCharacter.centerX;
@@ -144,6 +146,7 @@ public class PromptView extends View {
 
             canvas.restore();
         }
+
 
 
     }

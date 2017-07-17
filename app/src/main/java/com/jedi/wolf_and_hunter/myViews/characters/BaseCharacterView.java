@@ -71,7 +71,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public int nowAngleChangSpeed = 1;
 
     //以下为角色View基本位置与状态属性
-    public boolean isInvincible=false;
+    public boolean isInvincible = false;
     public long invincibleStartTime;
     public long invincibleLastTime;
     public int characterType = 0;
@@ -94,7 +94,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public static final int smellSleepTime = 100;
     public static final int reloadAttackTotalCount = 1000;
     public static final int reloadAttackSleepTime = 100;
-    public volatile int nowExtraAttackRevise=10;
+    public volatile int nowExtraAttackRevise = 10;
     public volatile int nowReloadingAttackCount = 0;
     public volatile int nowReloadAttackSpeed;
     public int nowHealthPoint;
@@ -106,7 +106,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public volatile int nowHearRadius = 500;
     public volatile int nowForceViewRadius = 200;
     public volatile int nowSmellRadius = 2000;
-    public volatile  int nowKnockAwayStrength = 100;
+    public volatile int nowKnockAwayStrength = 100;
     public int nowWalkWaitTime = 600;
     public int nowRunWaitTime = 300;
     public volatile int nowSpeed = 10;
@@ -121,11 +121,11 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public volatile boolean isKnockedAway = false;
     public long deadTime;
     public volatile boolean isForceToBeSawByMe = false;//注意！这属性只针对本机玩家视觉，对AI判行为无效
-    public volatile boolean isJumping=false;
+    public volatile boolean isJumping = false;
     public volatile boolean isReloadingAttack = false;
     public Handler gameHandler;
-    public volatile HashSet<Integer> seeMeTeamIDs;
-    public volatile HashSet<BaseCharacterView> theyDiscoverMe;
+    public volatile Vector<Integer> seeMeTeamIDs;
+    public volatile Vector<BaseCharacterView> theyDiscoverMe;
     public volatile Vector<CharacterPosition> enemiesPositionSet;
 
     public Thread movingMediaThread;
@@ -267,8 +267,8 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     private void init() {
         enemiesPositionSet = new Vector<CharacterPosition>();
         nowReloadingAttackCount = 0;
-        theyDiscoverMe = new HashSet<BaseCharacterView>();
-        seeMeTeamIDs = new HashSet<Integer>();
+        theyDiscoverMe = new Vector<BaseCharacterView>();
+        seeMeTeamIDs = new Vector<Integer>();
         windowWidth = MyVirtualWindow.getWindowWidth(getContext());
         windowHeight = MyVirtualWindow.getWindowHeight(getContext());
         characterBodySize = 60;
@@ -278,10 +278,10 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         mHolder.setFormat(PixelFormat.TRANSLUCENT);
         setZOrderOnTop(true);
 
-        if(starPic==null) {
+        if (starPic == null) {
             Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.star, option);
             Matrix matrixForSP = new Matrix();
-            matrixForSP.postScale((float) characterBodySize / bitmap.getWidth() *(float)0.8, (float) characterBodySize / bitmap.getHeight() *(float)0.8);
+            matrixForSP.postScale((float) characterBodySize / bitmap.getWidth() * (float) 0.8, (float) characterBodySize / bitmap.getHeight() * (float) 0.8);
             starPic = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrixForSP, true);
         }
         borderWidth = 5;
@@ -430,10 +430,11 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                         leftVol = leftVol / 3;
                         rightVol = rightVol / 3;
                     }
+                    try {
                     moveMediaPlayer.setVolume(leftVol, rightVol);
                     if (isStay == false && needMove == true)
                         moveMediaPlayer.start();
-                    try {
+
                         if (runOrWalk == MOVINT_TYPE_WALK)
                             Thread.sleep(nowWalkWaitTime);
                         else
@@ -925,14 +926,19 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                     otherCharacter.theyDiscoverMe.remove(this);
                 }
                 boolean hasMyTeammate = false;
-                for (BaseCharacterView c : otherCharacter.theyDiscoverMe) {
+                Iterator<BaseCharacterView> iterator = otherCharacter.theyDiscoverMe.iterator();
+                while (iterator.hasNext()) {
+                    BaseCharacterView c = iterator.next();
                     if (c.teamID == this.teamID) {
                         hasMyTeammate = true;
                         break;
                     }
                 }
+
                 if (hasMyTeammate == false) {
-                    otherCharacter.seeMeTeamIDs.remove(this.teamID);
+                    int index = otherCharacter.seeMeTeamIDs.indexOf(this.teamID);
+                    if (index >= 0)
+                        otherCharacter.seeMeTeamIDs.remove(index);
                     otherCharacter.isForceToBeSawByMe = false;
                 } else {
                     otherCharacter.isForceToBeSawByMe = true;
@@ -1092,12 +1098,12 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                             canvas.drawCircle(characterBodySize / 2, characterBodySize / 2, characterBodySize / 2 - borderWidth, normalPaint);
                             canvas.drawBitmap(characterPic, (int) (characterBodySize * 0.1), (int) (characterBodySize * 0.1), normalPaint);
                             canvas.rotate(nowFacingAngle, characterBodySize / 2, characterBodySize / 2);
-                            if(isInvincible){
+                            if (isInvincible) {
                                 canvas.drawBitmap(starPic, (int) (characterBodySize * 0.1), (int) (characterBodySize * 0.1), normalPaint);
 
                             }
                             if (isDead) {
-                                canvas.drawARGB(255,255,0,0);
+                                canvas.drawARGB(255, 255, 0, 0);
 
                                 continue;
                             }
@@ -1108,12 +1114,12 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                             canvas.drawCircle(characterBodySize / 2, characterBodySize / 2, characterBodySize / 2 - borderWidth, alphaPaint);
                             canvas.drawBitmap(characterPic, (int) (characterBodySize * 0.1), (int) (characterBodySize * 0.1), alphaPaint);
                             canvas.rotate(nowFacingAngle, characterBodySize / 2, characterBodySize / 2);
-                            if(isInvincible){
+                            if (isInvincible) {
                                 canvas.drawBitmap(starPic, (int) (characterBodySize * 0.1), (int) (characterBodySize * 0.1), alphaPaint);
 
                             }
                             if (isDead) {
-                                canvas.drawARGB(128,255,0,0);
+                                canvas.drawARGB(128, 255, 0, 0);
 
                                 continue;
                             }
@@ -1126,12 +1132,12 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                             canvas.drawCircle(characterBodySize / 2, characterBodySize / 2, characterBodySize / 2 - borderWidth, normalPaint);
                             canvas.drawBitmap(characterPic, (int) (characterBodySize * 0.1), (int) (characterBodySize * 0.1), normalPaint);
                             canvas.rotate(nowFacingAngle, characterBodySize / 2, characterBodySize / 2);
-                            if(isInvincible){
+                            if (isInvincible) {
                                 canvas.drawBitmap(starPic, (int) (characterBodySize * 0.1), (int) (characterBodySize * 0.1), normalPaint);
 
                             }
                             if (isDead) {
-                                canvas.drawARGB(255,255,0,0);
+                                canvas.drawARGB(255, 255, 0, 0);
 
                                 continue;
                             }
@@ -1144,12 +1150,12 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                             canvas.drawCircle(characterBodySize / 2, characterBodySize / 2, characterBodySize / 2 - borderWidth, transparentPaint);
                             canvas.drawBitmap(characterPic, (int) (characterBodySize * 0.1), (int) (characterBodySize * 0.1), transparentPaint);
                             canvas.rotate(nowFacingAngle, characterBodySize / 2, characterBodySize / 2);
-                            if(isInvincible){
+                            if (isInvincible) {
                                 canvas.drawBitmap(starPic, (int) (characterBodySize * 0.1), (int) (characterBodySize * 0.1), transparentPaint);
 
                             }
                             if (isDead) {
-                                canvas.drawARGB(0,255,0,0);
+                                canvas.drawARGB(0, 255, 0, 0);
 
                                 continue;
                             }
@@ -1179,52 +1185,52 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         }
     }
 
-    public void updateInvincibleState(){
-        if(isInvincible==true&&new Date().getTime()-invincibleStartTime>invincibleLastTime){
-            isInvincible=false;
-            invincibleStartTime=0;
-            invincibleLastTime=0;
+    public void updateInvincibleState() {
+        if (isInvincible == true && new Date().getTime() - invincibleStartTime > invincibleLastTime) {
+            isInvincible = false;
+            invincibleStartTime = 0;
+            invincibleLastTime = 0;
         }
     }
 
     public void deadReset() {
-        isKnockedAway=false;
-        knockedAwayX=-99999;
-        knockedAwayY=-99999;
-        isJumping=false;
-        jumpToX=-99999;
-        jumpToY=-99999;
-        int myBaseWidth=GameBaseAreaActivity.gameInfo.mapWidth/2;
-        int myBaseHeight=GameBaseAreaActivity.gameInfo.mapHeight/2;
-        if(myBaseHeight<characterBodySize||myBaseWidth<characterBodySize){
-            Log.e("deadReset","地图设得这么小，玩毛啊？");
+        isKnockedAway = false;
+        knockedAwayX = -99999;
+        knockedAwayY = -99999;
+        isJumping = false;
+        jumpToX = -99999;
+        jumpToY = -99999;
+        int myBaseWidth = GameBaseAreaActivity.gameInfo.mapWidth / 2;
+        int myBaseHeight = GameBaseAreaActivity.gameInfo.mapHeight / 2;
+        if (myBaseHeight < characterBodySize || myBaseWidth < characterBodySize) {
+            Log.e("deadReset", "地图设得这么小，玩毛啊？");
             return;
         }
-        Random random=new Random();
-        int offX=random.nextInt(myBaseWidth);
-        int offY=random.nextInt(myBaseHeight);
+        Random random = new Random();
+        int offX = random.nextInt(myBaseWidth);
+        int offY = random.nextInt(myBaseHeight);
         enemiesPositionSet.clear();
         long nowTime = new Date().getTime();
-        if (nowTime - deadTime > 2000&&isInvincible==false) {
-            isInvincible=true;
-            invincibleStartTime=new Date().getTime();
-            invincibleLastTime=3000;
+        if (nowTime - deadTime > 2000 && isInvincible == false) {
+            isInvincible = true;
+            invincibleStartTime = new Date().getTime();
+            invincibleLastTime = 3000;
             if (teamID == 1) {
                 nowLeft = offX;
                 nowTop = offY;
                 nowFacingAngle = 45;
 
             } else if (teamID == 2) {
-                nowLeft = GameBaseAreaActivity.gameInfo.mapWidth-offX - characterBodySize;
+                nowLeft = GameBaseAreaActivity.gameInfo.mapWidth - offX - characterBodySize;
                 nowTop = offY;
                 nowFacingAngle = 135;
             } else if (teamID == 3) {
                 nowLeft = offX;
-                nowTop = GameBaseAreaActivity.gameInfo.mapHeight-offY - characterBodySize ;
+                nowTop = GameBaseAreaActivity.gameInfo.mapHeight - offY - characterBodySize;
                 nowFacingAngle = 315;
             } else if (teamID == 4) {
-                nowLeft = GameBaseAreaActivity.gameInfo.mapWidth-offX - characterBodySize;
-                nowTop = GameBaseAreaActivity.gameInfo.mapHeight-offY - characterBodySize;
+                nowLeft = GameBaseAreaActivity.gameInfo.mapWidth - offX - characterBodySize;
+                nowTop = GameBaseAreaActivity.gameInfo.mapHeight - offY - characterBodySize;
                 nowFacingAngle = 225;
             }
             FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) this.getLayoutParams();
@@ -1282,8 +1288,8 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 //
 //    }
 
-    public void startKnockedAwayThread(Point toPoint){
-        if(isJumping==true) {
+    public void startKnockedAwayThread(Point toPoint) {
+        if (isJumping == true) {
             isJumping = false;
             jumpToX = -99999;
             jumpToY = -99999;
@@ -1297,7 +1303,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
         public Point knockedAwayToPoint;
 
-        public KnockedAwayThread( Point knockedAwayToPoint) {
+        public KnockedAwayThread(Point knockedAwayToPoint) {
             this.knockedAwayToPoint = knockedAwayToPoint;
         }
 
@@ -1341,7 +1347,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
 
     public void beKnockedAway(int limitLeft, int limitTop, int limitRight, int limitBottom) {
-        if(isJumping==true) {
+        if (isJumping == true) {
             isJumping = false;
             jumpToX = -99999;
             jumpToY = -99999;
@@ -1594,7 +1600,6 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     }
 
 
-
     /**
      * 这方法也是myCharacter专用
      */
@@ -1650,11 +1655,11 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
 
     public void switchLockingState(Boolean isLocking) {
-        this.isLocking=isLocking;
+        this.isLocking = isLocking;
     }
 
     public void attack() {
-        if (attackMediaPlayer == null||GameBaseAreaActivity.gameInfo.isStop==true)
+        if (attackMediaPlayer == null || GameBaseAreaActivity.gameInfo.isStop == true)
             return;
         if (isMyCharacter == false) {
             BaseCharacterView myCharacter = GameBaseAreaActivity.myCharacter;
@@ -1682,17 +1687,17 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                 rightVol = 1;
             try {
                 attackMediaPlayer.setVolume(leftVol, rightVol);
-            }catch (Exception e){
+            } catch (Exception e) {
                 attackMediaPlayer.release();
             }
 
-            Point nowPosition=new Point(centerX,centerY);
-            CharacterPosition characterPosition=new CharacterPosition(nowPosition,this,new Date().getTime(),3000);
-            Vector<CharacterPosition> enemiesPositionSet=GameBaseAreaActivity.myCharacter.enemiesPositionSet;
-            Iterator<CharacterPosition> iterator=enemiesPositionSet.iterator();
-            if(iterator.hasNext()){
-                CharacterPosition oldPosition=iterator.next();
-                if(oldPosition.character==this){
+            Point nowPosition = new Point(centerX, centerY);
+            CharacterPosition characterPosition = new CharacterPosition(nowPosition, this, new Date().getTime(), 3000);
+            Vector<CharacterPosition> enemiesPositionSet = GameBaseAreaActivity.myCharacter.enemiesPositionSet;
+            Iterator<CharacterPosition> iterator = enemiesPositionSet.iterator();
+            if (iterator.hasNext()) {
+                CharacterPosition oldPosition = iterator.next();
+                if (oldPosition.character == this) {
                     iterator.remove();
                 }
             }
@@ -1782,7 +1787,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                                 continue;
 
                             Point positionPoint = new Point(character.centerX, character.centerY);
-                            CharacterPosition characterPosition=new CharacterPosition(positionPoint,character,nowTime,3000);
+                            CharacterPosition characterPosition = new CharacterPosition(positionPoint, character, nowTime, 3000);
                             double distance = MyMathsUtils.getDistance(positionPoint, thisCharacterPosition);
                             if (distance <= nowSmellRadius) {
                                 enemiesPositionSet.add(characterPosition);

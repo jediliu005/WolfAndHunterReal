@@ -14,6 +14,7 @@ import android.util.DisplayMetrics;
 import android.view.View;
 import android.widget.FrameLayout;
 
+import com.jedi.wolf_and_hunter.engine.GameMainEngine;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 import com.jedi.wolf_and_hunter.R;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
@@ -25,7 +26,7 @@ import com.jedi.wolf_and_hunter.utils.ViewUtils;
 
 public class JRocker extends View  {
     BaseCharacterView bindingCharacter;
-    public GameBaseAreaActivity.GameHandler gameHandler;
+    public GameMainEngine.GameHandler gameHandler;
     Point padCircleCenter=new Point();
     Point rockerCircleCenter=new Point();
     static Bitmap fireBitmap;
@@ -38,6 +39,7 @@ public class JRocker extends View  {
     int windowHeight;
     public static int padRadius;
     public static int rockerRadius;
+    public static int viewWidth;
     double distance=0;
     Paint paintForPad;
     Paint paintForRocker;
@@ -67,6 +69,7 @@ public class JRocker extends View  {
             padRadius = (int) (windowWidth / 10);
             rockerRadius = (int) (padRadius / 1.3);
         }
+        viewWidth=(padRadius+rockerRadius)*2;
 //        actionButtonsWidth=(int)(padRadius/1.5);
         padCircleCenter.set(padRadius+rockerRadius,padRadius+rockerRadius);
         rockerCircleCenter.set(padRadius+rockerRadius,padRadius+rockerRadius);

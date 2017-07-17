@@ -7,6 +7,7 @@ import com.jedi.wolf_and_hunter.myViews.Trajectory;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 
+import java.util.Iterator;
 import java.util.TimerTask;
 
 /**
@@ -28,7 +29,7 @@ public class BaseAI extends TimerTask {
     public int targetLastY = -1;
 
     public BaseCharacterView targetCharacter;
-//    Thread facingThread;
+    //    Thread facingThread;
     public float chanceAngle = 5;
     public int angleChangSpeed = 2;
     public static int mapWidth = 0;
@@ -41,11 +42,10 @@ public class BaseAI extends TimerTask {
         super();
         this.bindingCharacter = character;
         if (mapWidth == 0 || mapHeight == 0) {
-            mapWidth = GameBaseAreaActivity.mapBaseFrame.getWidth();
-            mapHeight = GameBaseAreaActivity.mapBaseFrame.getHeight();
+            mapWidth = GameBaseAreaActivity.gameInfo.mapWidth;
+            mapHeight = GameBaseAreaActivity.gameInfo.mapHeight;
         }
     }
-
 
 
 //@Deprecated
@@ -144,7 +144,6 @@ public class BaseAI extends TimerTask {
             reset();
         }
         for (BaseCharacterView character : GameBaseAreaActivity.gameInfo.allCharacters) {
-            isInViewRange = false;
             if (bindingCharacter == null) {
                 return;
             }
@@ -185,16 +184,20 @@ public class BaseAI extends TimerTask {
                         character.theyDiscoverMe.remove(bindingCharacter);
                     }
                     boolean hasMyTeammate = false;
-                    for (BaseCharacterView c : character.theyDiscoverMe) {
+                    Iterator<BaseCharacterView> iterator = character.theyDiscoverMe.iterator();
+                    while (iterator.hasNext()) {
+                        BaseCharacterView c = iterator.next();
                         if (c.getTeamID() == bindingCharacter.getTeamID()) {
                             hasMyTeammate = true;
                             break;
                         }
                     }
+
                     if (hasMyTeammate == false) {
-                        character.seeMeTeamIDs.remove(bindingCharacter.getTeamID());
+                        int index = character.seeMeTeamIDs.indexOf(bindingCharacter.getTeamID());
+                        character.seeMeTeamIDs.remove(index);
                     }
-                } else if (bindingCharacter.getTeamID() == GameBaseAreaActivity.myCharacter.getTeamID()) {
+                } else if (GameBaseAreaActivity.myCharacter != null && bindingCharacter.getTeamID() == GameBaseAreaActivity.myCharacter.getTeamID()) {
                     character.isForceToBeSawByMe = false;
                 }
 
@@ -224,31 +227,35 @@ public class BaseAI extends TimerTask {
         }
         if (intent == INTENT_HUNT && trackTrajectory == null) {
             double minDistance = -1;
-            for (Trajectory trajectory : GameBaseAreaActivity.gameInfo.allTrajectories) {
-                if (trajectory.createCharacter.getTeamID() == bindingCharacter.getTeamID())
-                    continue;
+            Iterator<Trajectory> iterator = GameBaseAreaActivity.gameInfo.allTrajectories.iterator();
+            while (iterator.hasNext()) {
+                Trajectory trajectory = iterator.next();
                 double distance = MyMathsUtils.getDistance(trajectory.fromPointRelateParent, new Point(bindingCharacter.centerX, bindingCharacter.centerY));
                 minDistance = Math.min(minDistance, distance);
                 if (minDistance == -1 || minDistance == distance)
                     trackTrajectory = trajectory;
             }
 
+
         }
         if (trackTrajectory != null) {
             intent = INTENT_TRACK_TRAJECTORY;
         }
 
-
-
+        if (targetCharacter != null && targetCharacter.isDead == true) {
+            targetCharacter = null;
+            intent = INTENT_HUNT;
+            hasDealTrackOnce = false;
+        }
 
 
     }
 
-    public  void trackTrajectory() {
+    public void trackTrajectory() {
 
     }
 
-    public  void trackCharacter() {
+    public void trackCharacter() {
 
     }
 
@@ -262,18 +269,18 @@ public class BaseAI extends TimerTask {
         targetLastY = -1;
         trackTrajectory = null;
         hasDealTrackOnce = false;
-        bindingCharacter.isStay=false;
+        bindingCharacter.isStay = false;
     }
 
 
-    public  void attack() {
+    public void attack() {
 
     }
 
-    public  void hunt() {
+    public void hunt() {
 
     }
 
-    public  void escape() {
+    public void escape() {
     }
 }

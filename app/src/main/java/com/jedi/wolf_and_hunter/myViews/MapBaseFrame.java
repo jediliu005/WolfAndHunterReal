@@ -11,6 +11,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.FrameLayout;
 
+import com.jedi.wolf_and_hunter.engine.GameMainEngine;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 import com.jedi.wolf_and_hunter.myViews.landform.Landform;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
@@ -55,7 +56,7 @@ public class MapBaseFrame extends FrameLayout {
 
     }
 
-    public MapBaseFrame(@NonNull Context context, @Nullable AttributeSet attrs, GameBaseAreaActivity.GameHandler gameHandler) {
+    public MapBaseFrame(@NonNull Context context, @Nullable AttributeSet attrs, GameMainEngine.GameHandler gameHandler) {
         super(context, attrs);
 
 

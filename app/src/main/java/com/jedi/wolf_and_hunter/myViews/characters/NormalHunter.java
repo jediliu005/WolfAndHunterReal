@@ -12,6 +12,7 @@ import android.widget.FrameLayout;
 
 import com.jedi.wolf_and_hunter.R;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
+import com.jedi.wolf_and_hunter.engine.GameMainEngine;
 import com.jedi.wolf_and_hunter.myObj.gameObj.MyVirtualWindow;
 import com.jedi.wolf_and_hunter.myViews.Trajectory;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
@@ -295,7 +296,7 @@ public class NormalHunter extends BaseCharacterView {
         Point fromPoint = new Point(centerX, centerY);
         Point toPoint = new Point((int) endX, (int) endY);
         Trajectory trajectory = new Trajectory(getContext(), fromPoint, toPoint, this);
-        Message msg = gameHandler.obtainMessage(GameBaseAreaActivity.GameHandler.ADD_TRAJECTORY, trajectory);
+        Message msg = gameHandler.obtainMessage(GameMainEngine.GameHandler.ADD_TRAJECTORY, trajectory);
         gameHandler.sendMessage(msg);
 
     }

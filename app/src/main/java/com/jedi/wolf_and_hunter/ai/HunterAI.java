@@ -22,8 +22,8 @@ public class HunterAI extends BaseAI {
         super(character);
         this.bindingCharacter = character;
         if (mapWidth == 0 || mapHeight == 0) {
-            mapWidth = GameBaseAreaActivity.mapBaseFrame.getWidth();
-            mapHeight = GameBaseAreaActivity.mapBaseFrame.getHeight();
+            mapWidth = GameBaseAreaActivity.gameInfo.mapWidth;
+            mapHeight = GameBaseAreaActivity.gameInfo.mapHeight;
         }
     }
 
@@ -151,115 +151,118 @@ public class HunterAI extends BaseAI {
     }
 
     public synchronized void decideWhatToDo() {
-
-//        boolean isDiscover = false;
-        boolean isDiscoverByMe = false;
-        boolean isInViewRange = false;
-        intent = INTENT_HUNT;
-        if (bindingCharacter.isDead) {
-            reset();
-        }
-        for (BaseCharacterView character : GameBaseAreaActivity.gameInfo.allCharacters) {
-
-            if (bindingCharacter == null) {
-                return;
-            }
-            //忽略队友
-            if (character == bindingCharacter || character.getTeamID() == bindingCharacter.getTeamID())
-                continue;
-            if (character.isDead == true) {
-                continue;
-            }
-
-            isInViewRange = bindingCharacter.isInViewRange(character, bindingCharacter.nowViewRadius);
-
-            if (isInViewRange == true) {
-                if (character.nowHiddenLevel == 0)
-                    isDiscoverByMe = true;
-                else {
-                    boolean isInForceViewRange = bindingCharacter.isInViewRange(character, bindingCharacter.nowForceViewRadius);
-                    if (isInForceViewRange)
-                        isDiscoverByMe = true;
-
-                }
-            }
-            if (isDiscoverByMe == true) {//处理闯入本AI视觉范围的情况
-                if (character.seeMeTeamIDs.contains(bindingCharacter.getTeamID())) {//已经被AI本队发现
-                    if (character.theyDiscoverMe.contains(bindingCharacter) == false) {//第一发现人不是本AI
-                        character.theyDiscoverMe.add(bindingCharacter);
-                    }
-                } else {//本AI是第一发现人
-                    character.seeMeTeamIDs.add(bindingCharacter.getTeamID());
-                    character.theyDiscoverMe.add(bindingCharacter);
-                    if (bindingCharacter.getTeamID() == GameBaseAreaActivity.myCharacter.getTeamID())
-                        character.isForceToBeSawByMe = true;
-
-                }
-            } else {//处理不在本AI视觉范围内的情况
-                if (character.seeMeTeamIDs.contains(bindingCharacter.getTeamID())) {//已经被AI本队发现
-                    if (character.theyDiscoverMe.contains(bindingCharacter)) {
-                        character.theyDiscoverMe.remove(bindingCharacter);
-                    }
-                    boolean hasMyTeammate = false;
-                    for (BaseCharacterView c : character.theyDiscoverMe) {
-                        if (c.getTeamID() == bindingCharacter.getTeamID()) {
-                            hasMyTeammate = true;
-                            break;
-                        }
-                    }
-                    if (hasMyTeammate == false) {
-                        character.seeMeTeamIDs.remove(bindingCharacter.getTeamID());
-                    }
-                } else if (bindingCharacter.getTeamID() == GameBaseAreaActivity.myCharacter.getTeamID()) {
-                    character.isForceToBeSawByMe = false;
-                }
-
-
-            }
-            //对方比我方任何玩家发现
-            if (character.seeMeTeamIDs.contains(bindingCharacter.getTeamID())) {
-                reset();
-                targetCharacter = character;
-                intent = INTENT_ATTACK;
-                return;
-            } else {//对方此刻没被发现
-                //如果对方是突然消失的话即展开追击
-                if (targetCharacter != null) {
-                    hasDealTrackOnce = false;
-                    intent = INTENT_TRACK_CHARACTER;
-                    continue;
-                }
-                //对方已经被执行过一次追击，但还没完成追击则继续追
-                else if (hasDealTrackOnce == true || (targetLastX > 0 && targetLastY > 0)) {//处理被发现的目标突然消失的情况，执行追踪
-                    intent = INTENT_TRACK_CHARACTER;
-                    continue;
-
-                }
-            }
-
-        }
-        if (intent == INTENT_HUNT && trackTrajectory == null) {
-            double minDistance = -1;
-            for (Trajectory trajectory : GameBaseAreaActivity.gameInfo.allTrajectories) {
-                if (trajectory.createCharacter.getTeamID() == bindingCharacter.getTeamID())
-                    continue;
-                double distance = MyMathsUtils.getDistance(trajectory.fromPointRelateParent, new Point(bindingCharacter.centerX, bindingCharacter.centerY));
-                minDistance = Math.min(minDistance, distance);
-                if (minDistance == -1 || minDistance == distance)
-                    trackTrajectory = trajectory;
-            }
-
-        }
-        if (trackTrajectory != null) {
-            intent = INTENT_TRACK_TRAJECTORY;
-        }
-
-
-        if (targetCharacter != null && targetCharacter.isDead == true) {
-            targetCharacter = null;
-            intent = INTENT_HUNT;
-            hasDealTrackOnce = false;
-        }
+        super.decideWhatToDo();
+//
+////        boolean isDiscover = false;
+//        boolean isDiscoverByMe = false;
+//        boolean isInViewRange = false;
+//        intent = INTENT_HUNT;
+//        if (bindingCharacter.isDead) {
+//            reset();
+//        }
+//        for (BaseCharacterView character : GameBaseAreaActivity.gameInfo.allCharacters) {
+//
+//            if (bindingCharacter == null) {
+//                return;
+//            }
+//            //忽略队友
+//            if (character == bindingCharacter || character.getTeamID() == bindingCharacter.getTeamID())
+//                continue;
+//            if (character.isDead == true) {
+//                continue;
+//            }
+//
+//            isInViewRange = bindingCharacter.isInViewRange(character, bindingCharacter.nowViewRadius);
+//
+//            if (isInViewRange == true) {
+//                if (character.nowHiddenLevel == 0)
+//                    isDiscoverByMe = true;
+//                else {
+//                    boolean isInForceViewRange = bindingCharacter.isInViewRange(character, bindingCharacter.nowForceViewRadius);
+//                    if (isInForceViewRange)
+//                        isDiscoverByMe = true;
+//
+//                }
+//            }
+//            if (isDiscoverByMe == true) {//处理闯入本AI视觉范围的情况
+//                if (character.seeMeTeamIDs.contains(bindingCharacter.getTeamID())) {//已经被AI本队发现
+//                    if (character.theyDiscoverMe.contains(bindingCharacter) == false) {//第一发现人不是本AI
+//                        character.theyDiscoverMe.add(bindingCharacter);
+//                    }
+//                } else {//本AI是第一发现人
+//                    character.seeMeTeamIDs.add(bindingCharacter.getTeamID());
+//                    character.theyDiscoverMe.add(bindingCharacter);
+//                    if (GameBaseAreaActivity.myCharacter!=null&&bindingCharacter.getTeamID() == GameBaseAreaActivity.myCharacter.getTeamID())
+//                        character.isForceToBeSawByMe = true;
+//
+//                }
+//            } else {//处理不在本AI视觉范围内的情况
+//                if (character.seeMeTeamIDs.contains(bindingCharacter.getTeamID())) {//已经被AI本队发现
+//                    if (character.theyDiscoverMe.contains(bindingCharacter)) {
+//                        character.theyDiscoverMe.remove(bindingCharacter);
+//                    }
+//                    boolean hasMyTeammate = false;
+//                    for (BaseCharacterView c : character.theyDiscoverMe) {
+//                        if (c.getTeamID() == bindingCharacter.getTeamID()) {
+//                            hasMyTeammate = true;
+//                            break;
+//                        }
+//                    }
+//                    if (hasMyTeammate == false) {
+//                        character.seeMeTeamIDs.remove(bindingCharacter.getTeamID());
+//                    }
+//                } else if (GameBaseAreaActivity.myCharacter != null && bindingCharacter.getTeamID() == GameBaseAreaActivity.myCharacter.getTeamID()) {
+//                    character.isForceToBeSawByMe = false;
+//                }
+//
+//
+//            }
+//            //对方比我方任何玩家发现
+//            if (character.seeMeTeamIDs.contains(bindingCharacter.getTeamID())) {
+//                reset();
+//                targetCharacter = character;
+//                intent = INTENT_ATTACK;
+//                return;
+//            } else {//对方此刻没被发现
+//                //如果对方是突然消失的话即展开追击
+//                if (targetCharacter != null) {
+//                    hasDealTrackOnce = false;
+//                    intent = INTENT_TRACK_CHARACTER;
+//                    continue;
+//                }
+//                //对方已经被执行过一次追击，但还没完成追击则继续追
+//                else if (hasDealTrackOnce == true || (targetLastX > 0 && targetLastY > 0)) {//处理被发现的目标突然消失的情况，执行追踪
+//                    intent = INTENT_TRACK_CHARACTER;
+//                    continue;
+//
+//                }
+//            }
+//            //下面这句估计测试时有用
+//            if (GameBaseAreaActivity.myCharacter == null)
+//                character.isForceToBeSawByMe = true;
+//        }
+//        if (intent == INTENT_HUNT && trackTrajectory == null) {
+//            double minDistance = -1;
+//            for (Trajectory trajectory : GameBaseAreaActivity.gameInfo.allTrajectories) {
+//                if (trajectory.createCharacter.getTeamID() == bindingCharacter.getTeamID())
+//                    continue;
+//                double distance = MyMathsUtils.getDistance(trajectory.fromPointRelateParent, new Point(bindingCharacter.centerX, bindingCharacter.centerY));
+//                minDistance = Math.min(minDistance, distance);
+//                if (minDistance == -1 || minDistance == distance)
+//                    trackTrajectory = trajectory;
+//            }
+//
+//        }
+//        if (trackTrajectory != null) {
+//            intent = INTENT_TRACK_TRAJECTORY;
+//        }
+//
+//
+//        if (targetCharacter != null && targetCharacter.isDead == true) {
+//            targetCharacter = null;
+//            intent = INTENT_HUNT;
+//            hasDealTrackOnce = false;
+//        }
 
 
     }

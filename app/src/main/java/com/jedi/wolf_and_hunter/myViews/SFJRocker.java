@@ -14,6 +14,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.FrameLayout;
 
+import com.jedi.wolf_and_hunter.engine.GameMainEngine;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 import com.jedi.wolf_and_hunter.R;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
@@ -25,7 +26,7 @@ import com.jedi.wolf_and_hunter.utils.ViewUtils;
 
 public class SFJRocker extends SurfaceView implements SurfaceHolder.Callback {
     BaseCharacterView bindingCharacter;
-    public GameBaseAreaActivity.GameHandler gameHandler;
+    public GameMainEngine.GameHandler gameHandler;
     Point padCircleCenter=new Point();
     Point rockerCircleCenter=new Point();
 
