@@ -196,6 +196,7 @@ public class NormalHunter extends BaseCharacterView {
     public void deadReset() {
         super.deadReset();
         attackCount = defaultMaxAttackCount;
+
         nowHealthPoint=defaultHealthPoint;
         switchLockingState(false);
     }

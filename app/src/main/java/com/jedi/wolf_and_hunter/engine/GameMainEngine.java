@@ -432,7 +432,7 @@ public class GameMainEngine {
             atttackButton.buttonSize = (int) (atttackButton.buttonSize * 5 / 4);
             atttackButton.reCreateBitmap();
             rabp.leftMargin = MyVirtualWindow.getWindowWidth(gameBaseAreaActivity) - atttackButton.buttonSize - 50;
-            rabp.topMargin = MyVirtualWindow.getWindowHeight(gameBaseAreaActivity) - (leftRocker.getHeight() / 2 + atttackButton.buttonSize / 2);
+            rabp.topMargin = MyVirtualWindow.getWindowHeight(gameBaseAreaActivity) -JRocker.viewWidth / 2 ;
             smellButton = new SmellButton(gameBaseAreaActivity);
             int smellButtonSize = smellButton.buttonSize;
             smellButton.bindingCharacter = myCharacter;

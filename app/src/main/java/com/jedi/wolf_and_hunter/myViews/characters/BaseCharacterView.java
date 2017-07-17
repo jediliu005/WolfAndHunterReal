@@ -1194,6 +1194,8 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     }
 
     public void deadReset() {
+        isReloadingAttack=false;
+        nowReloadingAttackCount=0;
         isKnockedAway = false;
         knockedAwayX = -99999;
         knockedAwayY = -99999;
