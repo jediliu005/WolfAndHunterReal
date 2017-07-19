@@ -2,6 +2,7 @@ package com.jedi.wolf_and_hunter.utils;
 
 import android.graphics.Point;
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 /**
  * Created by Administrator on 2017/4/2.
@@ -59,6 +60,8 @@ public class MyMathsUtils {
      * @return
      */
     public static double getPointToLineDistance(Point point,double k,double b){
+        if(k==0||k+1==0)
+            Log.e("","");
         double distance=0;
         distance=Math.abs(k*point.x-point.y)/Math.sqrt(k*k+1);
         return distance;
@@ -69,8 +72,9 @@ public class MyMathsUtils {
      * @param relateY 相对Y轴坐标的相对距离
      * @return 相对X轴的夹角[0-360)
      */
-    public static float getAngleBetweenXAxus(int relateX,int relateY){
-
+    public static float getAngleBetweenXAxus(int relateX,int relateY) throws Exception {
+        if(relateX==0&&relateY==0)
+            throw new Exception("getAngleBetweenXAxus方法不允许参数都为0");
         double cos = relateX / Math.sqrt(relateX * relateX + relateY * relateY);
         double radian = Math.acos(cos);
         float angle = (float) (180 * radian / Math.PI);

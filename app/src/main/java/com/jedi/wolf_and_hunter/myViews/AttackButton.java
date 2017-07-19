@@ -125,8 +125,12 @@ public class AttackButton extends View {
             isHolding = true;
         else
             isHolding = false;
+        if ( lastTouchTime != 0&&new Date().getTime() - lastTouchTime > 300) {
+            if (GameBaseAreaActivity.myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER&&bindingCharacter.isReloadingAttack == false&&bindingCharacter.attackCount < bindingCharacter.maxAttackCount &&GameBaseAreaActivity.myCharacter!=null) {
+                bindingCharacter.isReloadingAttack=true;
+            }
+        }
         switch (event.getAction()) {
-
             case MotionEvent.ACTION_DOWN:
 
                 lastTouchTime = new Date().getTime();
@@ -149,11 +153,7 @@ public class AttackButton extends View {
 
             case MotionEvent.ACTION_MOVE:
 
-                if (new Date().getTime() - lastTouchTime > 300) {
-                    if (bindingCharacter.attackCount < bindingCharacter.maxAttackCount &&GameBaseAreaActivity.myCharacter!=null&& GameBaseAreaActivity.myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER) {
-                        bindingCharacter.reloadAttackCount();
-                    }
-                }
+
 
         }
 

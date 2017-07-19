@@ -118,8 +118,8 @@ public class BaseAI extends TimerTask {
 //        addFacingThread();
         decideWhatToDo();
 
-        if (bindingCharacter.attackCount == 0)
-            bindingCharacter.reloadAttackCount();
+//        if (bindingCharacter.attackCount == 0)
+//            bindingCharacter.reloadAttackCount();
         if (intent == INTENT_DAZE) {
             return;
         } else if (intent == INTENT_HUNT) {

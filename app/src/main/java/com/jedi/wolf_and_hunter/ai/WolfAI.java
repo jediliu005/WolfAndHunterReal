@@ -27,8 +27,8 @@ public class WolfAI extends BaseAI {
 //        addFacingThread();
         decideWhatToDo();
 
-        if (bindingCharacter.attackCount == 0)
-            bindingCharacter.reloadAttackCount();
+//        if (bindingCharacter.attackCount == 0)
+//            bindingCharacter.reloadAttackCount();
         if (intent == INTENT_DAZE) {
             return;
         } else if (intent == INTENT_HUNT) {
@@ -40,7 +40,11 @@ public class WolfAI extends BaseAI {
         } else if (intent == INTENT_TRACK_TRAJECTORY) {
             trackTrajectory();
         }
-
+        if (bindingCharacter.offX != 0 || bindingCharacter.offY != 0) {
+            bindingCharacter.needMove = true;
+        } else {
+            bindingCharacter.needMove = false;
+        }
     }
 
 //    public void changeFacing() {
@@ -85,25 +89,33 @@ public class WolfAI extends BaseAI {
 
             int searchRelateX = trackTrajectory.fromPointRelateParent.x - bindingCharacter.centerX;
             int searchRelateY = trackTrajectory.fromPointRelateParent.y - bindingCharacter.centerY;
-            float searchToAngle = MyMathsUtils.getAngleBetweenXAxus(searchRelateX, searchRelateY);
+            float searchToAngle = 0;
+            if (searchRelateX == 0 & searchRelateY == 0) {
+                reset();
+                return;
+            }
+            try {
+                searchToAngle = MyMathsUtils.getAngleBetweenXAxus(searchRelateX, searchRelateY);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
 
             int nowDistance = (int) MyMathsUtils.getDistance(trackTrajectory.fromPointRelateParent,
                     new Point(bindingCharacter.centerX, bindingCharacter.centerY));
 
 
-
-            if (bindingCharacter.nowFacingAngle == searchToAngle && nowDistance<=bindingCharacter.nowForceViewRadius/2) {
+            if (bindingCharacter.nowFacingAngle == searchToAngle && nowDistance <= bindingCharacter.nowForceViewRadius / 2) {
                 trackTrajectory = null;
                 reset();
 
             } else {
                 targetX = trackTrajectory.fromPointRelateParent.x;
                 targetY = trackTrajectory.fromPointRelateParent.y;
-                if (nowDistance <= bindingCharacter.nowForceViewRadius/2) {
-                    bindingCharacter.isStay=true;
-                }else{
-                    bindingCharacter.isStay=false;
+                if (nowDistance <= bindingCharacter.nowForceViewRadius / 2) {
+                    bindingCharacter.isStay = true;
+                } else {
+                    bindingCharacter.isStay = false;
                 }
                 bindingCharacter.offX = targetX - bindingCharacter.centerX;
                 bindingCharacter.offY = targetY - bindingCharacter.centerY;
@@ -127,9 +139,9 @@ public class WolfAI extends BaseAI {
                 int nowDistance = (int) MyMathsUtils.getDistance(new Point(targetCharacter.centerX, targetCharacter.centerY)
                         , new Point(bindingCharacter.centerX, bindingCharacter.centerY));
                 if (nowDistance > bindingCharacter.nowForceViewRadius) {
-                    bindingCharacter.isStay=false;
+                    bindingCharacter.isStay = false;
                 } else {
-                    bindingCharacter.isStay=true;
+                    bindingCharacter.isStay = true;
                 }
                 targetX = targetLastX;
                 targetY = targetLastY;
@@ -142,10 +154,19 @@ public class WolfAI extends BaseAI {
 //                hasDealTrackOnce = true;
             int relateX = targetX - bindingCharacter.centerX;
             int relateY = targetY - bindingCharacter.centerY;
-            float targetNowAngle=MyMathsUtils.getAngleBetweenXAxus(relateX,relateY);
+            if (relateX == 0 & relateY == 0) {
+                reset();
+                return;
+            }
+            float targetNowAngle = 0;
+            try {
+                targetNowAngle = MyMathsUtils.getAngleBetweenXAxus(relateX, relateY);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             double targetDistance = Math.sqrt(relateX * relateX + relateY * relateY);
             if (targetDistance == 0
-                    ||(targetDistance <= bindingCharacter.nowForceViewRadius && targetNowAngle == bindingCharacter.nowFacingAngle)) {
+                    || (targetDistance <= bindingCharacter.nowForceViewRadius && targetNowAngle == bindingCharacter.nowFacingAngle)) {
                 reset();
                 return;
             }
@@ -178,12 +199,21 @@ public class WolfAI extends BaseAI {
             targetLastY = targetCharacter.centerY;
             int relateX = targetCharacter.centerX - bindingCharacter.centerX;
             int relateY = targetCharacter.centerY - bindingCharacter.centerY;
+            if (relateX == 0 & relateY == 0) {
+                reset();
+                return;
+            }
             double distance = Math.sqrt(relateX * relateX + relateY * relateY);
-            float targetNowAngle = MyMathsUtils.getAngleBetweenXAxus(relateX, relateY);
+            float targetNowAngle = 0;
+            try {
+                targetNowAngle = MyMathsUtils.getAngleBetweenXAxus(relateX, relateY);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
             float relateAngle = targetNowAngle - bindingCharacter.nowFacingAngle;
 
-            float bestTurningAngle=relateAngle;
+            float bestTurningAngle = relateAngle;
             if (Math.abs(bestTurningAngle) > 180) {//处理旋转最佳方向
                 if (bestTurningAngle > 0)
                     bestTurningAngle = bestTurningAngle - 360;
@@ -194,7 +224,9 @@ public class WolfAI extends BaseAI {
             if (Math.abs(bestTurningAngle) > angleChangSpeed)
                 bestTurningAngle = Math.abs(bestTurningAngle) / bestTurningAngle * angleChangSpeed;
 
+
             bindingCharacter.nowFacingAngle = bindingCharacter.nowFacingAngle + bestTurningAngle;
+
             if (bindingCharacter.nowFacingAngle < 0)
                 bindingCharacter.nowFacingAngle = bindingCharacter.nowFacingAngle + 360;
             else if (bindingCharacter.nowFacingAngle > 360)
@@ -226,16 +258,16 @@ public class WolfAI extends BaseAI {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            synchronized (bindingCharacter) {
-                if (bindingCharacter == null || bindingCharacter.isDead == true) {
-                    reset();
-                    return;
-                }
-                if (bindingCharacter.isJumping == true)
-                    return;
 
-                bindingCharacter.attack();
+            if (bindingCharacter == null || bindingCharacter.isDead == true) {
+                reset();
+                return;
             }
+            if (bindingCharacter.isJumping == true || bindingCharacter.isAttackting == true)
+                return;
+
+            bindingCharacter.isAttackting = true;
+
         }
     }
 

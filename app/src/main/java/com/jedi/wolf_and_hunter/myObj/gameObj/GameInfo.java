@@ -59,7 +59,19 @@ public class GameInfo implements Serializable{
                     break;
                 int relateX = beAttackedCharacter.centerX - attackCharacter.centerX;
                 int relateY = beAttackedCharacter.centerY - attackCharacter.centerY;
-                float angleBetweenXAxus = MyMathsUtils.getAngleBetweenXAxus(relateX, relateY);
+                if(relateX==0&&relateY==0) {
+                    beAttackedCharacter.isDead = true;
+                    beAttackedCharacter.dieCount++;
+                    beAttackedCharacter.deadTime = new Date().getTime();
+                    attackCharacter.killCount++;
+                    continue;
+                }
+                float angleBetweenXAxus = 0;
+                try {
+                    angleBetweenXAxus = MyMathsUtils.getAngleBetweenXAxus(relateX, relateY);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 float relateFacingAngle = Math.abs(beAttackedCharacter.nowFacingAngle - angleBetweenXAxus);
 
                 if (relateFacingAngle < 90 || relateFacingAngle > 270) {//背击

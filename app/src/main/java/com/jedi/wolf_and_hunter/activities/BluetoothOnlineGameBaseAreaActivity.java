@@ -295,9 +295,9 @@ public class BluetoothOnlineGameBaseAreaActivity extends Activity {
                     } else if (controlMode == CONTROL_MODE_NORMAL) {
                         if (myCharacter.needMove == true) {
                             if (myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
-                                myCharacter.normalModeOffsetLRTBParams();
+                                myCharacter.reactHunterMove();
                             else if (myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF)
-                                myCharacter.normalModeOffsetWolfLRTBParams();
+                                myCharacter.reactWolfMove();
                         }
                         if (mySight != null && mySight.needMove == true) {
                             mySight.normalModeOffsetLRTBParams();

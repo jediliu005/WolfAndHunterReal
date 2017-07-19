@@ -5,6 +5,7 @@ import android.media.MediaPlayer;
 import android.os.Handler;
 import android.os.Message;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
@@ -581,10 +582,16 @@ public class GameMainEngine {
             virtualWindow.hasUpdatedWindowPosition = false;
             //获得当前位置
             myCharacter.updateNowPosition();
+
             if (gameInfo.mySight != null) {
                 gameInfo.mySight.hasUpdatedPosition = false;
                 gameInfo.mySight.updateNowPosition();
             }
+
+            if(myCharacter.isAttackting)
+                myCharacter.attack();
+            if(myCharacter.isReloadingAttack==true)
+                myCharacter.reloadAttackCount();
             if (myCharacter.isDead == true) {
                 myCharacter.deadReset();
 
@@ -593,6 +600,7 @@ public class GameMainEngine {
             } else if (myCharacter.isJumping) {
                 myCharacter.keepDirectionAndJump(0, 0, mapBaseFrame.getWidth(), mapBaseFrame.getHeight());
             } else {
+
                 if (gameInfo.controlMode == GameInfo.CONTROL_MODE_MASTER) {//GameInfo.CONTROL_MODE_MASTER这种操控方式已经过期，也许有用,留着玩儿
                     if (myCharacter.needMove == true) {
                         myCharacter.masterModeOffsetLRTBParams();
@@ -603,9 +611,9 @@ public class GameMainEngine {
                 } else if (gameInfo.controlMode == GameInfo.CONTROL_MODE_NORMAL) {
                     if (myCharacter.needMove == true) {
                         if (myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
-                            myCharacter.normalModeOffsetLRTBParams();
+                            myCharacter.reactHunterMove();
                         else if (myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF)
-                            myCharacter.normalModeOffsetWolfLRTBParams();
+                            myCharacter.reactWolfMove();
                     }
                     if (gameInfo.mySight != null && gameInfo.mySight.needMove == true) {
                         gameInfo.mySight.normalModeOffsetLRTBParams();
@@ -622,7 +630,7 @@ public class GameMainEngine {
             myCharacter.setLayoutParams(mLayoutParams);
             myCharacter.centerX = myCharacter.nowLeft + myCharacter.getWidth() / 2;
             myCharacter.centerY = myCharacter.nowTop + myCharacter.getHeight() / 2;
-            if (gameInfo.controlMode == GameInfo.CONTROL_MODE_MASTER) {
+            if (gameInfo.controlMode == GameInfo.CONTROL_MODE_MASTER) {//这个CONTROL_MODE_MASTER实际上已经废弃
                 gameInfo.mySight.mLayoutParams.leftMargin = gameInfo.mySight.nowLeft;
                 gameInfo.mySight.mLayoutParams.topMargin = gameInfo.mySight.nowTop;
                 gameInfo.mySight.centerX = gameInfo.mySight.nowLeft + gameInfo.mySight.getWidth() / 2;
@@ -683,6 +691,12 @@ public class GameMainEngine {
             synchronized (c) {
                 c.updateInvincibleState();
                 c.updateNowPosition();
+                if(c.isAttackting) {
+
+                    c.attack();
+                }
+                if(c.isReloadingAttack==true&&c.characterType==BaseCharacterView.CHARACTER_TYPE_HUNTER)
+                    c.reloadAttackCount();
                 if (c.isDead == true) {
                     c.deadReset();
                     c.invalidate();
@@ -694,9 +708,9 @@ public class GameMainEngine {
                     c.keepDirectionAndJump(0, 0, mapBaseFrame.getWidth(), mapBaseFrame.getHeight());
                 } else {
                     if (c.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
-                        c.reactOtherPlayerHunterMove();
+                        c.reactHunterMove();
                     else if (c.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF)
-                        c.reactOtherPlayerWolfMove();
+                        c.reactWolfMove();
                 }
 //                        if(c.getTeamID()==2){
 //                            Log.i("Player2 nowLeft",Integer.toString(c.nowLeft));

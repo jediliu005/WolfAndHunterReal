@@ -133,8 +133,16 @@ public class PromptView extends View {
             canvas.save();
             int relateX=position.x-bindingCharacter.centerX;
             int relateY=position.y-bindingCharacter.centerY;
+            if (relateX == 0 & relateY == 0) {
+                continue;
+            }
             double distance=Math.sqrt(relateX*relateX+relateY*relateY);
-            float angle=MyMathsUtils.getAngleBetweenXAxus(relateX,relateY);
+            float angle= 0;
+            try {
+                angle = MyMathsUtils.getAngleBetweenXAxus(relateX,relateY);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             canvas.rotate(angle,viewSize/2,viewSize/2);
             if(distance>greenRange){
                 canvas.drawBitmap(greenArrowBitmap,viewSize-greenArrowBitmap.getWidth(),(viewSize-greenArrowBitmap.getHeight())/2,null);

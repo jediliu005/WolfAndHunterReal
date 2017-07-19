@@ -204,8 +204,25 @@ public class NormalWolf extends BaseCharacterView {
                     int targetCharacterSize = targetCharacter.characterBodySize;
                     int relateX = targetCharacter.centerX - centerX;
                     int relateY = targetCharacter.centerY - centerY;
-
-                    float angleBetweenXAxus = MyMathsUtils.getAngleBetweenXAxus(relateX, relateY);
+                    if (relateX == 0 & relateY == 0) {
+                        HashMap<BaseCharacterView,BaseCharacterView> map=new HashMap<BaseCharacterView,BaseCharacterView>();
+                        map.put(attackCharacter,targetCharacter);
+                        GameBaseAreaActivity.gameInfo.beAttackedList.add(map);
+//                        targetCharacter.isDead = true;
+//                        attackCharacter.killCount++;
+//                        targetCharacter.dieCount++;
+//                        targetCharacter.deadTime = new Date().getTime();
+                        attackCharacter.jumpToX = targetCharacter.centerX;
+                        attackCharacter.jumpToY = targetCharacter.centerY;
+                        attackSuccess = true;
+                        break;
+                    }
+                    float angleBetweenXAxus = 0;
+                    try {
+                        angleBetweenXAxus = MyMathsUtils.getAngleBetweenXAxus(relateX, relateY);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                     float relateAngle = Math.abs(angleBetweenXAxus - nowFacingAngle);
                     if (relateAngle > 90 && relateAngle < 270) {//这类角度表示目标在此角色身后
                         continue;
@@ -250,6 +267,7 @@ public class NormalWolf extends BaseCharacterView {
                     e.printStackTrace();
                 }
             }
+            isAttackting=false;
             isJumping = false;
             attackThread = null;
         }

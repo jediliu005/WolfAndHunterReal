@@ -134,7 +134,8 @@ public class HunterAI extends BaseAI {
         decideWhatToDo();
 
         if (bindingCharacter.attackCount == 0)
-            bindingCharacter.reloadAttackCount();
+            bindingCharacter.isReloadingAttack=true;
+//            bindingCharacter.reloadAttackCount();
         if (intent == INTENT_DAZE) {
             return;
         } else if (intent == INTENT_HUNT) {
@@ -147,7 +148,11 @@ public class HunterAI extends BaseAI {
             trackTrajectory();
         }
         changeFacing();
-
+        if (bindingCharacter.offX != 0 || bindingCharacter.offY != 0) {
+            bindingCharacter.needMove = true;
+        } else {
+            bindingCharacter.needMove = false;
+        }
     }
 
     public synchronized void decideWhatToDo() {
@@ -276,7 +281,17 @@ public class HunterAI extends BaseAI {
 
             int searchRelateX = trackTrajectory.fromPointRelateParent.x - bindingCharacter.centerX;
             int searchRelateY = trackTrajectory.fromPointRelateParent.y - bindingCharacter.centerY;
-            float searchToAngle = MyMathsUtils.getAngleBetweenXAxus(searchRelateX, searchRelateY);
+            float searchToAngle = 0;
+            if(searchRelateX==0&&searchRelateY==0){
+                reset();
+                return;
+            }
+
+            try {
+                searchToAngle = MyMathsUtils.getAngleBetweenXAxus(searchRelateX, searchRelateY);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             targetFacingAngle = searchToAngle;
 
             int nowDistance = (int) MyMathsUtils.getDistance(trackTrajectory.fromPointRelateParent,
@@ -311,7 +326,16 @@ public class HunterAI extends BaseAI {
                 }
                 int searchRelateX = targetCharacter.centerX - bindingCharacter.centerX;
                 int searchRelateY = targetCharacter.centerY - bindingCharacter.centerY;
-                float searchToAngle = MyMathsUtils.getAngleBetweenXAxus(searchRelateX, searchRelateY);
+                float searchToAngle = 0;
+                if(searchRelateX==0&&searchRelateY==0){
+                    reset();
+                    return;
+                }
+                try {
+                    searchToAngle = MyMathsUtils.getAngleBetweenXAxus(searchRelateX, searchRelateY);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 targetFacingAngle = searchToAngle;
 
                 int nowDistance = (int) MyMathsUtils.getDistance(new Point(targetCharacter.centerX, targetCharacter.centerY)
@@ -359,8 +383,17 @@ public class HunterAI extends BaseAI {
             targetLastY = targetCharacter.centerY;
             int relateX = targetCharacter.centerX - bindingCharacter.centerX;
             int relateY = targetCharacter.centerY - bindingCharacter.centerY;
+            if(relateX==0&&relateY==0){
+                reset();
+                return;
+            }
             double distance = Math.sqrt(relateX * relateX + relateY * relateY);
-            float angle = MyMathsUtils.getAngleBetweenXAxus(relateX, relateY);
+            float angle = 0;
+            try {
+                angle = MyMathsUtils.getAngleBetweenXAxus(relateX, relateY);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             targetFacingAngle = angle;
 
             float relateAngle = targetFacingAngle - bindingCharacter.nowFacingAngle;
@@ -387,15 +420,15 @@ public class HunterAI extends BaseAI {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            synchronized (bindingCharacter) {
-                if (bindingCharacter == null || bindingCharacter.isDead == true) {
-                    reset();
-                    return;
-                }
 
-                bindingCharacter.attack();
-                bindingCharacter.isStay = false;
+            if (bindingCharacter == null || bindingCharacter.isDead == true) {
+                reset();
+                return;
             }
+
+            bindingCharacter.attack();
+            bindingCharacter.isStay = false;
+
 
         }
     }

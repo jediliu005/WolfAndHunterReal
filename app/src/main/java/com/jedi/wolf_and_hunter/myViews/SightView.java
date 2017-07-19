@@ -380,7 +380,11 @@ public class SightView extends SurfaceView implements SurfaceHolder.Callback {
         float targetFacingAngle=0;
         if(nowOffX==0&&nowOffY==0)
             return;
-        targetFacingAngle=MyMathsUtils.getAngleBetweenXAxus(nowOffX,nowOffY);
+        try {
+            targetFacingAngle=MyMathsUtils.getAngleBetweenXAxus(nowOffX,nowOffY);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         float relateAngle = targetFacingAngle - bindingCharacter.nowFacingAngle;
         if (Math.abs(relateAngle) > 180) {//处理旋转最佳方向
             if (relateAngle > 0)
@@ -394,6 +398,7 @@ public class SightView extends SurfaceView implements SurfaceHolder.Callback {
 
         targetFacingAngle = bindingCharacter.nowFacingAngle + relateAngle;
         bindingCharacter.nowFacingAngle=targetFacingAngle;
+
         if (bindingCharacter.nowFacingAngle < 0)
             bindingCharacter.nowFacingAngle = bindingCharacter.nowFacingAngle + 360;
         else if (bindingCharacter.nowFacingAngle > 360)

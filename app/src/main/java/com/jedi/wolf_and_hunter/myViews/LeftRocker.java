@@ -10,6 +10,7 @@ import android.view.MotionEvent;
 import android.widget.FrameLayout;
 
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
+import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 import com.jedi.wolf_and_hunter.utils.ViewUtils;
 
@@ -102,6 +103,8 @@ public class LeftRocker extends JRocker {
     public void reactUsingTouchPadMode(MotionEvent event) {
         int x = (int) event.getX();
         int y = (int) event.getY();
+        int offX=0;
+        int offY=0;
         switch (event.getAction()) {
 
             case MotionEvent.ACTION_DOWN:
@@ -153,10 +156,18 @@ public class LeftRocker extends JRocker {
                 rockerCircleCenter = new ViewUtils().revisePointInCircleViewMovement(padCircleCenter, padRadius, newPosition);
                 distance = MyMathsUtils.getDistance(rockerCircleCenter, padCircleCenter);
                 synchronized (bindingCharacter) {
-                    bindingCharacter.offX = rockerCircleCenter.x - padCircleCenter.x;
+                    offX=rockerCircleCenter.x - padCircleCenter.x;
+                    offY=rockerCircleCenter.y - padCircleCenter.y;
+                    bindingCharacter.offX = offX;
                     bindingCharacter.needMove = true;
-                    bindingCharacter.offY = rockerCircleCenter.y - padCircleCenter.y;
+                    bindingCharacter.offY = offY;
                     bindingCharacter.needMove = true;
+                    double offDistance = Math.sqrt(offX * offX + offY * offY);
+                    int nowMoveSpeed = bindingCharacter.nowSpeed;
+                    bindingCharacter.runOrWalk = BaseCharacterView.MOVINT_TYPE_RUN;
+                    if (offDistance < JRocker.padRadius * 3 / 4) {
+                        bindingCharacter.runOrWalk = BaseCharacterView.MOVINT_TYPE_WALK;
+                    }
                 }
                 invalidate();
 

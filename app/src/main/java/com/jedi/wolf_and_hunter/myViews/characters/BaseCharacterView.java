@@ -94,6 +94,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public static final int smellSleepTime = 100;
     public static final int reloadAttackTotalCount = 1000;
     public static final int reloadAttackSleepTime = 100;
+    public volatile boolean isAttackting;
     public volatile int nowExtraAttackRevise = 10;
     public volatile int nowReloadingAttackCount = 0;
     public volatile int nowReloadAttackSpeed;
@@ -123,13 +124,14 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public volatile boolean isForceToBeSawByMe = false;//注意！这属性只针对本机玩家视觉，对AI判行为无效
     public volatile boolean isJumping = false;
     public volatile boolean isReloadingAttack = false;
+    public Thread reloadAttackCountThread;
     public Handler gameHandler;
     public volatile Vector<Integer> seeMeTeamIDs;
     public volatile Vector<BaseCharacterView> theyDiscoverMe;
     public volatile Vector<CharacterPosition> enemiesPositionSet;
 
     public Thread movingMediaThread;
-    public int runOrWalk = 0;
+    public int runOrWalk = MOVINT_TYPE_RUN;
     public volatile boolean isStay;
     public volatile boolean isLocking;
     public volatile boolean isSmelling;
@@ -511,149 +513,26 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     }
 
 
-    public void normalModeOffsetLRTBParams() {
-        int nowOffX = 0;
-        int nowOffY = 0;
-        //跳跃移动
-//        if (jumpToX > -99999 && jumpToY > -99999) {
-//            FrameLayout parent = (FrameLayout) getParent();
-//            keepDirectionAndJump(0, 0, parent.getWidth(), parent.getHeight());
-//            jumpToX = -99999;
-//            jumpToY = -99999;
-//        } else {
-        //一般移动
-        nowOffX = offX;
-        nowOffY = offY;
-        //根据设定速度修正位移量
-        double offDistance = Math.sqrt(nowOffX * nowOffX + nowOffY * nowOffY);
-        int nowMoveSpeed = nowSpeed;
-        runOrWalk = MOVINT_TYPE_RUN;
-        if (offDistance < JRocker.padRadius * 3 / 4) {
-            nowMoveSpeed = nowSpeed / 3;
-            runOrWalk = MOVINT_TYPE_WALK;
-        }
-        nowOffX = Math.round((float) (nowMoveSpeed * nowOffX / offDistance));
-        nowOffY = Math.round((float) (nowMoveSpeed * nowOffY / offDistance));
-
-        //保证不超出父View边界
-        try {
-            nowOffX = ViewUtils.reviseOffX(this, (View) this.getParent(), nowOffX);
-
-            nowOffY = ViewUtils.reviseOffY(this, (View) this.getParent(), nowOffY);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-//        }
-        nowLeft = nowLeft + nowOffX;
-        nowTop = nowTop + nowOffY;
-        nowRight = nowLeft + getWidth();
-        nowBottom = nowTop + getHeight();
 
 
-        //判定character位置修正是否在当前视窗内，若不在，根据sight和character位置修正视窗位置
-//        if (sight.isCharacterInWindow() == false) {
-//
-//            sight.goWatchingCharacter();
-//
-//        }
 
-    }
-
-    public void normalModeOffsetWolfLRTBParams() {
-        int nowOffX = offX;
-        int nowOffY = offY;
-        float realRelateAngle = 0;
-        float targetFacingAngle = 0;
-        isSmelling = false;
-        if (nowOffX == 0 && nowOffY == 0)
-            return;
-        targetFacingAngle = MyMathsUtils.getAngleBetweenXAxus(nowOffX, nowOffY);
-        float relateAngle = targetFacingAngle - nowFacingAngle;
-        if (Math.abs(relateAngle) > 180) {//处理旋转最佳方向
-            if (relateAngle > 0)
-                relateAngle = relateAngle - 360;
-
-            else
-                relateAngle = 360 - relateAngle;
-        }
-        realRelateAngle = relateAngle;
-        if (Math.abs(relateAngle) > nowAngleChangSpeed * 2)
-            realRelateAngle = Math.abs(relateAngle) / relateAngle * nowAngleChangSpeed * 2;
-
-        targetFacingAngle = nowFacingAngle + realRelateAngle;
-        nowFacingAngle = targetFacingAngle;
-        if (nowFacingAngle < 0)
-            nowFacingAngle = nowFacingAngle + 360;
-        else if (nowFacingAngle > 360)
-            nowFacingAngle = nowFacingAngle - 360;
-
-        if (isStay == false) {
-
-            double offDistance = Math.sqrt(nowOffX * nowOffX + nowOffY * nowOffY);
-            int nowMoveSpeed = nowSpeed;
-
-            runOrWalk = MOVINT_TYPE_RUN;
-            if (offDistance < JRocker.padRadius * 3 / 4) {
-                nowMoveSpeed = nowSpeed / 3;
-                runOrWalk = MOVINT_TYPE_WALK;
-            }
-            if (Math.abs(relateAngle) > 45)
-                nowMoveSpeed = nowMoveSpeed / 10;
-            double cosNowFacingAngle = Math.cos(Math.toRadians(nowFacingAngle));
-            nowOffX = (int) Math.round(cosNowFacingAngle * offDistance);
-            nowOffY = (int) Math.round(Math.sqrt(offDistance * offDistance - nowOffX * nowOffX));
-            if (nowFacingAngle > 180)
-                nowOffY = -nowOffY;
-            //根据设定速度修正位移量
-            nowOffX = Math.round((float) (nowMoveSpeed * nowOffX / offDistance));
-            nowOffY = Math.round((float) (nowMoveSpeed * nowOffY / offDistance));
-
-            //保证不超出父View边界
-            try {
-                nowOffX = ViewUtils.reviseOffX(this, (View) this.getParent(), nowOffX);
-
-                nowOffY = ViewUtils.reviseOffY(this, (View) this.getParent(), nowOffY);
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-//        }
-            if (Math.abs(nowOffX) > nowSpeed || Math.abs(nowOffY) > nowSpeed)
-                Log.i("", "");
-            nowLeft = nowLeft + nowOffX;
-            nowTop = nowTop + nowOffY;
-            nowRight = nowLeft + getWidth();
-            nowBottom = nowTop + getHeight();
-        }
-
-        //判定character位置修正是否在当前视窗内，若不在，根据sight和character位置修正视窗位置
-//        if (sight.isCharacterInWindow() == false) {
-//
-//            sight.goWatchingCharacter();
-//
-//        }
-
-    }
 
     public void initCharacterState() {
 
     }
 
-    public void reactOtherPlayerHunterMove() {
+    public void reactHunterMove() {
         if (isStay)
             return;
         int nowOffX = offX;
         int nowOffY = offY;
-        if (nowOffX != 0 || nowOffY != 0) {
-            needMove = true;
-        } else {
-            needMove = false;
-        }
-
 
         //根据设定速度修正位移量
-        double offDistance = Math.sqrt(nowOffX * nowOffX + nowOffY * nowOffY);
         float nowMoveSpeed = nowSpeed;
+        if (runOrWalk==MOVINT_TYPE_WALK) {
+            nowMoveSpeed = nowSpeed / 3;
+        }
+        double offDistance = Math.sqrt(nowOffX * nowOffX + nowOffY * nowOffY);
         if (offDistance > nowMoveSpeed) {
             nowOffX = Math.round((float) (nowMoveSpeed * nowOffX / offDistance));
             nowOffY = Math.round((float) (nowMoveSpeed * nowOffY / offDistance));
@@ -680,11 +559,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         int nowOffY = targetCenterY - centerY;
         if (playerInfo.nowSpeed != nowSpeed)
             nowSpeed = playerInfo.nowSpeed;
-        if (nowOffX != 0 || nowOffY != 0) {
-            needMove = true;
-        } else {
-            needMove = false;
-        }
+
 
 
         //根据设定速度修正位移量
@@ -715,19 +590,21 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
     }
 
-    public void reactOtherPlayerWolfMove() {
+    public void reactWolfMove() {
+        isSmelling = false;
         int nowOffX = offX;
         int nowOffY = offY;
-        if (nowOffX != 0 || nowOffY != 0) {
-            needMove = true;
-        } else {
-            needMove = false;
-        }
-        if (nowOffX == 0 && nowOffY == 0)
+        if(nowOffX==0&&nowOffY==0)
             return;
         float realRelateAngle = 0;
         float targetFacingAngle = 0;
-        targetFacingAngle = MyMathsUtils.getAngleBetweenXAxus(nowOffX, nowOffY);
+
+        try {
+            targetFacingAngle = MyMathsUtils.getAngleBetweenXAxus(nowOffX, nowOffY);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         float relateAngle = targetFacingAngle - nowFacingAngle;
         if (Math.abs(relateAngle) > 180) {//处理旋转最佳方向
             if (relateAngle > 0)
@@ -740,6 +617,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             realRelateAngle = Math.abs(relateAngle) / relateAngle * nowAngleChangSpeed * 2;
         else
             realRelateAngle = relateAngle;
+
         nowFacingAngle = nowFacingAngle + realRelateAngle;
         if (nowFacingAngle < 0)
             nowFacingAngle = nowFacingAngle + 360;
@@ -750,7 +628,9 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
             double offDistance = Math.sqrt(nowOffX * nowOffX + nowOffY * nowOffY);
             int nowMoveSpeed = nowSpeed;
-
+            if (runOrWalk==MOVINT_TYPE_WALK) {
+                nowMoveSpeed = nowSpeed / 3;
+            }
 
             if (Math.abs(relateAngle) > 45)
                 nowMoveSpeed = nowMoveSpeed / 10;
@@ -784,16 +664,16 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public void reactOtherOnlinePlayerWolfMove(PlayerInfo playerInfo) {
         int nowOffX = offX;
         int nowOffY = offY;
-        if (nowOffX != 0 || nowOffY != 0) {
-            needMove = true;
-        } else {
-            needMove = false;
-        }
+
         if (nowOffX == 0 && nowOffY == 0)
             return;
         float realRelateAngle = 0;
         float targetFacingAngle = 0;
-        targetFacingAngle = MyMathsUtils.getAngleBetweenXAxus(nowOffX, nowOffY);
+        try {
+            targetFacingAngle = MyMathsUtils.getAngleBetweenXAxus(nowOffX, nowOffY);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         float relateAngle = targetFacingAngle - nowFacingAngle;
         if (Math.abs(relateAngle) > 180) {//处理旋转最佳方向
             if (relateAngle > 0)
@@ -955,10 +835,13 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         int relateX = sight.centerX - this.centerX;
         int relateY = sight.centerY - this.centerY;
 
-        double cos = relateX / Math.sqrt(relateX * relateX + relateY * relateY);
-        double radian = Math.acos(cos);
 
-        nowFacingAngle = MyMathsUtils.getAngleBetweenXAxus(relateX, relateY);
+        try {
+            nowFacingAngle = MyMathsUtils.getAngleBetweenXAxus(relateX, relateY);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
 
@@ -1235,6 +1118,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                 nowTop = GameBaseAreaActivity.gameInfo.mapHeight - offY - characterBodySize;
                 nowFacingAngle = 225;
             }
+
             FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) this.getLayoutParams();
             layoutParams.leftMargin = nowLeft;
             layoutParams.topMargin = nowTop;
@@ -1622,7 +1506,15 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             } else {
                 relateX = lockingCharacter.centerX - this.centerX;
                 relateY = lockingCharacter.centerY - this.centerY;
-                targetFacingAngle = MyMathsUtils.getAngleBetweenXAxus(relateX, relateY);
+                if(relateX==0&&relateY==0) {
+                    lockingCharacter=null;
+                    return;
+                }
+                try {
+                    targetFacingAngle = MyMathsUtils.getAngleBetweenXAxus(relateX, relateY);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 float relateAngle = targetFacingAngle - this.nowFacingAngle;
                 if (Math.abs(relateAngle) > 180) {//处理旋转最佳方向
                     if (relateAngle > 0)
@@ -1640,6 +1532,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                     this.nowFacingAngle = this.nowFacingAngle + 360;
                 else if (this.nowFacingAngle > 360)
                     this.nowFacingAngle = this.nowFacingAngle - 360;
+
             }
             return;
         } else {
@@ -1660,7 +1553,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         this.isLocking = isLocking;
     }
 
-    public void attack() {
+    public synchronized void attack() {
         if (attackMediaPlayer == null || GameBaseAreaActivity.gameInfo.isStop == true)
             return;
         if (isMyCharacter == false) {
@@ -1712,34 +1605,37 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     }
 
     public void reloadAttackCount() {
-        reloadMediaPlayer.seekTo(0);
-        if (reloadMediaPlayer == null)
+        if (reloadAttackCountThread != null && reloadAttackCountThread.getState() != Thread.State.TERMINATED)
             return;
-        if (isMyCharacter == false) {
-            BaseCharacterView myCharacter = GameBaseAreaActivity.myCharacter;
-            int relateX = myCharacter.centerX - centerX;
-            int relateY = myCharacter.centerY - centerY;
-            double distance = Math.sqrt(relateX * relateX + relateY * relateY);
-            if (distance > nowHearRadius) {
+        if(reloadMediaPlayer!=null) {
+            reloadMediaPlayer.seekTo(0);
+            if (reloadMediaPlayer == null)
                 return;
-            }
-            float leftVol = 0;
-            float rightVol = 0;
-            if (relateX > 0) {
-                rightVol = (float) (nowHearRadius - distance) / nowHearRadius;
-                leftVol = rightVol / 2;
-            } else if (relateX < 0) {
-                leftVol = (float) (nowHearRadius - distance) / nowHearRadius;
-                rightVol = leftVol / 2;
-            }
-            if (leftVol > 1)
-                leftVol = 1;
-            if (rightVol > 1)
-                rightVol = 1;
-            attackMediaPlayer.setVolume(leftVol, rightVol);
+            if (isMyCharacter == false) {
+                BaseCharacterView myCharacter = GameBaseAreaActivity.myCharacter;
+                int relateX = myCharacter.centerX - centerX;
+                int relateY = myCharacter.centerY - centerY;
+                double distance = Math.sqrt(relateX * relateX + relateY * relateY);
+                if (distance > nowHearRadius) {
+                    return;
+                }
+                float leftVol = 0;
+                float rightVol = 0;
+                if (relateX > 0) {
+                    rightVol = (float) (nowHearRadius - distance) / nowHearRadius;
+                    leftVol = rightVol / 2;
+                } else if (relateX < 0) {
+                    leftVol = (float) (nowHearRadius - distance) / nowHearRadius;
+                    rightVol = leftVol / 2;
+                }
+                if (leftVol > 1)
+                    leftVol = 1;
+                if (rightVol > 1)
+                    rightVol = 1;
+                attackMediaPlayer.setVolume(leftVol, rightVol);
 
+            }
         }
-
         reloadMediaPlayer.start();
     }
 
