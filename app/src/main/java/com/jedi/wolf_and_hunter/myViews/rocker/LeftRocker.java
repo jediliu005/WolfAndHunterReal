@@ -1,20 +1,16 @@
-package com.jedi.wolf_and_hunter.myViews;
+package com.jedi.wolf_and_hunter.myViews.rocker;
 
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Point;
-import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.widget.FrameLayout;
 
-import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 import com.jedi.wolf_and_hunter.utils.ViewUtils;
-
-import java.util.Date;
 
 /**
  * Created by Administrator on 2017/3/29.

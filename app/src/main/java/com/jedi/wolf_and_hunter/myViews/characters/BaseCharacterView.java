@@ -24,21 +24,19 @@ import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
 import com.jedi.wolf_and_hunter.myObj.gameObj.CharacterPosition;
 import com.jedi.wolf_and_hunter.myObj.gameObj.MyVirtualWindow;
 import com.jedi.wolf_and_hunter.myObj.gameObj.PlayerInfo;
-import com.jedi.wolf_and_hunter.myViews.AttackRange;
-import com.jedi.wolf_and_hunter.myViews.GameMap;
-import com.jedi.wolf_and_hunter.myViews.JRocker;
-import com.jedi.wolf_and_hunter.myViews.PromptView;
+import com.jedi.wolf_and_hunter.myViews.range.AttackRange;
+import com.jedi.wolf_and_hunter.myViews.mapBase.GameMap;
+import com.jedi.wolf_and_hunter.myViews.rocker.JRocker;
+import com.jedi.wolf_and_hunter.myViews.range.PromptView;
 import com.jedi.wolf_and_hunter.myViews.SightView;
-import com.jedi.wolf_and_hunter.myViews.ViewRange;
+import com.jedi.wolf_and_hunter.myViews.range.ViewRange;
 import com.jedi.wolf_and_hunter.myViews.landform.Landform;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 import com.jedi.wolf_and_hunter.utils.ViewUtils;
 
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Random;
-import java.util.Set;
 import java.util.Vector;
 
 /**
@@ -1078,6 +1076,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
     public void deadReset() {
         isReloadingAttack=false;
+        isAttackting=false;
         nowReloadingAttackCount=0;
         isKnockedAway = false;
         knockedAwayX = -99999;

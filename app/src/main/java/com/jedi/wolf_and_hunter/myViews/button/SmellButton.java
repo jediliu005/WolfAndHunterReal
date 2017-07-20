@@ -1,4 +1,4 @@
-package com.jedi.wolf_and_hunter.myViews;
+package com.jedi.wolf_and_hunter.myViews.button;
 
 import android.content.Context;
 import android.graphics.Bitmap;

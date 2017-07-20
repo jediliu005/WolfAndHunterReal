@@ -6,7 +6,7 @@ import android.os.Bundle;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 
-import com.jedi.wolf_and_hunter.myViews.MapBaseFrame;
+import com.jedi.wolf_and_hunter.myViews.mapBase.MapBaseFrame;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 import com.jedi.wolf_and_hunter.R;
 

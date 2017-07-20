@@ -1,4 +1,4 @@
-package com.jedi.wolf_and_hunter.myViews;
+package com.jedi.wolf_and_hunter.myViews.rocker;
 
 import android.content.Context;
 import android.content.res.TypedArray;

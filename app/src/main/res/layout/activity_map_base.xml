@@ -7,19 +7,19 @@
     tools:context="com.jedi.wolf_and_hunter.activities.MapBaseActivity">
 
 
-    <com.jedi.wolf_and_hunter.myViews.MapBaseFrame
+    <com.jedi.wolf_and_hunter.myViews.mapBase.MapBaseFrame
         android:id="@+id/map_base_frame"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#000000"
         >
-        <com.jedi.wolf_and_hunter.myViews.JRocker
+        <com.jedi.wolf_and_hunter.myViews.rocker.JRocker
             android:layout_height="100dp"
             android:layout_width="100dp"
             android:background="#0055FF"
             >
 
-        </com.jedi.wolf_and_hunter.myViews.JRocker>
-    </com.jedi.wolf_and_hunter.myViews.MapBaseFrame>
+        </com.jedi.wolf_and_hunter.myViews.rocker.JRocker>
+    </com.jedi.wolf_and_hunter.myViews.mapBase.MapBaseFrame>
 
 </android.support.constraint.ConstraintLayout>

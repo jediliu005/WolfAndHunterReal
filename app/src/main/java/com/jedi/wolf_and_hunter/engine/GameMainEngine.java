@@ -1,11 +1,11 @@
 package com.jedi.wolf_and_hunter.engine;
 
 import android.graphics.Color;
+import android.graphics.Point;
 import android.media.MediaPlayer;
 import android.os.Handler;
 import android.os.Message;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
@@ -18,25 +18,29 @@ import com.jedi.wolf_and_hunter.ai.WolfAI;
 import com.jedi.wolf_and_hunter.myObj.gameObj.GameInfo;
 import com.jedi.wolf_and_hunter.myObj.gameObj.MyVirtualWindow;
 import com.jedi.wolf_and_hunter.myObj.gameObj.PlayerInfo;
-import com.jedi.wolf_and_hunter.myViews.AttackButton;
-import com.jedi.wolf_and_hunter.myViews.GameMap;
-import com.jedi.wolf_and_hunter.myViews.JRocker;
-import com.jedi.wolf_and_hunter.myViews.LeftRocker;
-import com.jedi.wolf_and_hunter.myViews.LockingButton;
-import com.jedi.wolf_and_hunter.myViews.MapBaseFrame;
-import com.jedi.wolf_and_hunter.myViews.PromptView;
-import com.jedi.wolf_and_hunter.myViews.RightRocker;
+import com.jedi.wolf_and_hunter.myViews.button.AttackButton;
+import com.jedi.wolf_and_hunter.myViews.mapBase.GameMap;
+import com.jedi.wolf_and_hunter.myViews.rocker.JRocker;
+import com.jedi.wolf_and_hunter.myViews.rocker.LeftRocker;
+import com.jedi.wolf_and_hunter.myViews.button.LockingButton;
+import com.jedi.wolf_and_hunter.myViews.mapBase.MapBaseFrame;
+import com.jedi.wolf_and_hunter.myViews.range.PromptView;
+import com.jedi.wolf_and_hunter.myViews.rocker.RightRocker;
 import com.jedi.wolf_and_hunter.myViews.SightView;
-import com.jedi.wolf_and_hunter.myViews.SmellButton;
-import com.jedi.wolf_and_hunter.myViews.Trajectory;
+import com.jedi.wolf_and_hunter.myViews.button.SmellButton;
+import com.jedi.wolf_and_hunter.myViews.tempView.Trajectory;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 import com.jedi.wolf_and_hunter.myViews.characters.NormalHunter;
 import com.jedi.wolf_and_hunter.myViews.characters.NormalWolf;
+import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 import com.jedi.wolf_and_hunter.utils.ViewUtils;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Vector;
@@ -568,6 +572,70 @@ public class GameMainEngine {
 
     }
 
+    public void dealNeedToBeKilled() {
+Iterator<HashMap<BaseCharacterView, BaseCharacterView>> iterator=gameInfo.beAttackedList.iterator();
+
+        while (iterator.hasNext()) {
+            Map<BaseCharacterView, BaseCharacterView> attackMap=iterator.next();
+            Set<Map.Entry<BaseCharacterView, BaseCharacterView>> entrySet = attackMap.entrySet();
+            for (Map.Entry<BaseCharacterView, BaseCharacterView> entry : entrySet) {
+                BaseCharacterView attackCharacter = entry.getKey();
+                BaseCharacterView beAttackedCharacter = entry.getValue();
+                if (beAttackedCharacter.isInvincible)
+                    break;
+                if (beAttackedCharacter.isDead)
+                    break;
+                int relateX = beAttackedCharacter.centerX - attackCharacter.centerX;
+                int relateY = beAttackedCharacter.centerY - attackCharacter.centerY;
+                if(relateX==0&&relateY==0) {
+                    beAttackedCharacter.isDead = true;
+                    beAttackedCharacter.dieCount++;
+                    beAttackedCharacter.deadTime = new Date().getTime();
+                    attackCharacter.killCount++;
+                    continue;
+                }
+                float angleBetweenXAxus = 0;
+                try {
+                    angleBetweenXAxus = MyMathsUtils.getAngleBetweenXAxus(relateX, relateY);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                float relateFacingAngle = Math.abs(beAttackedCharacter.nowFacingAngle - angleBetweenXAxus);
+
+                if (relateFacingAngle < 90 || relateFacingAngle > 270) {//背击
+                    beAttackedCharacter.nowHealthPoint -= 2;
+                } else {
+                    beAttackedCharacter.nowHealthPoint -= 1;
+                }
+                if (beAttackedCharacter.nowHealthPoint <= 0) {
+                    beAttackedCharacter.isDead = true;
+                    beAttackedCharacter.dieCount++;
+                    beAttackedCharacter.deadTime = new Date().getTime();
+                    attackCharacter.killCount++;
+                } else {
+                    if (beAttackedCharacter.knockedAwayThread == null || beAttackedCharacter.knockedAwayThread.getState() == Thread.State.TERMINATED) {
+                        double cosAlpha = Math.cos(Math.toRadians(attackCharacter.nowFacingAngle));
+                        double offX = cosAlpha * attackCharacter.nowKnockAwayStrength;
+
+                        double offY = Math.sqrt(attackCharacter.nowKnockAwayStrength * attackCharacter.nowKnockAwayStrength - offX * offX);
+                        if (attackCharacter.nowFacingAngle >= 180)
+                            offY = -offY;
+                        double endX = offX + beAttackedCharacter.centerX;
+                        double endY = offY + beAttackedCharacter.centerY;
+//        Point fromPoint = new Point(centerX, centerY);
+                        Point toPoint = new Point((int) endX, (int) endY);
+                        beAttackedCharacter.startKnockedAwayThread(toPoint);
+                    }
+                }
+            }
+
+        }
+
+        gameInfo.beAttackedList.clear();
+    }
+
+
+
     private synchronized void reflash() {
 
         if (myCharacter == null || leftRocker == null || rightRocker == null || mapBaseFrame == null)
@@ -575,7 +643,7 @@ public class GameMainEngine {
         boolean isMyCharacterMoving = myCharacter.needMove;
         boolean needChange = false;
         if (gameInfo.beAttackedList.size() > 0)
-            gameInfo.dealNeedToBeKilled();
+            dealNeedToBeKilled();
         synchronized (myCharacter) {
             myCharacter.updateInvincibleState();
             myCharacter.hasUpdatedPosition = false;

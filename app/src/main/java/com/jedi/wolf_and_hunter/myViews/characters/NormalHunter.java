@@ -14,7 +14,7 @@ import com.jedi.wolf_and_hunter.R;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
 import com.jedi.wolf_and_hunter.engine.GameMainEngine;
 import com.jedi.wolf_and_hunter.myObj.gameObj.MyVirtualWindow;
-import com.jedi.wolf_and_hunter.myViews.Trajectory;
+import com.jedi.wolf_and_hunter.myViews.tempView.Trajectory;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 
 import java.util.HashMap;

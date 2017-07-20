@@ -3,7 +3,7 @@ package com.jedi.wolf_and_hunter.ai;
 import android.graphics.Point;
 
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
-import com.jedi.wolf_and_hunter.myViews.Trajectory;
+import com.jedi.wolf_and_hunter.myViews.tempView.Trajectory;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 

@@ -1,4 +1,4 @@
-package com.jedi.wolf_and_hunter.myViews;
+package com.jedi.wolf_and_hunter.myViews.mapBase;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -12,9 +12,12 @@ import android.view.View;
 import android.widget.FrameLayout;
 
 import com.jedi.wolf_and_hunter.engine.GameMainEngine;
+import com.jedi.wolf_and_hunter.myViews.SightView;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 import com.jedi.wolf_and_hunter.myViews.landform.Landform;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
+import com.jedi.wolf_and_hunter.myViews.rocker.LeftRocker;
+import com.jedi.wolf_and_hunter.myViews.rocker.RightRocker;
 import com.jedi.wolf_and_hunter.utils.ViewUtils;
 
 /**

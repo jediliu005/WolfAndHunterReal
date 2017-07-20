@@ -2,56 +2,18 @@ package com.jedi.wolf_and_hunter.activities;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
-import android.graphics.Color;
-import android.media.MediaPlayer;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
-import android.util.DisplayMetrics;
-import android.util.Log;
-import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.TextView;
 
 import com.jedi.wolf_and_hunter.R;
-import com.jedi.wolf_and_hunter.ai.BaseAI;
-import com.jedi.wolf_and_hunter.ai.HunterAI;
-import com.jedi.wolf_and_hunter.ai.WolfAI;
 import com.jedi.wolf_and_hunter.engine.GameMainEngine;
 import com.jedi.wolf_and_hunter.myObj.gameObj.GameInfo;
 import com.jedi.wolf_and_hunter.myObj.gameObj.MyVirtualWindow;
-import com.jedi.wolf_and_hunter.myObj.gameObj.PlayerInfo;
-import com.jedi.wolf_and_hunter.myViews.AttackButton;
-import com.jedi.wolf_and_hunter.myViews.GameMap;
-import com.jedi.wolf_and_hunter.myViews.JRocker;
-import com.jedi.wolf_and_hunter.myViews.LeftRocker;
-import com.jedi.wolf_and_hunter.myViews.LockingButton;
-import com.jedi.wolf_and_hunter.myViews.MapBaseFrame;
-import com.jedi.wolf_and_hunter.myViews.PromptView;
-import com.jedi.wolf_and_hunter.myViews.RightRocker;
-import com.jedi.wolf_and_hunter.myViews.SightView;
-import com.jedi.wolf_and_hunter.myViews.SmellButton;
-import com.jedi.wolf_and_hunter.myViews.Trajectory;
+import com.jedi.wolf_and_hunter.myViews.mapBase.GameMap;
+import com.jedi.wolf_and_hunter.myViews.mapBase.MapBaseFrame;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
-import com.jedi.wolf_and_hunter.myViews.characters.NormalHunter;
-import com.jedi.wolf_and_hunter.myViews.characters.NormalWolf;
-import com.jedi.wolf_and_hunter.utils.BluetoothController;
-import com.jedi.wolf_and_hunter.utils.ViewUtils;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.UUID;
-import java.util.Vector;
 
 public class GameBaseAreaActivity extends Activity {
     //    public TextView t1;

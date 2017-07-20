@@ -21,6 +21,7 @@ import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
 import com.jedi.wolf_and_hunter.myObj.gameObj.MyVirtualWindow;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 import com.jedi.wolf_and_hunter.R;
+import com.jedi.wolf_and_hunter.myViews.rocker.JRocker;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 import com.jedi.wolf_and_hunter.utils.ViewUtils;
 

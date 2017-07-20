@@ -60,8 +60,7 @@ public class MyMathsUtils {
      * @return
      */
     public static double getPointToLineDistance(Point point,double k,double b){
-        if(k==0||k+1==0)
-            Log.e("","");
+
         double distance=0;
         distance=Math.abs(k*point.x-point.y)/Math.sqrt(k*k+1);
         return distance;
