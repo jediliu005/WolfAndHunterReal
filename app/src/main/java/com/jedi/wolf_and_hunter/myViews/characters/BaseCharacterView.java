@@ -1093,7 +1093,9 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         Random random = new Random();
         int offX = random.nextInt(myBaseWidth);
         int offY = random.nextInt(myBaseHeight);
-        enemiesPositionSet.clear();
+        synchronized (enemiesPositionSet) {
+            enemiesPositionSet.clear();
+        }
         long nowTime = new Date().getTime();
         if (nowTime - deadTime > 2000 && isInvincible == false) {
             isInvincible = true;
@@ -1588,14 +1590,16 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             Point nowPosition = new Point(centerX, centerY);
             CharacterPosition characterPosition = new CharacterPosition(nowPosition, this, new Date().getTime(), 3000);
             Vector<CharacterPosition> enemiesPositionSet = GameBaseAreaActivity.myCharacter.enemiesPositionSet;
-            Iterator<CharacterPosition> iterator = enemiesPositionSet.iterator();
-            if (iterator.hasNext()) {
-                CharacterPosition oldPosition = iterator.next();
-                if (oldPosition.character == this) {
-                    iterator.remove();
+            synchronized (enemiesPositionSet) {
+                Iterator<CharacterPosition> iterator = enemiesPositionSet.iterator();
+                while (iterator.hasNext()) {
+                    CharacterPosition oldPosition = iterator.next();
+                    if (oldPosition.character == this) {
+                        iterator.remove();
+                    }
                 }
+                GameBaseAreaActivity.myCharacter.enemiesPositionSet.add(characterPosition);
             }
-            GameBaseAreaActivity.myCharacter.enemiesPositionSet.add(characterPosition);
         }
         attackMediaPlayer.seekTo(0);
         attackMediaPlayer.start();
@@ -1669,39 +1673,41 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
         @Override
         public void run() {
-            enemiesPositionSet.clear();
-            isSmelling = true;
-            try {
-                while (GameBaseAreaActivity.gameInfo.isStop == false && isSmelling) {
-                    nowSmellCount += nowSmellSpeed;
-                    if (nowSmellCount > smellTotalCount)
-                        nowSmellCount = smellTotalCount;
-                    if (nowSmellCount == smellTotalCount) {
-                        long nowTime = new Date().getTime();
-                        Point thisCharacterPosition = new Point(bindingCharacter.centerX, bindingCharacter.centerY);
-                        for (BaseCharacterView character : GameBaseAreaActivity.gameInfo.allCharacters) {
-                            if (character.teamID == bindingCharacter.teamID)
-                                continue;
+            synchronized (enemiesPositionSet) {
+                enemiesPositionSet.clear();
+                isSmelling = true;
+                try {
+                    while (GameBaseAreaActivity.gameInfo.isStop == false && isSmelling) {
+                        nowSmellCount += nowSmellSpeed;
+                        if (nowSmellCount > smellTotalCount)
+                            nowSmellCount = smellTotalCount;
+                        if (nowSmellCount == smellTotalCount) {
+                            long nowTime = new Date().getTime();
+                            Point thisCharacterPosition = new Point(bindingCharacter.centerX, bindingCharacter.centerY);
+                            for (BaseCharacterView character : GameBaseAreaActivity.gameInfo.allCharacters) {
+                                if (character.teamID == bindingCharacter.teamID)
+                                    continue;
 
-                            Point positionPoint = new Point(character.centerX, character.centerY);
-                            CharacterPosition characterPosition = new CharacterPosition(positionPoint, character, nowTime, 3000);
-                            double distance = MyMathsUtils.getDistance(positionPoint, thisCharacterPosition);
-                            if (distance <= nowSmellRadius) {
-                                enemiesPositionSet.add(characterPosition);
+                                Point positionPoint = new Point(character.centerX, character.centerY);
+                                CharacterPosition characterPosition = new CharacterPosition(positionPoint, character, nowTime, 3000);
+                                double distance = MyMathsUtils.getDistance(positionPoint, thisCharacterPosition);
+                                if (distance <= nowSmellRadius) {
+                                    enemiesPositionSet.add(characterPosition);
+                                }
                             }
+                            break;
                         }
-                        break;
+
+                        Thread.sleep(smellSleepTime);
+
                     }
-
-                    Thread.sleep(smellSleepTime);
-
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } finally {
+                    nowSmellCount = 0;
+                    isSmelling = false;
+                    smellThread = null;
                 }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } finally {
-                nowSmellCount = 0;
-                isSmelling = false;
-                smellThread = null;
             }
         }
     }

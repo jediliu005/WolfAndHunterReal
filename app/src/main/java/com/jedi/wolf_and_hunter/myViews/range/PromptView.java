@@ -125,37 +125,38 @@ public class PromptView extends View {
 //            bindingCharacter.enemiesPositionSet.clear();
 //            return;
 //        }
-        CharacterPosition.removeOverdue(bindingCharacter.enemiesPositionSet);
-        Iterator<CharacterPosition> iterator= bindingCharacter.enemiesPositionSet.iterator();
-        while(iterator.hasNext()){
-            CharacterPosition characterPosition=iterator.next();
-            Point position=characterPosition.position;
-            canvas.save();
-            int relateX=position.x-bindingCharacter.centerX;
-            int relateY=position.y-bindingCharacter.centerY;
-            if (relateX == 0 & relateY == 0) {
-                continue;
-            }
-            double distance=Math.sqrt(relateX*relateX+relateY*relateY);
-            float angle= 0;
-            try {
-                angle = MyMathsUtils.getAngleBetweenXAxus(relateX,relateY);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            canvas.rotate(angle,viewSize/2,viewSize/2);
-            if(distance>greenRange){
-                canvas.drawBitmap(greenArrowBitmap,viewSize-greenArrowBitmap.getWidth(),(viewSize-greenArrowBitmap.getHeight())/2,null);
-            }else if(distance>yellowRange){
-                canvas.drawBitmap(yellowArrowBitmap,viewSize-yellowArrowBitmap.getWidth(),(viewSize-yellowArrowBitmap.getHeight())/2,null);
-            }else if(distance>redRange){
-                canvas.drawBitmap(redArrowBitmap,viewSize-redArrowBitmap.getWidth(),(viewSize-redArrowBitmap.getHeight())/2,null);
+        synchronized (bindingCharacter.enemiesPositionSet) {
+            CharacterPosition.removeOverdue(bindingCharacter.enemiesPositionSet);
+            Iterator<CharacterPosition> iterator = bindingCharacter.enemiesPositionSet.iterator();
+            while (iterator.hasNext()) {
+                CharacterPosition characterPosition = iterator.next();
+                Point position = characterPosition.position;
+                canvas.save();
+                int relateX = position.x - bindingCharacter.centerX;
+                int relateY = position.y - bindingCharacter.centerY;
+                if (relateX == 0 & relateY == 0) {
+                    continue;
+                }
+                double distance = Math.sqrt(relateX * relateX + relateY * relateY);
+                float angle = 0;
+                try {
+                    angle = MyMathsUtils.getAngleBetweenXAxus(relateX, relateY);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                canvas.rotate(angle, viewSize / 2, viewSize / 2);
+                if (distance > greenRange) {
+                    canvas.drawBitmap(greenArrowBitmap, viewSize - greenArrowBitmap.getWidth(), (viewSize - greenArrowBitmap.getHeight()) / 2, null);
+                } else if (distance > yellowRange) {
+                    canvas.drawBitmap(yellowArrowBitmap, viewSize - yellowArrowBitmap.getWidth(), (viewSize - yellowArrowBitmap.getHeight()) / 2, null);
+                } else if (distance > redRange) {
+                    canvas.drawBitmap(redArrowBitmap, viewSize - redArrowBitmap.getWidth(), (viewSize - redArrowBitmap.getHeight()) / 2, null);
+                }
+
+                canvas.restore();
             }
 
-            canvas.restore();
+
         }
-
-
-
     }
 }
