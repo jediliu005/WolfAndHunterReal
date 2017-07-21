@@ -27,18 +27,19 @@ public class NormalWolf extends BaseCharacterView {
     private final static int defauleReloadAttackSpeed = 50;
     public final static int defaultAngleChangSpeed = 2;
     public final static int defaultAttackRadius = 300;
-//    public final static int defaultViewRadius = 200;
+    //    public final static int defaultViewRadius = 200;
     public final static int defaultViewRadius = 500;
     public final static int defaultViewAngle = 90;
     public final static int defaultHearRadius = 600;
-    public  final static int defaultForceViewRadius=400;
-    public  final static int defaultSmellRadius=2000;
-    public  final static int defaultSmellSpeed=70;
+    public final static int defaultForceViewRadius = 400;
+    public final static int defaultSmellRadius = 2000;
+    public final static int defaultSmellSpeed = 70;
     public final static int defaultWalkWaitTime = 500;
     public final static int defaultRunWaitTime = 200;
     public final static int defaultSpeed = 15;
     public final static int defaultHealthPoint = 2;
     public final static int defaultKnockAwayStrength = 300;
+    public final static int defaultRecoverTime = 1500;
     boolean isStop = false;
     Thread attackThread;
     //下面一行控制bitmap是否自适应分辨率，不强制设flase可能出现图片分辨率和draw分辨率不一致
@@ -73,10 +74,10 @@ public class NormalWolf extends BaseCharacterView {
     }
 
     public void init() {
-        characterType=CHARACTER_TYPE_WOLF;
+        characterType = CHARACTER_TYPE_WOLF;
         Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.normal_wolf, option);
         Matrix matrixForCP = new Matrix();
-        matrixForCP.postScale((float)characterBodySize / bitmap.getWidth()*(float)0.8 , (float)  characterBodySize /bitmap.getHeight()*(float)0.8 );
+        matrixForCP.postScale((float) characterBodySize / bitmap.getWidth() * (float) 0.8, (float) characterBodySize / bitmap.getHeight() * (float) 0.8);
         characterPic = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrixForCP, true);
 
         attackMediaPlayer = MediaPlayer.create(getContext(), R.raw.wolf_attack);
@@ -84,22 +85,22 @@ public class NormalWolf extends BaseCharacterView {
         super.nowReloadAttackSpeed = defauleReloadAttackSpeed;
         attackCount = defaultMaxAttackCount;
         maxAttackCount = defaultMaxAttackCount;
-        nowExtraAttackRevise=defaultExtraAttackRevise;
+        nowExtraAttackRevise = defaultExtraAttackRevise;
         nowAttackRadius = defaultAttackRadius;
         nowViewRadius = defaultViewRadius;
         nowViewAngle = defaultViewAngle;
         nowHearRadius = defaultHearRadius;
-        nowForceViewRadius=defaultForceViewRadius;
+        nowForceViewRadius = defaultForceViewRadius;
         nowSpeed = defaultSpeed;
         nowAngleChangSpeed = defaultAngleChangSpeed;
-        nowWalkWaitTime=defaultWalkWaitTime;
-        nowRunWaitTime=defaultRunWaitTime;
-        nowSmellRadius=defaultSmellRadius;
-        nowSmellSpeed=defaultSmellSpeed;
+        nowWalkWaitTime = defaultWalkWaitTime;
+        nowRunWaitTime = defaultRunWaitTime;
+        nowSmellRadius = defaultSmellRadius;
+        nowSmellSpeed = defaultSmellSpeed;
         moveMediaPlayer = MediaPlayer.create(getContext(), R.raw.wolf_move);
-        nowHealthPoint=defaultHealthPoint;
+        nowHealthPoint = defaultHealthPoint;
         nowKnockAwayStrength = defaultKnockAwayStrength;
-
+        nowRecoverTime = defaultRecoverTime;
         if (this.virtualWindow == null)
             this.virtualWindow = GameBaseAreaActivity.virtualWindow;
         reloadAttackCount();
@@ -111,7 +112,7 @@ public class NormalWolf extends BaseCharacterView {
         nowViewRadius = defaultViewRadius;
         nowViewAngle = defaultViewAngle;
         nowHearRadius = defaultHearRadius;
-        nowForceViewRadius=defaultForceViewRadius;
+        nowForceViewRadius = defaultForceViewRadius;
         nowSpeed = defaultSpeed;
         nowAngleChangSpeed = defaultAngleChangSpeed;
     }
@@ -124,8 +125,8 @@ public class NormalWolf extends BaseCharacterView {
                     public void run() {
                         while (GameBaseAreaActivity.gameInfo.isStop == false && isStop == false) {
                             if (attackCount == maxAttackCount) {
-                                if(nowSpeed!=defaultSpeed)
-                                    nowSpeed=defaultSpeed;
+                                if (nowSpeed != defaultSpeed)
+                                    nowSpeed = defaultSpeed;
                                 try {
                                     Thread.sleep(reloadAttackSleepTime);
                                 } catch (InterruptedException e) {
@@ -133,14 +134,14 @@ public class NormalWolf extends BaseCharacterView {
                                 }
                                 continue;
 
-                            }else {
-                                nowSpeed =(int)((0.3+ 0.7*attackCount/maxAttackCount)*defaultSpeed);
+                            } else {
+                                nowSpeed = (int) ((0.3 + 0.7 * attackCount / maxAttackCount) * defaultSpeed);
                             }
-                            if(nowReloadingAttackCount<reloadAttackTotalCount)
-                                nowReloadingAttackCount+=nowReloadAttackSpeed;
-                            if(nowReloadingAttackCount>reloadAttackTotalCount)
-                                nowReloadingAttackCount=reloadAttackTotalCount;
-                            if(nowReloadingAttackCount==reloadAttackTotalCount) {
+                            if (nowReloadingAttackCount < reloadAttackTotalCount)
+                                nowReloadingAttackCount += nowReloadAttackSpeed;
+                            if (nowReloadingAttackCount > reloadAttackTotalCount)
+                                nowReloadingAttackCount = reloadAttackTotalCount;
+                            if (nowReloadingAttackCount == reloadAttackTotalCount) {
                                 nowReloadingAttackCount = 0;
                                 attackCount++;
                             }
@@ -193,7 +194,7 @@ public class NormalWolf extends BaseCharacterView {
                 for (BaseCharacterView targetCharacter : GameBaseAreaActivity.gameInfo.allCharacters) {
 
 
-                    if (attackCharacter == targetCharacter ||targetCharacter.isDead==true|| targetCharacter.getTeamID() == attackCharacter.getTeamID())
+                    if (attackCharacter == targetCharacter || targetCharacter.isDead == true || targetCharacter.getTeamID() == attackCharacter.getTeamID())
                         continue;
 
                     double distance = MyMathsUtils.getDistance(new Point(centerX, centerY), new Point(targetCharacter.centerX, targetCharacter.centerY));
@@ -205,8 +206,8 @@ public class NormalWolf extends BaseCharacterView {
                     int relateX = targetCharacter.centerX - centerX;
                     int relateY = targetCharacter.centerY - centerY;
                     if (relateX == 0 & relateY == 0) {
-                        HashMap<BaseCharacterView,BaseCharacterView> map=new HashMap<BaseCharacterView,BaseCharacterView>();
-                        map.put(attackCharacter,targetCharacter);
+                        HashMap<BaseCharacterView, BaseCharacterView> map = new HashMap<BaseCharacterView, BaseCharacterView>();
+                        map.put(attackCharacter, targetCharacter);
                         GameBaseAreaActivity.gameInfo.beAttackedList.add(map);
 //                        targetCharacter.isDead = true;
 //                        attackCharacter.killCount++;
@@ -238,9 +239,9 @@ public class NormalWolf extends BaseCharacterView {
 
                     }
 
-                    if (pointToLineDistance <= characterBodySize / 2 + targetCharacterSize+nowExtraAttackRevise) {
-                        HashMap<BaseCharacterView,BaseCharacterView> map=new HashMap<BaseCharacterView,BaseCharacterView>();
-                        map.put(attackCharacter,targetCharacter);
+                    if (pointToLineDistance <= characterBodySize / 2 + targetCharacterSize + nowExtraAttackRevise) {
+                        HashMap<BaseCharacterView, BaseCharacterView> map = new HashMap<BaseCharacterView, BaseCharacterView>();
+                        map.put(attackCharacter, targetCharacter);
                         GameBaseAreaActivity.gameInfo.beAttackedList.add(map);
 //                        targetCharacter.isDead = true;
 //                        attackCharacter.killCount++;
@@ -267,7 +268,7 @@ public class NormalWolf extends BaseCharacterView {
                     e.printStackTrace();
                 }
             }
-            isAttackting=false;
+            isAttackting = false;
             isJumping = false;
             attackThread = null;
         }
@@ -276,8 +277,8 @@ public class NormalWolf extends BaseCharacterView {
     @Override
     public void deadReset() {
         super.deadReset();
-        attackCount=defaultMaxAttackCount;
-        nowHealthPoint=defaultHealthPoint;
+        attackCount = defaultMaxAttackCount;
+        nowHealthPoint = defaultHealthPoint;
 
     }
 
@@ -286,7 +287,7 @@ public class NormalWolf extends BaseCharacterView {
         if (isJumping || attackCount <= 0 || isDead) {
             return;
         }
-        if (attackThread != null&&attackThread.getState()!= Thread.State.TERMINATED) {
+        if (attackThread != null && attackThread.getState() != Thread.State.TERMINATED) {
             return;
         }
         super.attack();
@@ -305,7 +306,6 @@ public class NormalWolf extends BaseCharacterView {
         attackThread = new Thread(new AttackThread(this, toPoint));
         attackThread.setDaemon(true);
         attackThread.start();
-
 
 
     }

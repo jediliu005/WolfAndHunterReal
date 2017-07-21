@@ -29,7 +29,7 @@ public class GameBaseAreaActivity extends Activity {
     public static GameInfo gameInfo;
     public static GameMap gameMap;
     public static MyVirtualWindow virtualWindow;
-    public GameMainEngine engine;
+    public static GameMainEngine engine;
     BluetoothAdapter bluetoothAdapter;
     BluetoothServerSocket bluetoothServerSocket;
     BluetoothSocket bluetoothSocket;

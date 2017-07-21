@@ -31,6 +31,7 @@ import com.jedi.wolf_and_hunter.myViews.range.PromptView;
 import com.jedi.wolf_and_hunter.myViews.SightView;
 import com.jedi.wolf_and_hunter.myViews.range.ViewRange;
 import com.jedi.wolf_and_hunter.myViews.landform.Landform;
+import com.jedi.wolf_and_hunter.myViews.tempView.InjuryView;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 import com.jedi.wolf_and_hunter.utils.ViewUtils;
 
@@ -116,6 +117,8 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     private int teamID;
     public int id;
     public MyVirtualWindow virtualWindow;
+    public long lastInjureTime;
+    public int nowRecoverTime;
     public volatile boolean isDead = false;
     public volatile boolean isKnockedAway = false;
     public long deadTime;
@@ -431,9 +434,9 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                         rightVol = rightVol / 3;
                     }
                     try {
-                    moveMediaPlayer.setVolume(leftVol, rightVol);
-                    if (isStay == false && needMove == true)
-                        moveMediaPlayer.start();
+                        moveMediaPlayer.setVolume(leftVol, rightVol);
+                        if (isStay == false && needMove == true)
+                            moveMediaPlayer.start();
 
                         if (runOrWalk == MOVINT_TYPE_WALK)
                             Thread.sleep(nowWalkWaitTime);
@@ -511,10 +514,6 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     }
 
 
-
-
-
-
     public void initCharacterState() {
 
     }
@@ -527,7 +526,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
         //根据设定速度修正位移量
         float nowMoveSpeed = nowSpeed;
-        if (runOrWalk==MOVINT_TYPE_WALK) {
+        if (runOrWalk == MOVINT_TYPE_WALK) {
             nowMoveSpeed = nowSpeed / 3;
         }
         double offDistance = Math.sqrt(nowOffX * nowOffX + nowOffY * nowOffY);
@@ -557,7 +556,6 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         int nowOffY = targetCenterY - centerY;
         if (playerInfo.nowSpeed != nowSpeed)
             nowSpeed = playerInfo.nowSpeed;
-
 
 
         //根据设定速度修正位移量
@@ -592,7 +590,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         isSmelling = false;
         int nowOffX = offX;
         int nowOffY = offY;
-        if(nowOffX==0&&nowOffY==0)
+        if (nowOffX == 0 && nowOffY == 0)
             return;
         float realRelateAngle = 0;
         float targetFacingAngle = 0;
@@ -626,7 +624,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
             double offDistance = Math.sqrt(nowOffX * nowOffX + nowOffY * nowOffY);
             int nowMoveSpeed = nowSpeed;
-            if (runOrWalk==MOVINT_TYPE_WALK) {
+            if (runOrWalk == MOVINT_TYPE_WALK) {
                 nowMoveSpeed = nowSpeed / 3;
             }
 
@@ -1075,15 +1073,29 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     }
 
     public void deadReset() {
-        isReloadingAttack=false;
-        isAttackting=false;
-        nowReloadingAttackCount=0;
+
+        lastInjureTime = -1;
+        isReloadingAttack = false;
+        isAttackting = false;
+        nowReloadingAttackCount = 0;
         isKnockedAway = false;
         knockedAwayX = -99999;
         knockedAwayY = -99999;
         isJumping = false;
         jumpToX = -99999;
         jumpToY = -99999;
+        if (isMyCharacter) {
+            if (GameBaseAreaActivity.gameInfo.injuryViews.size() > 0) {
+                synchronized (GameBaseAreaActivity.gameInfo.injuryViews) {
+                    Iterator<InjuryView> iterator=GameBaseAreaActivity.gameInfo.injuryViews.iterator();
+                    while (iterator.hasNext()){
+                        InjuryView injuryView=iterator.next();
+                        GameBaseAreaActivity.baseFrame.removeView(injuryView);
+                    }
+                    GameBaseAreaActivity.gameInfo.injuryViews.clear();
+                }
+            }
+        }
         int myBaseWidth = GameBaseAreaActivity.gameInfo.mapWidth / 2;
         int myBaseHeight = GameBaseAreaActivity.gameInfo.mapHeight / 2;
         if (myBaseHeight < characterBodySize || myBaseWidth < characterBodySize) {
@@ -1135,8 +1147,6 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         if (nowTime - deadTime > 3000) {
             isDead = false;
             deadTime = 0;
-
-
         }
 
     }
@@ -1507,8 +1517,8 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             } else {
                 relateX = lockingCharacter.centerX - this.centerX;
                 relateY = lockingCharacter.centerY - this.centerY;
-                if(relateX==0&&relateY==0) {
-                    lockingCharacter=null;
+                if (relateX == 0 && relateY == 0) {
+                    lockingCharacter = null;
                     return;
                 }
                 try {
@@ -1610,7 +1620,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public void reloadAttackCount() {
         if (reloadAttackCountThread != null && reloadAttackCountThread.getState() != Thread.State.TERMINATED)
             return;
-        if(reloadMediaPlayer!=null) {
+        if (reloadMediaPlayer != null) {
             reloadMediaPlayer.seekTo(0);
             if (reloadMediaPlayer == null)
                 return;

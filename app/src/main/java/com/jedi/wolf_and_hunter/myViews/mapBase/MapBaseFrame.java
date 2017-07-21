@@ -18,7 +18,10 @@ import com.jedi.wolf_and_hunter.myViews.landform.Landform;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
 import com.jedi.wolf_and_hunter.myViews.rocker.LeftRocker;
 import com.jedi.wolf_and_hunter.myViews.rocker.RightRocker;
+import com.jedi.wolf_and_hunter.myViews.tempView.InjuryView;
 import com.jedi.wolf_and_hunter.utils.ViewUtils;
+
+import java.util.Vector;
 
 /**
  * Created by Administrator on 2017/3/15.
@@ -38,6 +41,7 @@ public class MapBaseFrame extends FrameLayout {
     public LeftRocker leftRocker;
     public RightRocker rightRocker;
     private LayoutParams mLayoutParams;
+
     public  Landform[][] landformses;
     public int mapWidth;
     public int mapHeight;
@@ -48,6 +52,7 @@ public class MapBaseFrame extends FrameLayout {
         this.mapWidth=mapWidth;
         this.mapHeight=mapHeight;
         mLayoutParams=new LayoutParams(mapWidth,mapHeight);
+
         this.setLayoutParams(mLayoutParams);
 
     }

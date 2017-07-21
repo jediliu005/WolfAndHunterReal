@@ -14,9 +14,11 @@ import com.jedi.wolf_and_hunter.R;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
 import com.jedi.wolf_and_hunter.engine.GameMainEngine;
 import com.jedi.wolf_and_hunter.myObj.gameObj.MyVirtualWindow;
+import com.jedi.wolf_and_hunter.myViews.tempView.InjuryView;
 import com.jedi.wolf_and_hunter.myViews.tempView.Trajectory;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 
+import java.util.Date;
 import java.util.HashMap;
 
 /**
@@ -38,8 +40,9 @@ public class NormalHunter extends BaseCharacterView {
     public final static int defaultRunWaitTime = 300;
     public final static int defaultSpeed = 10;
     public final static int defaultAngleChangSpeed = 5;
-    public final static int defaultHealthPoint = 2;
+    public final static int defaultHealthPoint = 10;
     public final static int defaultKnockAwayStrength = 300;
+    public final static int defaultRecoverTime = 15000;
 
 
     //下面一行控制bitmap是否自适应分辨率，不强制设flase可能出现图片分辨率和draw分辨率不一致
@@ -97,7 +100,7 @@ public class NormalHunter extends BaseCharacterView {
         nowSpeed = defaultSpeed;
         nowHealthPoint = defaultHealthPoint;
         nowKnockAwayStrength = defaultKnockAwayStrength;
-
+        nowRecoverTime=defaultRecoverTime;
         FrameLayout.LayoutParams viewRangeLP = (FrameLayout.LayoutParams) viewRange.getLayoutParams();
         viewRangeLP.width = 2 * defaultViewRadius;
         viewRange.setLayoutParams(viewRangeLP);
@@ -196,6 +199,7 @@ public class NormalHunter extends BaseCharacterView {
                 HashMap<BaseCharacterView, BaseCharacterView> map = new HashMap<BaseCharacterView, BaseCharacterView>();
                 map.put(this, targetCharacter);
                 GameBaseAreaActivity.gameInfo.beAttackedList.add(map);
+
 //                float relateFacingAngle = Math.abs(targetCharacter.nowFacingAngle - nowFacingAngle);
 //
 //                if (relateFacingAngle < 90 || relateFacingAngle > 270) {//背击

@@ -28,6 +28,7 @@ import com.jedi.wolf_and_hunter.myViews.range.PromptView;
 import com.jedi.wolf_and_hunter.myViews.rocker.RightRocker;
 import com.jedi.wolf_and_hunter.myViews.SightView;
 import com.jedi.wolf_and_hunter.myViews.button.SmellButton;
+import com.jedi.wolf_and_hunter.myViews.tempView.InjuryView;
 import com.jedi.wolf_and_hunter.myViews.tempView.Trajectory;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 import com.jedi.wolf_and_hunter.myViews.characters.NormalHunter;
@@ -40,6 +41,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -62,6 +64,7 @@ public class GameMainEngine {
     private FrameLayout baseFrame;
     private MapBaseFrame mapBaseFrame;
     private MyVirtualWindow virtualWindow;
+
     private GameMap gameMap;
     private GameBaseAreaActivity gameBaseAreaActivity;
     private GameHandler gameHandler = new GameHandler();
@@ -101,8 +104,8 @@ public class GameMainEngine {
         return virtualWindow;
     }
 
-    public  GameMainEngine (GameBaseAreaActivity gameBaseAreaActivity) {
-        this.gameBaseAreaActivity=gameBaseAreaActivity;
+    public GameMainEngine(GameBaseAreaActivity gameBaseAreaActivity) {
+        this.gameBaseAreaActivity = gameBaseAreaActivity;
         gameInfo = (GameInfo) gameBaseAreaActivity.getIntent().getExtras().get("gameInfo");
         if (gameInfo == null)
             gameBaseAreaActivity.finish();
@@ -177,10 +180,9 @@ public class GameMainEngine {
         baseFrame.addView(gameResult);
 
 
-
     }
 
-    public void stopEngine(){
+    public void stopEngine() {
         gameInfo.isStop = true;
         timerForTrajectory.cancel();
         backGroundMediaPlayer.release();
@@ -212,9 +214,9 @@ public class GameMainEngine {
                 case REMOVE_TRAJECTORY:
                     long nowTime = new Date().getTime();
                     ArrayList<Trajectory> removeTrajectories = new ArrayList<Trajectory>();
-                    Iterator<Trajectory> iterator=gameInfo.allTrajectories.iterator();
-                    while(iterator.hasNext()){
-                        Trajectory t=iterator.next();
+                    Iterator<Trajectory> iterator = gameInfo.allTrajectories.iterator();
+                    while (iterator.hasNext()) {
+                        Trajectory t = iterator.next();
                         if (nowTime - t.addTime > 1000) {
                             iterator.remove();
                             t.parent.removeView(t);
@@ -289,6 +291,7 @@ public class GameMainEngine {
         }
 
     }
+
     private class GameMainTask extends TimerTask {
         @Override
         public void run() {
@@ -298,7 +301,7 @@ public class GameMainEngine {
                     backGroundMediaPlayer.seekTo(0);
                     backGroundMediaPlayer.start();
                 }
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
 //            if (backGroundMusicThread == null) {
@@ -339,7 +342,6 @@ public class GameMainEngine {
     public void runEngine() {
 
 
-
 //        for (int i = 0; i < gameMap.landformses.length; i++) {
 //            if (Math.abs(i) % 3 == 0) {
 //                for (int j = 0; j < gameMap.landformses[i].length; j++) {
@@ -376,7 +378,7 @@ public class GameMainEngine {
 
         gameInfo.allCharacters.add(myCharacter);
 //        mapBaseFrame.addView(myCharacter);
-        gameBaseAreaActivity.myCharacter=myCharacter;
+        gameBaseAreaActivity.myCharacter = myCharacter;
         mapBaseFrame.myCharacter = myCharacter;
 
 
@@ -419,7 +421,7 @@ public class GameMainEngine {
             rrlp.rightMargin = atttackButton.buttonSize - JRocker.rockerRadius;
 
             rabp.leftMargin = MyVirtualWindow.getWindowWidth(gameBaseAreaActivity) - atttackButton.buttonSize;
-            rabp.topMargin =MyVirtualWindow.getWindowHeight(gameBaseAreaActivity) - JRocker.viewWidth / 2 - atttackButton.buttonSize;
+            rabp.topMargin = MyVirtualWindow.getWindowHeight(gameBaseAreaActivity) - JRocker.viewWidth / 2 - atttackButton.buttonSize;
 
 
             lockingButton = new LockingButton(gameBaseAreaActivity);
@@ -430,7 +432,7 @@ public class GameMainEngine {
                 lblp = new FrameLayout.LayoutParams(lockingButtonSize, lockingButtonSize);
             }
             lblp.leftMargin = rabp.leftMargin;
-            lblp.topMargin = MyVirtualWindow.getWindowHeight(gameBaseAreaActivity)-JRocker.viewWidth/ 2 + 10;
+            lblp.topMargin = MyVirtualWindow.getWindowHeight(gameBaseAreaActivity) - JRocker.viewWidth / 2 + 10;
             lockingButton.setLayoutParams(lblp);
             baseFrame.addView(lockingButton);
 
@@ -441,7 +443,7 @@ public class GameMainEngine {
             atttackButton.buttonSize = (int) (atttackButton.buttonSize * 5 / 4);
             atttackButton.reCreateBitmap();
             rabp.leftMargin = MyVirtualWindow.getWindowWidth(gameBaseAreaActivity) - atttackButton.buttonSize - 50;
-            rabp.topMargin = MyVirtualWindow.getWindowHeight(gameBaseAreaActivity) -JRocker.viewWidth / 2 ;
+            rabp.topMargin = MyVirtualWindow.getWindowHeight(gameBaseAreaActivity) - JRocker.viewWidth / 2;
             smellButton = new SmellButton(gameBaseAreaActivity);
             int smellButtonSize = smellButton.buttonSize;
             smellButton.bindingCharacter = myCharacter;
@@ -573,10 +575,10 @@ public class GameMainEngine {
     }
 
     public void dealNeedToBeKilled() {
-Iterator<HashMap<BaseCharacterView, BaseCharacterView>> iterator=gameInfo.beAttackedList.iterator();
+        Iterator<HashMap<BaseCharacterView, BaseCharacterView>> iterator = gameInfo.beAttackedList.iterator();
 
         while (iterator.hasNext()) {
-            Map<BaseCharacterView, BaseCharacterView> attackMap=iterator.next();
+            Map<BaseCharacterView, BaseCharacterView> attackMap = iterator.next();
             Set<Map.Entry<BaseCharacterView, BaseCharacterView>> entrySet = attackMap.entrySet();
             for (Map.Entry<BaseCharacterView, BaseCharacterView> entry : entrySet) {
                 BaseCharacterView attackCharacter = entry.getKey();
@@ -587,7 +589,7 @@ Iterator<HashMap<BaseCharacterView, BaseCharacterView>> iterator=gameInfo.beAtta
                     break;
                 int relateX = beAttackedCharacter.centerX - attackCharacter.centerX;
                 int relateY = beAttackedCharacter.centerY - attackCharacter.centerY;
-                if(relateX==0&&relateY==0) {
+                if (relateX == 0 && relateY == 0) {
                     beAttackedCharacter.isDead = true;
                     beAttackedCharacter.dieCount++;
                     beAttackedCharacter.deadTime = new Date().getTime();
@@ -626,6 +628,26 @@ Iterator<HashMap<BaseCharacterView, BaseCharacterView>> iterator=gameInfo.beAtta
                         Point toPoint = new Point((int) endX, (int) endY);
                         beAttackedCharacter.startKnockedAwayThread(toPoint);
                     }
+                    if(beAttackedCharacter.isMyCharacter){
+                        InjuryView injuryView=new InjuryView(gameBaseAreaActivity);
+                        Random r=new Random();
+                        int left=r.nextInt(MyVirtualWindow.getWindowWidth(gameBaseAreaActivity)-injuryView.viewSize);
+                        int top=r.nextInt(MyVirtualWindow.getWindowHeight(gameBaseAreaActivity)-injuryView.viewSize);
+                        injuryView.centerX=left+injuryView.viewSize/2;
+                        injuryView.centerY=top+injuryView.viewSize/2;
+                        FrameLayout.LayoutParams layoutParams=(FrameLayout.LayoutParams) injuryView.getLayoutParams();
+                        if (layoutParams == null) {
+                            layoutParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                        }
+                        layoutParams.leftMargin=left;
+                        layoutParams.topMargin=top;
+
+                        injuryView.setLayoutParams(layoutParams);
+                        synchronized (gameInfo.injuryViews) {
+                            gameInfo.injuryViews.add(injuryView);
+                        }
+                        beAttackedCharacter.lastInjureTime=new Date().getTime();
+                    }
                 }
             }
 
@@ -634,7 +656,27 @@ Iterator<HashMap<BaseCharacterView, BaseCharacterView>> iterator=gameInfo.beAtta
         gameInfo.beAttackedList.clear();
     }
 
-
+    private void dealInjuryView() {
+        synchronized (gameInfo.injuryViews) {
+            if(gameInfo.injuryViews.size()==0)
+                return;
+            long nowTime=new Date().getTime();
+           Iterator<InjuryView> iterator= gameInfo.injuryViews.iterator();
+            while (iterator.hasNext()){
+                InjuryView injuryView=iterator.next();
+                if(injuryView.hasAddedToBaseFrame){
+                    if (nowTime-injuryView.createTime>myCharacter.nowRecoverTime) {
+                        baseFrame.removeView(injuryView);
+                        iterator.remove();
+                    }
+                }else{
+                    baseFrame.addView(injuryView);
+                    injuryView.hasAddedToBaseFrame=true;
+                    injuryView.bringToFront();
+                }
+            }
+        }
+    }
 
     private synchronized void reflash() {
 
@@ -656,9 +698,11 @@ Iterator<HashMap<BaseCharacterView, BaseCharacterView>> iterator=gameInfo.beAtta
                 gameInfo.mySight.updateNowPosition();
             }
 
-            if(myCharacter.isAttackting)
+
+            dealInjuryView();
+            if (myCharacter.isAttackting)
                 myCharacter.attack();
-            if(myCharacter.isReloadingAttack==true)
+            if (myCharacter.isReloadingAttack == true)
                 myCharacter.reloadAttackCount();
             if (myCharacter.isDead == true) {
                 myCharacter.deadReset();
@@ -759,11 +803,11 @@ Iterator<HashMap<BaseCharacterView, BaseCharacterView>> iterator=gameInfo.beAtta
             synchronized (c) {
                 c.updateInvincibleState();
                 c.updateNowPosition();
-                if(c.isAttackting) {
+                if (c.isAttackting) {
 
                     c.attack();
                 }
-                if(c.isReloadingAttack==true&&c.characterType==BaseCharacterView.CHARACTER_TYPE_HUNTER)
+                if (c.isReloadingAttack == true && c.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
                     c.reloadAttackCount();
                 if (c.isDead == true) {
                     c.deadReset();

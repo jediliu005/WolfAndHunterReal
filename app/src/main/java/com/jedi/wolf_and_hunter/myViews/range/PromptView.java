@@ -73,12 +73,13 @@ public class PromptView extends View {
     }
 
 
+
+
     private void init() {
 
         if (bindingCharacter != null) {
             centerX = bindingCharacter.centerX;
             centerY = bindingCharacter.centerY;
-            DashPathEffect pathEffect = new DashPathEffect(new float[]{10, 10}, 0);
 
 
             transparentPaint = new Paint();
@@ -121,7 +122,7 @@ public class PromptView extends View {
         super.onDraw(canvas);
         if(bindingCharacter==null||bindingCharacter.enemiesPositionSet==null)
             return;
-//        if(new Date().getTime()-bindingCharacter.lastSmellTime>5000){
+//        if(new Date().getTime()-bindingCh  aracter.lastSmellTime>5000){
 //            bindingCharacter.enemiesPositionSet.clear();
 //            return;
 //        }

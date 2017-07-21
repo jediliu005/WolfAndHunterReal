@@ -1,6 +1,7 @@
 package com.jedi.wolf_and_hunter.myObj.gameObj;
 
 import com.jedi.wolf_and_hunter.myViews.SightView;
+import com.jedi.wolf_and_hunter.myViews.tempView.InjuryView;
 import com.jedi.wolf_and_hunter.myViews.tempView.Trajectory;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 
@@ -23,7 +24,8 @@ public class GameInfo implements Serializable{
     public PlayerInfo myPlayerInfo;
     public SightView mySight;
     public Vector<PlayerInfo> playerInfos;
-    public static Vector<Trajectory> allTrajectories;
+    public  Vector<Trajectory> allTrajectories;
+    public Vector<InjuryView> injuryViews=new Vector<InjuryView>();
     public int tallGrasslandDensity=50;
     public List<HashMap<BaseCharacterView, BaseCharacterView>> beAttackedList;
     public String playMode="single";
