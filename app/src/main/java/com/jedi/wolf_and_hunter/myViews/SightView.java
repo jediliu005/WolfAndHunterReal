@@ -471,18 +471,6 @@ public class SightView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
 
-    public void virtualWindowPassiveFollow(){
-        int windowCenterX;
-        int windowCenterY;
-        int centerDistance=windowWidth/5;
-        windowCenterX=(int)(Math.cos(Math.toRadians(bindingCharacter.nowFacingAngle))*centerDistance)+centerX;
-        windowCenterY=(int)(Math.sin(Math.toRadians(bindingCharacter.nowFacingAngle))*centerDistance)+centerY;;
-        this.virtualWindow.targetLeft=windowCenterX-windowWidth/2;
-        this.virtualWindow.targetRight=virtualWindow.left+windowWidth;
-        this.virtualWindow.targetTop=windowCenterY-windowHeight/2;
-        this.virtualWindow.targetBottom=virtualWindow.top+windowHeight;
-    }
-
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {

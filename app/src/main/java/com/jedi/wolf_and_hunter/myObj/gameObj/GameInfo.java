@@ -18,11 +18,10 @@ import java.util.Vector;
 public class GameInfo implements Serializable{
 
     public final static int CONTROL_MODE_NORMAL = 0;
-    public final static int CONTROL_MODE_MASTER = 1;
+
     public int controlMode = CONTROL_MODE_NORMAL;
     public volatile boolean isStop = false;
     public PlayerInfo myPlayerInfo;
-    public SightView mySight;
     public Vector<PlayerInfo> playerInfos;
     public  Vector<Trajectory> allTrajectories;
     public Vector<InjuryView> injuryViews=new Vector<InjuryView>();

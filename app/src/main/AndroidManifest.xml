@@ -39,9 +39,6 @@
             android:name=".activities.GameBaseAreaActivity"
             android:screenOrientation="landscape" />
         <activity
-            android:name=".activities.BluetoothOnlineGameBaseAreaActivity"
-            android:screenOrientation="landscape" />
-        <activity
             android:name=".activities.BlueToothTestActivity"
             android:screenOrientation="landscape" />
         <activity

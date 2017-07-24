@@ -7,6 +7,7 @@ import android.view.WindowManager;
 import android.widget.FrameLayout;
 
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
+import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
 import com.jedi.wolf_and_hunter.utils.ViewUtils;
 
 import java.util.TimerTask;
@@ -30,6 +31,19 @@ public class MyVirtualWindow {
     public FrameLayout movingLayout;
     public boolean hasUpdatedWindowPosition = false;
 
+    public void virtualWindowPassiveFollow(Context context, BaseCharacterView focusCharacter){
+        int windowCenterX;
+        int windowCenterY;
+        int windowWidth=getWindowWidth(context);
+        int windowHeight=getWindowHeight(context);
+        int centerDistance=windowWidth/5;
+        windowCenterX=(int)(Math.cos(Math.toRadians(focusCharacter.nowFacingAngle))*centerDistance)+focusCharacter.centerX;
+        windowCenterY=(int)(Math.sin(Math.toRadians(focusCharacter.nowFacingAngle))*centerDistance)+focusCharacter.centerY;;
+        targetLeft=windowCenterX-windowWidth/2;
+        targetRight=left+windowWidth;
+        targetTop=windowCenterY-windowHeight/2;
+        targetBottom=top+windowHeight;
+    }
     public static int getWindowWidth(Context context) {
         if(windowWidth==0){
             ViewUtils.initWindowParams(context);

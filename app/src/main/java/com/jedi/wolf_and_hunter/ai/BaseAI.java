@@ -269,6 +269,7 @@ public class BaseAI extends TimerTask {
         targetLastY = -1;
         trackTrajectory = null;
         hasDealTrackOnce = false;
+        bindingCharacter.targetFacingAngle=-1;
         bindingCharacter.isStay = false;
     }
 

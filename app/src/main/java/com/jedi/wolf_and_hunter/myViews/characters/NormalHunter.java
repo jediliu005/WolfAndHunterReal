@@ -29,7 +29,7 @@ public class NormalHunter extends BaseCharacterView {
     private static final String TAG = "NormalHunter";
     private final static String characterName = "普通猎人";
     private final static int defaultExtraAttackRevise = 0;
-    private final static int defaultMaxAttackCount = 2;
+    private final static int defaultMaxAttackCount = 3;
     private final static int defauleReloadAttackSpeed = 25;
     public final static int defaultAttackRadius = 700;
     public final static int defaultViewRadius = 600;
@@ -40,7 +40,7 @@ public class NormalHunter extends BaseCharacterView {
     public final static int defaultRunWaitTime = 300;
     public final static int defaultSpeed = 10;
     public final static int defaultAngleChangSpeed = 5;
-    public final static int defaultHealthPoint = 10;
+    public final static int defaultHealthPoint = 3;
     public final static int defaultKnockAwayStrength = 300;
     public final static int defaultRecoverTime = 15000;
 

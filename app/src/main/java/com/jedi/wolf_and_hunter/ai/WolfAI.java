@@ -223,12 +223,18 @@ public class WolfAI extends BaseAI {
                 bestTurningAngle = Math.abs(bestTurningAngle) / bestTurningAngle * angleChangSpeed;
 
 
-            bindingCharacter.nowFacingAngle = bindingCharacter.nowFacingAngle + bestTurningAngle;
-
-            if (bindingCharacter.nowFacingAngle < 0)
-                bindingCharacter.nowFacingAngle = bindingCharacter.nowFacingAngle + 360;
-            else if (bindingCharacter.nowFacingAngle > 360)
-                bindingCharacter.nowFacingAngle = bindingCharacter.nowFacingAngle - 360;
+            float targetFacingAngle=bindingCharacter.nowFacingAngle + bestTurningAngle;
+            if (targetFacingAngle < 0)
+                targetFacingAngle = targetFacingAngle + 360;
+            else if (targetFacingAngle > 360)
+                targetFacingAngle = targetFacingAngle - 360;
+            bindingCharacter.targetFacingAngle=targetFacingAngle;
+//            bindingCharacter.nowFacingAngle = bindingCharacter.nowFacingAngle + bestTurningAngle;
+//
+//            if (bindingCharacter.nowFacingAngle < 0)
+//                bindingCharacter.nowFacingAngle = bindingCharacter.nowFacingAngle + 360;
+//            else if (bindingCharacter.nowFacingAngle > 360)
+//                bindingCharacter.nowFacingAngle = bindingCharacter.nowFacingAngle - 360;
 
 
 
@@ -237,8 +243,7 @@ public class WolfAI extends BaseAI {
                 bindingCharacter.offY = 0;
                 isChance = true;
             } else {
-                float startAngle = relateAngle - chanceAngle;
-                float endAngle = relateAngle + chanceAngle;
+
                 if (Math.abs(relateAngle) < chanceAngle && bindingCharacter.nowAttackRadius > distance) {
                     isChance = true;
                     bindingCharacter.offX = 0;

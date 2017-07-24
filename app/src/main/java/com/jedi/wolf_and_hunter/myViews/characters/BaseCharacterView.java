@@ -56,11 +56,12 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public static final int CHARACTER_TYPE_UNDEFINED = 0;
     public static final int CHARACTER_TYPE_HUNTER = 1;
     public static final int CHARACTER_TYPE_WOLF = 2;
-    //以下为移动相关
+    //以下为移动相关的临时参数
     public int lastX;
     public int lastY;
     public int offX;
     public int offY;
+    public float targetFacingAngle;
     public int jumpToX = -99999;
     public int jumpToY = -99999;
     public int knockedAwayX = -99999;
@@ -69,7 +70,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public volatile boolean needMove = false;
     public int nowAngleChangSpeed = 1;
 
-    //以下为角色View基本位置与状态属性
+    //以下为角色View实际或最终位置以及实际状态属性
     public boolean isInvincible = false;
     public long invincibleStartTime;
     public long invincibleLastTime;
@@ -110,13 +111,9 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public int nowWalkWaitTime = 600;
     public int nowRunWaitTime = 300;
     public volatile int nowSpeed = 10;
-    public SightView sight;
-    public AttackRange attackRange;
-    public ViewRange viewRange;
-    public PromptView promptView;
+    public SightView sight;//这个view已经废弃
     private int teamID;
     public int id;
-    public MyVirtualWindow virtualWindow;
     public long lastInjureTime;
     public int nowRecoverTime;
     public volatile boolean isDead = false;
@@ -125,47 +122,52 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public volatile boolean isForceToBeSawByMe = false;//注意！这属性只针对本机玩家视觉，对AI判行为无效
     public volatile boolean isJumping = false;
     public volatile boolean isReloadingAttack = false;
-    public Thread reloadAttackCountThread;
-    public Handler gameHandler;
-    public volatile Vector<Integer> seeMeTeamIDs;
-    public volatile Vector<BaseCharacterView> theyDiscoverMe;
-    public volatile Vector<CharacterPosition> enemiesPositionSet;
-
-    public Thread movingMediaThread;
     public int runOrWalk = MOVINT_TYPE_RUN;
     public volatile boolean isStay;
     public volatile boolean isLocking;
     public volatile boolean isSmelling;
     public BaseCharacterView lockingCharacter;
+
+    //各种标识用附加view
+    public AttackRange attackRange;//攻击范围View
+    public ViewRange viewRange;//视觉范围View
+    public PromptView promptView;//探测提示View
+    public MyVirtualWindow virtualWindow;//虚拟窗口，把屏幕可视区域看成一个View；
+
+    //各种线程
+    public volatile boolean isStop = false;
+    public Thread movingMediaThread;//移动音效线程
+    public Thread reloadAttackCountThread;//装弹运算线程
+    Thread smellThread;//嗅觉探测相关线程
+    //各种集合
+    public volatile Vector<Integer> seeMeTeamIDs;//存储发现这角色的队伍ID
+    public volatile Vector<BaseCharacterView> theyDiscoverMe;//存储发现这角色的角色
+    public volatile Vector<CharacterPosition> enemiesPositionSet;//存储探测到的其他角色位置
+
+
+    //地形影响相关
     public int lastEffectX = -1;
     public int lastEffectY = -1;
     public Landform lastLandform;
+
     //多媒体
     public MediaPlayer moveMediaPlayer;
     public MediaPlayer attackMediaPlayer;
     public MediaPlayer reloadMediaPlayer;
     public MediaPlayer smellMediaPlayer;
 
-    //以下为绘图杂项
+    //绘图相关
     public Bitmap characterPic;
     public static Bitmap starPic;
-    int windowWidth;
-    int windowHeight;
-    public volatile boolean isStop = false;
-    public Matrix matrixForArrow;
     public SurfaceHolder mHolder;
-    public int arrowBitmapWidth;
-    public int arrowBitmapHeight;
-    //    public FrameLayout.LayoutParams mLayoutParams;
     int borderWidth;
     Paint normalPaint;
     Paint alphaPaint;
     Paint transparentPaint;
     Paint textNormalPaint;
     Paint textAlphaPaint;
+    public Handler gameHandler;
 
-
-    Thread smellThread;
 
     BitmapFactory.Options option = new BitmapFactory.Options();
 
@@ -272,8 +274,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         nowReloadingAttackCount = 0;
         theyDiscoverMe = new Vector<BaseCharacterView>();
         seeMeTeamIDs = new Vector<Integer>();
-        windowWidth = MyVirtualWindow.getWindowWidth(getContext());
-        windowHeight = MyVirtualWindow.getWindowHeight(getContext());
+
         characterBodySize = 60;
         mHolder = getHolder();
         mHolder.addCallback(this);
@@ -547,6 +548,27 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         nowRight = nowLeft + getWidth();
         nowBottom = nowTop + getHeight();
 
+        if (targetFacingAngle > 0) {
+            float relateAngle = targetFacingAngle - nowFacingAngle;
+            if (Math.abs(relateAngle) > 180) {//处理旋转最佳方向
+                if (relateAngle > 0)
+                    relateAngle = relateAngle - 360;
+
+                else
+                    relateAngle = 360 - relateAngle;
+            }
+            if (Math.abs(relateAngle) > nowAngleChangSpeed)
+                relateAngle = Math.abs(relateAngle) / relateAngle * nowAngleChangSpeed;
+
+            nowFacingAngle = nowFacingAngle + relateAngle;
+
+
+            if (nowFacingAngle < 0)
+                nowFacingAngle = nowFacingAngle + 360;
+            else if (nowFacingAngle > 360)
+                nowFacingAngle = nowFacingAngle - 360;
+
+        }
     }
 
     public void reactOtherOnlinePlayerHunterMove(PlayerInfo playerInfo) {
@@ -590,8 +612,11 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         isSmelling = false;
         int nowOffX = offX;
         int nowOffY = offY;
-        if (nowOffX == 0 && nowOffY == 0)
+        if (nowOffX == 0 && nowOffY == 0) {
+            if (targetFacingAngle >= 0)
+                nowFacingAngle = targetFacingAngle;
             return;
+        }
         float realRelateAngle = 0;
         float targetFacingAngle = 0;
 
@@ -752,78 +777,79 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     /**
      * 本方法仅为myCharacter所用，ai不应使用
      *
-     * @param otherCharacter
      */
-    public void changeOtherCharacterState(BaseCharacterView otherCharacter) {
+    public void changeOtherCharacterLandformState() {
         //处理隐身
+        for (BaseCharacterView otherCharacter : GameBaseAreaActivity.gameInfo.allCharacters) {
+            if(otherCharacter==this)
+                return;
+            boolean isInViewRange = isInViewRange(otherCharacter, nowViewRadius);
+            boolean isDiscoverByMe = false;
+            if (otherCharacter.teamID == teamID)
+                return;
 
-        boolean isInViewRange = isInViewRange(otherCharacter, nowViewRadius);
-        boolean isDiscoverByMe = false;
-        if (otherCharacter.teamID == teamID)
-            return;
-
-        //在基本可视范围内
-        if (isInViewRange) {
-            //对方没有隐藏，直接可见
-            if (otherCharacter.nowHiddenLevel == HIDDEN_LEVEL_NO_HIDDEN) {
-                isDiscoverByMe = true;
-
-            }
-            //有隐身，判是否在强制可视范围内
-            else if (otherCharacter.nowHiddenLevel > HIDDEN_LEVEL_NO_HIDDEN) {
-                boolean isInForceViewRange = isInViewRange(otherCharacter, nowForceViewRadius);
-                if (isInForceViewRange) {
+            //在基本可视范围内
+            if (isInViewRange) {
+                //对方没有隐藏，直接可见
+                if (otherCharacter.nowHiddenLevel == HIDDEN_LEVEL_NO_HIDDEN) {
                     isDiscoverByMe = true;
-                } else {
-                    isDiscoverByMe = false;
+
+                }
+                //有隐身，判是否在强制可视范围内
+                else if (otherCharacter.nowHiddenLevel > HIDDEN_LEVEL_NO_HIDDEN) {
+                    boolean isInForceViewRange = isInViewRange(otherCharacter, nowForceViewRadius);
+                    if (isInForceViewRange) {
+                        isDiscoverByMe = true;
+                    } else {
+                        isDiscoverByMe = false;
+                    }
                 }
             }
-        }
-        //不在基本可视范围内
-        else {
-            isDiscoverByMe = false;
-        }
+            //不在基本可视范围内
+            else {
+                isDiscoverByMe = false;
+            }
 
 
-        if (isDiscoverByMe == true) {//处理闯入本角色视觉范围的情况
-            if (otherCharacter.seeMeTeamIDs.contains(this.teamID)) {//已经被本队发现
-                if (otherCharacter.theyDiscoverMe.contains(this) == false) {//第一发现人不是本角色
+            if (isDiscoverByMe == true) {//处理闯入本角色视觉范围的情况
+                if (otherCharacter.seeMeTeamIDs.contains(this.teamID)) {//已经被本队发现
+                    if (otherCharacter.theyDiscoverMe.contains(this) == false) {//第一发现人不是本角色
+                        otherCharacter.theyDiscoverMe.add(this);
+                    }
+                } else {//自己是第一发现人
+                    otherCharacter.seeMeTeamIDs.add(this.teamID);
                     otherCharacter.theyDiscoverMe.add(this);
-                }
-            } else {//自己是第一发现人
-                otherCharacter.seeMeTeamIDs.add(this.teamID);
-                otherCharacter.theyDiscoverMe.add(this);
 
-                otherCharacter.isForceToBeSawByMe = true;
-            }
-        } else {//处理不在本角色视觉范围内的情况
-            if (otherCharacter.seeMeTeamIDs.contains(this.teamID)) {//已经被我队发现
-                if (otherCharacter.theyDiscoverMe.contains(this)) {
-                    otherCharacter.theyDiscoverMe.remove(this);
+                    otherCharacter.isForceToBeSawByMe = true;
                 }
-                boolean hasMyTeammate = false;
-                Iterator<BaseCharacterView> iterator = otherCharacter.theyDiscoverMe.iterator();
-                while (iterator.hasNext()) {
-                    BaseCharacterView c = iterator.next();
-                    if (c.teamID == this.teamID) {
-                        hasMyTeammate = true;
-                        break;
+            } else {//处理不在本角色视觉范围内的情况
+                if (otherCharacter.seeMeTeamIDs.contains(this.teamID)) {//已经被我队发现
+                    if (otherCharacter.theyDiscoverMe.contains(this)) {
+                        otherCharacter.theyDiscoverMe.remove(this);
+                    }
+                    boolean hasMyTeammate = false;
+                    Iterator<BaseCharacterView> iterator = otherCharacter.theyDiscoverMe.iterator();
+                    while (iterator.hasNext()) {
+                        BaseCharacterView c = iterator.next();
+                        if (c.teamID == this.teamID) {
+                            hasMyTeammate = true;
+                            break;
+                        }
+                    }
+
+                    if (hasMyTeammate == false) {
+                        int index = otherCharacter.seeMeTeamIDs.indexOf(this.teamID);
+                        if (index >= 0)
+                            otherCharacter.seeMeTeamIDs.remove(index);
+                        otherCharacter.isForceToBeSawByMe = false;
+                    } else {
+                        otherCharacter.isForceToBeSawByMe = true;
                     }
                 }
 
-                if (hasMyTeammate == false) {
-                    int index = otherCharacter.seeMeTeamIDs.indexOf(this.teamID);
-                    if (index >= 0)
-                        otherCharacter.seeMeTeamIDs.remove(index);
-                    otherCharacter.isForceToBeSawByMe = false;
-                } else {
-                    otherCharacter.isForceToBeSawByMe = true;
-                }
+
             }
-
-
         }
-
 
     }
 
@@ -1073,7 +1099,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     }
 
     public void deadReset() {
-
+        targetFacingAngle = -1;
         lastInjureTime = -1;
         isReloadingAttack = false;
         isAttackting = false;
@@ -1087,9 +1113,9 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         if (isMyCharacter) {
             if (GameBaseAreaActivity.gameInfo.injuryViews.size() > 0) {
                 synchronized (GameBaseAreaActivity.gameInfo.injuryViews) {
-                    Iterator<InjuryView> iterator=GameBaseAreaActivity.gameInfo.injuryViews.iterator();
-                    while (iterator.hasNext()){
-                        InjuryView injuryView=iterator.next();
+                    Iterator<InjuryView> iterator = GameBaseAreaActivity.gameInfo.injuryViews.iterator();
+                    while (iterator.hasNext()) {
+                        InjuryView injuryView = iterator.next();
                         GameBaseAreaActivity.baseFrame.removeView(injuryView);
                     }
                     GameBaseAreaActivity.gameInfo.injuryViews.clear();
@@ -1503,12 +1529,13 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public void dealLocking() {
         if (isLocking == false)
             return;
-        if (isReloadingAttack) {
+        if (isReloadingAttack)
             return;
-        }
+        if (targetFacingAngle >= 0)
+            return;
         int relateX = 0;
         int relateY = 0;
-        float targetFacingAngle = 0;
+
         if (lockingCharacter != null) {
 
             if (lockingCharacter.isDead || lockingCharacter.isForceToBeSawByMe == false) {
@@ -1681,6 +1708,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             this.bindingCharacter = bindingCharacter;
         }
 
+
         @Override
         public void run() {
             synchronized (enemiesPositionSet) {
@@ -1738,5 +1766,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             reloadMediaPlayer.release();
 
     }
+
+
 }
 

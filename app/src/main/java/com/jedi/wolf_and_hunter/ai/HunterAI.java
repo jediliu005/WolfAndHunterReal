@@ -36,24 +36,11 @@ public class HunterAI extends BaseAI {
             if (targetFacingAngle < 0 && intent == INTENT_HUNT) {//这一句判断是否需要重新取targetFacingAngle
                 targetFacingAngle = new Random().nextInt(360);
 
+            }else{
+                bindingCharacter.targetFacingAngle=targetFacingAngle;
             }
 
-            float relateAngle = targetFacingAngle - bindingCharacter.nowFacingAngle;
-            if (Math.abs(relateAngle) > 180) {//处理旋转最佳方向
-                if (relateAngle > 0)
-                    relateAngle = relateAngle - 360;
 
-                else
-                    relateAngle = 360 - relateAngle;
-            }
-            if (Math.abs(relateAngle) > angleChangSpeed)
-                relateAngle = Math.abs(relateAngle) / relateAngle * angleChangSpeed;
-
-            bindingCharacter.nowFacingAngle = bindingCharacter.nowFacingAngle + relateAngle;
-            if (bindingCharacter.nowFacingAngle < 0)
-                bindingCharacter.nowFacingAngle = bindingCharacter.nowFacingAngle + 360;
-            else if (bindingCharacter.nowFacingAngle > 360)
-                bindingCharacter.nowFacingAngle = bindingCharacter.nowFacingAngle - 360;
             if (targetFacingAngle == bindingCharacter.nowFacingAngle && intent == INTENT_HUNT)
                 targetFacingAngle = -1;
         }
@@ -400,8 +387,7 @@ public class HunterAI extends BaseAI {
                 bindingCharacter.offY = 0;
                 isChance = true;
             } else {
-                float startAngle = relateAngle - chanceAngle;
-                float endAngle = relateAngle + chanceAngle;
+
                 if (Math.abs(relateAngle) < chanceAngle && bindingCharacter.nowAttackRadius > distance)
                     isChance = true;
                 else if (bindingCharacter.nowAttackRadius < distance) {

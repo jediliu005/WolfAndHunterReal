@@ -8,6 +8,7 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.widget.FrameLayout;
 
+import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 import com.jedi.wolf_and_hunter.utils.ViewUtils;
 
@@ -30,62 +31,62 @@ public class RightRocker extends JRocker  {
     }
 
     public void reactUsingTouchPadMode(MotionEvent event) {
-        //获取到手指处的横坐标和纵坐标
-        int x = (int) event.getX();
-        int y = (int) event.getY();
-        switch(event.getAction())
-        {
-            case MotionEvent.ACTION_DOWN:
-                if(MyMathsUtils.isInCircle(rockerCircleCenter,rockerRadius,new Point(x,y))) {
-                    isHoldingRocker = true;
-                    int relateX=x-padCircleCenter.x;
-                    int relateY=y-padCircleCenter.y;
+        synchronized (GameBaseAreaActivity.myCharacter) {
+            //获取到手指处的横坐标和纵坐标
+            int x = (int) event.getX();
+            int y = (int) event.getY();
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    if (MyMathsUtils.isInCircle(rockerCircleCenter, rockerRadius, new Point(x, y))) {
+                        isHoldingRocker = true;
+                        bindingCharacter.needMove = true;
+                        int relateX = x - padCircleCenter.x;
+                        int relateY = y - padCircleCenter.y;
 
 
-                    Point newPosition=new Point(padCircleCenter.x+relateX,padCircleCenter.y+relateY);
-                    rockerCircleCenter= new ViewUtils().revisePointInCircleViewMovement(padCircleCenter,padRadius,newPosition);
-                    synchronized (bindingCharacter.getSight()) {
-                        bindingCharacter.getSight().offX = rockerCircleCenter.x - padCircleCenter.x;
-                        bindingCharacter.getSight().needMove = true;
-                        bindingCharacter.getSight().offY = rockerCircleCenter.y - padCircleCenter.y;
-                        bindingCharacter.getSight().needMove = true;
+                        Point newPosition = new Point(padCircleCenter.x + relateX, padCircleCenter.y + relateY);
+                        rockerCircleCenter = new ViewUtils().revisePointInCircleViewMovement(padCircleCenter, padRadius, newPosition);
+                        bindingCharacter.targetFacingAngle = -1;
+                        distance = MyMathsUtils.getDistance(rockerCircleCenter, padCircleCenter);
+                        invalidate();
                     }
-                    distance= MyMathsUtils.getDistance(rockerCircleCenter,padCircleCenter);
-                    invalidate();
-                }
-                break;
-            case MotionEvent.ACTION_UP:
-                isHoldingRocker=false;
-                distance=0;
-                rockerCircleCenter.set(padCircleCenter.x,padCircleCenter.y);
-                synchronized (bindingCharacter.getSight()) {
-                    bindingCharacter.getSight().needMove = false;
-                    bindingCharacter.getSight().offX = 0;
-                    bindingCharacter.getSight().offY = 0;
-                }
-
-                invalidate();
-                break;
-
-            case MotionEvent.ACTION_MOVE:
-                if(isHoldingRocker==false) {
                     break;
-                }
+                case MotionEvent.ACTION_UP:
+                    isHoldingRocker = false;
+                    bindingCharacter.needMove = false;
+                    distance = 0;
+                    rockerCircleCenter.set(padCircleCenter.x, padCircleCenter.y);
+                    bindingCharacter.targetFacingAngle = -1;
 
-                int relateX=x-padCircleCenter.x;
-                int relateY=y-padCircleCenter.y;
+                    invalidate();
+                    break;
+
+                case MotionEvent.ACTION_MOVE:
+                    if (isHoldingRocker == false) {
+                        break;
+                    }
+
+                    int relateX = x - padCircleCenter.x;
+                    int relateY = y - padCircleCenter.y;
 
 
-                Point newPosition=new Point(padCircleCenter.x+relateX,padCircleCenter.y+relateY);
-                rockerCircleCenter= new ViewUtils().revisePointInCircleViewMovement(padCircleCenter,padRadius,newPosition);
-                synchronized (bindingCharacter.getSight()) {
-                    bindingCharacter.getSight().offX = rockerCircleCenter.x - padCircleCenter.x;
-                    bindingCharacter.getSight().needMove = true;
-                    bindingCharacter.getSight().offY = rockerCircleCenter.y - padCircleCenter.y;
-                    bindingCharacter.getSight().needMove = true;
-                }
-                distance= MyMathsUtils.getDistance(rockerCircleCenter,padCircleCenter);
-                invalidate();
+                    Point newPosition = new Point(padCircleCenter.x + relateX, padCircleCenter.y + relateY);
+                    rockerCircleCenter = new ViewUtils().revisePointInCircleViewMovement(padCircleCenter, padRadius, newPosition);
+
+                    if (relateX == 0 && relateX == 0) {
+                        distance = 0;
+                        return;
+                    }
+                    try {
+                        bindingCharacter.targetFacingAngle = MyMathsUtils.getAngleBetweenXAxus(relateX, relateY);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+//
+                    distance = MyMathsUtils.getDistance(rockerCircleCenter, padCircleCenter);
+                    invalidate();
+            }
         }
     }
 

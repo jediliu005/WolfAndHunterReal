@@ -75,7 +75,7 @@ public class GameMainEngine {
     private LockingButton lockingButton;
     private SmellButton smellButton;
     private BaseCharacterView myCharacter;
-
+    private BaseCharacterView focusCharacter;
     private Timer timerForAllMoving = new Timer();
     private Timer timerForTrajectory = new Timer();
     private ArrayList<Timer> timerForAIList = new ArrayList<Timer>();
@@ -368,6 +368,7 @@ public class GameMainEngine {
         else {
             myCharacter = new NormalWolf(gameBaseAreaActivity, virtualWindow);
         }
+        focusCharacter = myCharacter;
         PromptView promptView = new PromptView(gameBaseAreaActivity, myCharacter);
         mapBaseFrame.addView(promptView);
         myCharacter.promptView = promptView;
@@ -386,18 +387,18 @@ public class GameMainEngine {
 //        testCharacter.setTeamID(2);
 //        gameInfo.allCharacters.add(testCharacter);
 
-        //添加视点
-        gameInfo.mySight = new SightView(gameBaseAreaActivity);
-        gameInfo.mySight.virtualWindow = this.virtualWindow;
-        gameInfo.mySight.sightSize = myCharacter.characterBodySize;
-        if (gameInfo.controlMode == GameInfo.CONTROL_MODE_NORMAL)
-            gameInfo.mySight.isHidden = true;
-
-        myCharacter.setSight(gameInfo.mySight);
-        if (gameInfo.mySight.isHidden == false) {
-            mapBaseFrame.addView(gameInfo.mySight);
-            mapBaseFrame.mySight = gameInfo.mySight;
-        }
+//        //添加视点
+//        gameInfo.mySight = new SightView(gameBaseAreaActivity);
+//        gameInfo.mySight.virtualWindow = this.virtualWindow;
+//        gameInfo.mySight.sightSize = myCharacter.characterBodySize;
+//        if (gameInfo.controlMode == GameInfo.CONTROL_MODE_NORMAL)
+//            gameInfo.mySight.isHidden = true;
+//
+//        myCharacter.setSight(gameInfo.mySight);
+//        if (gameInfo.mySight.isHidden == false) {
+//            mapBaseFrame.addView(gameInfo.mySight);
+//            mapBaseFrame.mySight = gameInfo.mySight;
+//        }
 
 
         atttackButton = (AttackButton) gameBaseAreaActivity.findViewById(R.id.attack_button_right);
@@ -563,8 +564,8 @@ public class GameMainEngine {
 
 
             gameInfo.allCharacters.add(aiCharacter);
-//            if (true)
-//                continue;
+            if (true)
+                continue;
             Timer timerForAI = new Timer("AIPlayer1", true);
             timerForAI.schedule(ai, 1000, 30);
             timerForAIList.add(timerForAI);
@@ -605,7 +606,7 @@ public class GameMainEngine {
                 float relateFacingAngle = Math.abs(beAttackedCharacter.nowFacingAngle - angleBetweenXAxus);
 
                 if (relateFacingAngle < 90 || relateFacingAngle > 270) {//背击
-                    beAttackedCharacter.nowHealthPoint -= 2;
+                    beAttackedCharacter.nowHealthPoint = 0;
                 } else {
                     beAttackedCharacter.nowHealthPoint -= 1;
                 }
@@ -628,25 +629,25 @@ public class GameMainEngine {
                         Point toPoint = new Point((int) endX, (int) endY);
                         beAttackedCharacter.startKnockedAwayThread(toPoint);
                     }
-                    if(beAttackedCharacter.isMyCharacter){
-                        InjuryView injuryView=new InjuryView(gameBaseAreaActivity);
-                        Random r=new Random();
-                        int left=r.nextInt(MyVirtualWindow.getWindowWidth(gameBaseAreaActivity)-injuryView.viewSize);
-                        int top=r.nextInt(MyVirtualWindow.getWindowHeight(gameBaseAreaActivity)-injuryView.viewSize);
-                        injuryView.centerX=left+injuryView.viewSize/2;
-                        injuryView.centerY=top+injuryView.viewSize/2;
-                        FrameLayout.LayoutParams layoutParams=(FrameLayout.LayoutParams) injuryView.getLayoutParams();
+                    if (beAttackedCharacter.isMyCharacter) {
+                        InjuryView injuryView = new InjuryView(gameBaseAreaActivity);
+                        Random r = new Random();
+                        int left = r.nextInt(MyVirtualWindow.getWindowWidth(gameBaseAreaActivity) - injuryView.viewSize);
+                        int top = r.nextInt(MyVirtualWindow.getWindowHeight(gameBaseAreaActivity) - injuryView.viewSize);
+                        injuryView.centerX = left + injuryView.viewSize / 2;
+                        injuryView.centerY = top + injuryView.viewSize / 2;
+                        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) injuryView.getLayoutParams();
                         if (layoutParams == null) {
                             layoutParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                         }
-                        layoutParams.leftMargin=left;
-                        layoutParams.topMargin=top;
+                        layoutParams.leftMargin = left;
+                        layoutParams.topMargin = top;
 
                         injuryView.setLayoutParams(layoutParams);
                         synchronized (gameInfo.injuryViews) {
                             gameInfo.injuryViews.add(injuryView);
                         }
-                        beAttackedCharacter.lastInjureTime=new Date().getTime();
+                        beAttackedCharacter.lastInjureTime = new Date().getTime();
                     }
                 }
             }
@@ -656,22 +657,22 @@ public class GameMainEngine {
         gameInfo.beAttackedList.clear();
     }
 
-    private void dealInjuryView() {
+    private void dealInjury() {
         synchronized (gameInfo.injuryViews) {
-            if(gameInfo.injuryViews.size()==0)
+            if (gameInfo.injuryViews.size() == 0)
                 return;
-            long nowTime=new Date().getTime();
-           Iterator<InjuryView> iterator= gameInfo.injuryViews.iterator();
-            while (iterator.hasNext()){
-                InjuryView injuryView=iterator.next();
-                if(injuryView.hasAddedToBaseFrame){
-                    if (nowTime-injuryView.createTime>myCharacter.nowRecoverTime) {
+            long nowTime = new Date().getTime();
+            Iterator<InjuryView> iterator = gameInfo.injuryViews.iterator();
+            while (iterator.hasNext()) {
+                InjuryView injuryView = iterator.next();
+                if (injuryView.hasAddedToBaseFrame) {
+                    if (nowTime - injuryView.createTime > myCharacter.nowRecoverTime) {
                         baseFrame.removeView(injuryView);
                         iterator.remove();
                     }
-                }else{
+                } else {
                     baseFrame.addView(injuryView);
-                    injuryView.hasAddedToBaseFrame=true;
+                    injuryView.hasAddedToBaseFrame = true;
                     injuryView.bringToFront();
                 }
             }
@@ -682,136 +683,28 @@ public class GameMainEngine {
 
         if (myCharacter == null || leftRocker == null || rightRocker == null || mapBaseFrame == null)
             return;
-        boolean isMyCharacterMoving = myCharacter.needMove;
-        boolean needChange = false;
+
         if (gameInfo.beAttackedList.size() > 0)
             dealNeedToBeKilled();
-        synchronized (myCharacter) {
-            myCharacter.updateInvincibleState();
-            myCharacter.hasUpdatedPosition = false;
-            virtualWindow.hasUpdatedWindowPosition = false;
-            //获得当前位置
-            myCharacter.updateNowPosition();
 
-            if (gameInfo.mySight != null) {
-                gameInfo.mySight.hasUpdatedPosition = false;
-                gameInfo.mySight.updateNowPosition();
-            }
-
-
-            dealInjuryView();
-            if (myCharacter.isAttackting)
-                myCharacter.attack();
-            if (myCharacter.isReloadingAttack == true)
-                myCharacter.reloadAttackCount();
-            if (myCharacter.isDead == true) {
-                myCharacter.deadReset();
-
-            } else if (myCharacter.isKnockedAway) {
-                myCharacter.beKnockedAway(0, 0, mapBaseFrame.getWidth(), mapBaseFrame.getHeight());
-            } else if (myCharacter.isJumping) {
-                myCharacter.keepDirectionAndJump(0, 0, mapBaseFrame.getWidth(), mapBaseFrame.getHeight());
-            } else {
-
-                if (gameInfo.controlMode == GameInfo.CONTROL_MODE_MASTER) {//GameInfo.CONTROL_MODE_MASTER这种操控方式已经过期，也许有用,留着玩儿
-                    if (myCharacter.needMove == true) {
-                        myCharacter.masterModeOffsetLRTBParams();
-                    }
-                    if (gameInfo.mySight != null && gameInfo.mySight.needMove == true) {
-                        gameInfo.mySight.masterModeOffsetLRTBParams(isMyCharacterMoving);
-                    }
-                } else if (gameInfo.controlMode == GameInfo.CONTROL_MODE_NORMAL) {
-                    if (myCharacter.needMove == true) {
-                        if (myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
-                            myCharacter.reactHunterMove();
-                        else if (myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF)
-                            myCharacter.reactWolfMove();
-                    }
-                    if (gameInfo.mySight != null && gameInfo.mySight.needMove == true) {
-                        gameInfo.mySight.normalModeOffsetLRTBParams();
-                    } else if (myCharacter.isLocking) {
-                        myCharacter.dealLocking();
-                    }
-
-
-                }
-            }
-            FrameLayout.LayoutParams mLayoutParams = (FrameLayout.LayoutParams) myCharacter.getLayoutParams();
-            mLayoutParams.leftMargin = myCharacter.nowLeft;
-            mLayoutParams.topMargin = myCharacter.nowTop;
-            myCharacter.setLayoutParams(mLayoutParams);
-            myCharacter.centerX = myCharacter.nowLeft + myCharacter.getWidth() / 2;
-            myCharacter.centerY = myCharacter.nowTop + myCharacter.getHeight() / 2;
-            if (gameInfo.controlMode == GameInfo.CONTROL_MODE_MASTER) {//这个CONTROL_MODE_MASTER实际上已经废弃
-                gameInfo.mySight.mLayoutParams.leftMargin = gameInfo.mySight.nowLeft;
-                gameInfo.mySight.mLayoutParams.topMargin = gameInfo.mySight.nowTop;
-                gameInfo.mySight.centerX = gameInfo.mySight.nowLeft + gameInfo.mySight.getWidth() / 2;
-                gameInfo.mySight.centerY = gameInfo.mySight.nowTop + gameInfo.mySight.getHeight() / 2;
-            } else if (gameInfo.controlMode == GameInfo.CONTROL_MODE_NORMAL) {
-                gameInfo.mySight.mLayoutParams.leftMargin = myCharacter.centerX - gameInfo.mySight.getWidth() / 2;
-                gameInfo.mySight.mLayoutParams.topMargin = myCharacter.centerY - gameInfo.mySight.getHeight() / 2;
-                gameInfo.mySight.centerX = myCharacter.centerX;
-                gameInfo.mySight.centerY = myCharacter.centerY;
-            }
-
-            gameInfo.mySight.setLayoutParams(gameInfo.mySight.mLayoutParams);
-
-
-            myCharacter.changeThisCharacterOnLandformses();
-            //master模式下nowFacingAngle由sight和Character共同决定；需要在这里调用changeRotate()；
-            //而normal模式下nowFacingAngle在sight的normalModeOffsetLRTBParams()下已经计算获得。
-            if (gameInfo.controlMode == GameInfo.CONTROL_MODE_MASTER) {
-                myCharacter.changeRotate();
-            }
-            myCharacter.attackRange.centerX = myCharacter.centerX;
-            myCharacter.attackRange.centerY = myCharacter.centerY;
-            myCharacter.attackRange.layoutParams.leftMargin = myCharacter.attackRange.centerX - myCharacter.nowAttackRadius;
-            myCharacter.attackRange.layoutParams.topMargin = myCharacter.attackRange.centerY - myCharacter.nowAttackRadius;
-
-            myCharacter.attackRange.setLayoutParams(myCharacter.attackRange.layoutParams);
-
-            myCharacter.viewRange.centerX = myCharacter.centerX;
-            myCharacter.viewRange.centerY = myCharacter.centerY;
-
-            FrameLayout.LayoutParams viewRangeLP = (FrameLayout.LayoutParams) myCharacter.viewRange.getLayoutParams();
-            viewRangeLP.leftMargin = myCharacter.viewRange.centerX - myCharacter.nowViewRadius;
-            viewRangeLP.topMargin = myCharacter.viewRange.centerY - myCharacter.nowViewRadius;
-            myCharacter.viewRange.setLayoutParams(viewRangeLP);
-
-            if (myCharacter.promptView != null) {
-                myCharacter.promptView.centerX = myCharacter.centerX;
-                myCharacter.promptView.centerY = myCharacter.centerY;
-                myCharacter.promptView.layoutParams.leftMargin = myCharacter.promptView.centerX - myCharacter.promptView.viewSize / 2;
-                myCharacter.promptView.layoutParams.topMargin = myCharacter.promptView.centerY - myCharacter.promptView.viewSize / 2;
-
-                myCharacter.promptView.setLayoutParams(myCharacter.promptView.layoutParams);
-            }
-
-//            myCharacter.viewRange.invalidate();
-
-            gameInfo.mySight.virtualWindowPassiveFollow();
-            myCharacter.startMovingMediaThread();
-
-//            }
-        }
+        //处理攻击导致的受伤或死亡
+        dealInjury();
 
 
         for (BaseCharacterView c : gameInfo.allCharacters) {
 
-            if (c == myCharacter)
-                continue;
+
             synchronized (c) {
+                c.hasUpdatedPosition = false;
                 c.updateInvincibleState();
                 c.updateNowPosition();
                 if (c.isAttackting) {
-
                     c.attack();
                 }
                 if (c.isReloadingAttack == true && c.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
                     c.reloadAttackCount();
                 if (c.isDead == true) {
                     c.deadReset();
-                    c.invalidate();
                     continue;
                 }
                 if (c.isKnockedAway) {
@@ -824,6 +717,9 @@ public class GameMainEngine {
                     else if (c.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF)
                         c.reactWolfMove();
                 }
+                if (c.isMyCharacter && c.isLocking) {
+                    c.dealLocking();
+                }
 //                        if(c.getTeamID()==2){
 //                            Log.i("Player2 nowLeft",Integer.toString(c.nowLeft));
 //                        }
@@ -832,35 +728,54 @@ public class GameMainEngine {
                 mLayoutParams.topMargin = c.nowTop;
                 c.centerX = c.nowLeft + c.getWidth() / 2;
                 c.centerY = c.nowTop + c.getHeight() / 2;
-                c.changeThisCharacterOnLandformses();
-                myCharacter.changeOtherCharacterState(c);
+
                 c.setLayoutParams(mLayoutParams);
 
 
+                //处理地形影响
+                c.changeThisCharacterOnLandformses();
+
+                //攻击范围view跟随移动
                 c.attackRange.centerX = c.centerX;
                 c.attackRange.centerY = c.centerY;
                 c.attackRange.layoutParams.leftMargin = c.attackRange.centerX - c.nowAttackRadius;
                 c.attackRange.layoutParams.topMargin = c.attackRange.centerY - c.nowAttackRadius;
                 c.attackRange.setLayoutParams(c.attackRange.layoutParams);
 
+                //视觉范围view跟随移动
                 c.viewRange.centerX = c.centerX;
                 c.viewRange.centerY = c.centerY;
-                FrameLayout.LayoutParams viewRangeLP = (FrameLayout.LayoutParams) c.viewRange.getLayoutParams();
+                FrameLayout.LayoutParams viewRangeLP = (FrameLayout.LayoutParams) myCharacter.viewRange.getLayoutParams();
                 viewRangeLP.leftMargin = c.viewRange.centerX - c.nowViewRadius;
                 viewRangeLP.topMargin = c.viewRange.centerY - c.nowViewRadius;
                 c.viewRange.setLayoutParams(viewRangeLP);
-                c.viewRange.invalidate();
+
+                //探测View跟随移动
+                if (c.promptView != null) {
+                    c.promptView.centerX = c.centerX;
+                    c.promptView.centerY = c.centerY;
+                    c.promptView.layoutParams.leftMargin = c.promptView.centerX - c.promptView.viewSize / 2;
+                    c.promptView.layoutParams.topMargin = c.promptView.centerY - c.promptView.viewSize / 2;
+
+                    c.promptView.setLayoutParams(c.promptView.layoutParams);
+                }
+
+//            myCharacter.viewRange.invalidate();
+
+
                 c.hasUpdatedPosition = false;
                 int relateX = myCharacter.centerX - c.centerX;
                 int relateY = myCharacter.centerY - c.centerY;
                 double distance = Math.sqrt(relateX * relateX + relateY * relateY);
-                if (distance < myCharacter.nowHearRadius) {
+                if (c.isMyCharacter || distance < myCharacter.nowHearRadius) {
                     c.startMovingMediaThread();
                 }
 
             }
         }
 
+        virtualWindow.virtualWindowPassiveFollow(gameBaseAreaActivity, focusCharacter);
+        myCharacter.changeOtherCharacterLandformState();
         virtualWindow.reflashWindowPosition();
         mapBaseFrame.invalidate();
 
