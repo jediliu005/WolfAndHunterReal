@@ -133,7 +133,7 @@ public class HunterAI extends BaseAI {
             trackTrajectory();
         }
         changeFacing();
-        if (bindingCharacter.offX != 0 || bindingCharacter.offY != 0) {
+        if (bindingCharacter.offX != 0 || bindingCharacter.offY != 0||bindingCharacter.targetFacingAngle>=0) {
             bindingCharacter.needMove = true;
         } else {
             bindingCharacter.needMove = false;

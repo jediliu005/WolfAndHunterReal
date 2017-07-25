@@ -1752,6 +1752,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         public void run() {
             synchronized (enemiesPositionSet) {
                 enemiesPositionSet.clear();
+            }
                 isSmelling = true;
                 try {
                     while (GameBaseAreaActivity.gameInfo.isStop == false && isSmelling) {
@@ -1769,7 +1770,9 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                                 CharacterPosition characterPosition = new CharacterPosition(positionPoint, character, nowTime, 3000);
                                 double distance = MyMathsUtils.getDistance(positionPoint, thisCharacterPosition);
                                 if (distance <= nowSmellRadius) {
-                                    enemiesPositionSet.add(characterPosition);
+                                    synchronized (enemiesPositionSet) {
+                                        enemiesPositionSet.add(characterPosition);
+                                    }
                                 }
                             }
                             break;
@@ -1785,7 +1788,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                     isSmelling = false;
                     smellThread = null;
                 }
-            }
+
         }
     }
 

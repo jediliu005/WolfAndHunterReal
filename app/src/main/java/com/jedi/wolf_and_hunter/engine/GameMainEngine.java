@@ -274,7 +274,7 @@ public class GameMainEngine {
                     target = t4;
                 if (target == null)
                     continue;
-                target.setText((i + 1) + "P("+c.nowHealthPoint+"):杀" + Integer.toString(c.killCount) + "  挂" + Integer.toString(c.dieCount));
+                target.setText((i + 1) + "P(" + c.nowHealthPoint + "):杀" + Integer.toString(c.killCount) + "  挂" + Integer.toString(c.dieCount));
 
 
             }
@@ -630,17 +630,17 @@ public class GameMainEngine {
                         beAttackedCharacter.startKnockedAwayThread(toPoint);
                     }
 
-                    InjuryView injuryView = new InjuryView(gameBaseAreaActivity,beAttackedCharacter);
-                    int left=0;
-                    int top=0;
-                    if(beAttackedCharacter.isMyCharacter){
-                        Random r=new Random();
+                    InjuryView injuryView = new InjuryView(gameBaseAreaActivity, beAttackedCharacter);
+                    int left = 0;
+                    int top = 0;
+                    if (beAttackedCharacter.isMyCharacter) {
+                        Random r = new Random();
                         left = r.nextInt(MyVirtualWindow.getWindowWidth(gameBaseAreaActivity) - injuryView.viewSize);
                         top = r.nextInt(MyVirtualWindow.getWindowHeight(gameBaseAreaActivity) - injuryView.viewSize);
 
-                    }else{
-                        left=beAttackedCharacter.centerX-injuryView.viewSize / 2;
-                        top=beAttackedCharacter.centerY-injuryView.viewSize/2;
+                    } else {
+                        left = beAttackedCharacter.centerX - injuryView.viewSize / 2;
+                        top = beAttackedCharacter.centerY - injuryView.viewSize / 2;
                     }
                     injuryView.centerX = left + injuryView.viewSize / 2;
                     injuryView.centerY = top + injuryView.viewSize / 2;
@@ -681,12 +681,12 @@ public class GameMainEngine {
                             baseFrame.removeView(injuryView);
                             iterator.remove();
                         }
-                    }else{
+                    } else {
                         baseFrame.addView(injuryView);
                         injuryView.hasAddedToBaseFrame = true;
                         injuryView.bringToFront();
                     }
-                }else{
+                } else {
                     if (nowTime - injuryView.createTime > character.nowRecoverTime) {
                         character.nowHealthPoint++;
                         iterator.remove();
@@ -706,7 +706,6 @@ public class GameMainEngine {
             dealNeedToBeKilled();
 
         //处理攻击导致的受伤或死亡
-
 
 
         for (BaseCharacterView c : gameInfo.allCharacters) {
@@ -731,10 +730,12 @@ public class GameMainEngine {
                 } else if (c.isJumping) {
                     c.keepDirectionAndJump(0, 0, mapBaseFrame.getWidth(), mapBaseFrame.getHeight());
                 } else {
-                    if (c.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
-                        c.reactHunterMove();
-                    else if (c.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF)
-                        c.reactWolfMove();
+                    if (c.needMove) {
+                        if (c.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
+                            c.reactHunterMove();
+                        else if (c.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF)
+                            c.reactWolfMove();
+                    }
                 }
                 if (c.isMyCharacter && c.isLocking) {
                     c.dealLocking();
