@@ -90,7 +90,7 @@ public class RightRocker extends JRocker  {
         }
     }
 
-
+@Deprecated
     public void reactUsingRockerMode(MotionEvent event) {
         //获取到手指处的横坐标和纵坐标
         int x = (int) event.getX();

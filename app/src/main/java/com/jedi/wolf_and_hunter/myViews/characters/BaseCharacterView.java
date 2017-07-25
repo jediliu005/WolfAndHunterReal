@@ -133,7 +133,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public ViewRange viewRange;//视觉范围View
     public PromptView promptView;//探测提示View
     public MyVirtualWindow virtualWindow;//虚拟窗口，把屏幕可视区域看成一个View；
-
+    public Vector<InjuryView> injuryViews = new Vector<InjuryView>();
     //各种线程
     public volatile boolean isStop = false;
     public Thread movingMediaThread;//移动音效线程
@@ -383,6 +383,45 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         sight.bindingCharacter = this;
     }
 
+    public void dealInjury() {
+
+        if (injuryViews.size() == 0)
+            return;
+        long nowTime = new Date().getTime();
+        Iterator<InjuryView> iterator = injuryViews.iterator();
+        while (iterator.hasNext()) {
+            InjuryView injuryView = iterator.next();
+            if (isMyCharacter) {
+                if (injuryView.hasAddedToBaseFrame) {
+                    if (nowTime - injuryView.createTime > nowRecoverTime) {
+                        nowHealthPoint++;
+                        GameBaseAreaActivity.baseFrame.removeView(injuryView);
+                        iterator.remove();
+                    }
+                } else {
+                    GameBaseAreaActivity.baseFrame.addView(injuryView);
+                    injuryView.hasAddedToBaseFrame = true;
+                    injuryView.bringToFront();
+                }
+            } else {
+                if (injuryView.hasAddedToBaseFrame) {
+                    if (nowTime - injuryView.createTime > nowRecoverTime) {
+                        nowHealthPoint++;
+                        GameBaseAreaActivity.mapBaseFrame.removeView(injuryView);
+                        iterator.remove();
+                    }
+                } else {
+                    GameBaseAreaActivity.mapBaseFrame.addView(injuryView);
+                    injuryView.hasAddedToBaseFrame = true;
+                    injuryView.bringToFront();
+                }
+            }
+
+        }
+
+    }
+
+
     public void startMovingMediaThread() {
         if (movingMediaThread != null) {
             if (movingMediaThread.getState() == Thread.State.TERMINATED)
@@ -439,7 +478,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                         if (isStay == false && needMove == true)
                             moveMediaPlayer.start();
 
-                        if (runOrWalk == MOVINT_TYPE_WALK)
+                        if (runOrWalk == MOVINT_TYPE_WALK || isReloadingAttack == true || isLocking == true)
                             Thread.sleep(nowWalkWaitTime);
                         else
                             Thread.sleep(nowRunWaitTime);
@@ -776,13 +815,12 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
     /**
      * 本方法仅为myCharacter所用，ai不应使用
-     *
      */
     public void changeOtherCharacterLandformState() {
         //处理隐身
         for (BaseCharacterView otherCharacter : GameBaseAreaActivity.gameInfo.allCharacters) {
-            if(otherCharacter==this)
-                return;
+            if (otherCharacter == this)
+                continue;
             boolean isInViewRange = isInViewRange(otherCharacter, nowViewRadius);
             boolean isDiscoverByMe = false;
             if (otherCharacter.teamID == teamID)
@@ -969,12 +1007,12 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
         @Override
         public void run() {
-            int i = 0;
 
             if (isMyCharacter == false) {
                 Log.i("", "");
             }
             while (GameBaseAreaActivity.gameInfo.isStop == false && isStop == false) {
+
                 SurfaceHolder holder = getHolder();
                 if (holder == null)
                     continue;
@@ -988,7 +1026,6 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
 
                     canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);//清除屏幕
-                    i++;
 
 //                    if (isDead) {
 //                        canvas.drawColor(Color.RED);
@@ -1110,18 +1147,20 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         isJumping = false;
         jumpToX = -99999;
         jumpToY = -99999;
-        if (isMyCharacter) {
-            if (GameBaseAreaActivity.gameInfo.injuryViews.size() > 0) {
-                synchronized (GameBaseAreaActivity.gameInfo.injuryViews) {
-                    Iterator<InjuryView> iterator = GameBaseAreaActivity.gameInfo.injuryViews.iterator();
-                    while (iterator.hasNext()) {
-                        InjuryView injuryView = iterator.next();
-                        GameBaseAreaActivity.baseFrame.removeView(injuryView);
-                    }
-                    GameBaseAreaActivity.gameInfo.injuryViews.clear();
+
+        if (injuryViews.size() > 0) {
+
+            Iterator<InjuryView> iterator = injuryViews.iterator();
+            if (isMyCharacter) {
+                while (iterator.hasNext()) {
+                    InjuryView injuryView = iterator.next();
+                    GameBaseAreaActivity.baseFrame.removeView(injuryView);
                 }
             }
+            injuryViews.clear();
+
         }
+
         int myBaseWidth = GameBaseAreaActivity.gameInfo.mapWidth / 2;
         int myBaseHeight = GameBaseAreaActivity.gameInfo.mapHeight / 2;
         if (myBaseHeight < characterBodySize || myBaseWidth < characterBodySize) {

@@ -274,7 +274,7 @@ public class GameMainEngine {
                     target = t4;
                 if (target == null)
                     continue;
-                target.setText((i + 1) + "P:杀" + Integer.toString(c.killCount) + "  挂" + Integer.toString(c.dieCount));
+                target.setText((i + 1) + "P("+c.nowHealthPoint+"):杀" + Integer.toString(c.killCount) + "  挂" + Integer.toString(c.dieCount));
 
 
             }
@@ -519,7 +519,7 @@ public class GameMainEngine {
 //                new ViewRange(this, character);
 //                character.setLayoutParams(characterParams);
 //
-            if (character.isMyCharacter) {
+            if (character == focusCharacter) {
                 FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) mapBaseFrame.getLayoutParams();
                 params.leftMargin = -(character.centerX - MyVirtualWindow.getWindowWidth(gameBaseAreaActivity) / 2);
                 params.topMargin = -(character.centerY - MyVirtualWindow.getWindowHeight(gameBaseAreaActivity) / 2);
@@ -564,8 +564,8 @@ public class GameMainEngine {
 
 
             gameInfo.allCharacters.add(aiCharacter);
-            if (true)
-                continue;
+//            if (true)
+//                continue;
             Timer timerForAI = new Timer("AIPlayer1", true);
             timerForAI.schedule(ai, 1000, 30);
             timerForAIList.add(timerForAI);
@@ -629,26 +629,34 @@ public class GameMainEngine {
                         Point toPoint = new Point((int) endX, (int) endY);
                         beAttackedCharacter.startKnockedAwayThread(toPoint);
                     }
-                    if (beAttackedCharacter.isMyCharacter) {
-                        InjuryView injuryView = new InjuryView(gameBaseAreaActivity);
-                        Random r = new Random();
-                        int left = r.nextInt(MyVirtualWindow.getWindowWidth(gameBaseAreaActivity) - injuryView.viewSize);
-                        int top = r.nextInt(MyVirtualWindow.getWindowHeight(gameBaseAreaActivity) - injuryView.viewSize);
-                        injuryView.centerX = left + injuryView.viewSize / 2;
-                        injuryView.centerY = top + injuryView.viewSize / 2;
-                        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) injuryView.getLayoutParams();
-                        if (layoutParams == null) {
-                            layoutParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                        }
-                        layoutParams.leftMargin = left;
-                        layoutParams.topMargin = top;
 
-                        injuryView.setLayoutParams(layoutParams);
-                        synchronized (gameInfo.injuryViews) {
-                            gameInfo.injuryViews.add(injuryView);
-                        }
-                        beAttackedCharacter.lastInjureTime = new Date().getTime();
+                    InjuryView injuryView = new InjuryView(gameBaseAreaActivity,beAttackedCharacter);
+                    int left=0;
+                    int top=0;
+                    if(beAttackedCharacter.isMyCharacter){
+                        Random r=new Random();
+                        left = r.nextInt(MyVirtualWindow.getWindowWidth(gameBaseAreaActivity) - injuryView.viewSize);
+                        top = r.nextInt(MyVirtualWindow.getWindowHeight(gameBaseAreaActivity) - injuryView.viewSize);
+
+                    }else{
+                        left=beAttackedCharacter.centerX-injuryView.viewSize / 2;
+                        top=beAttackedCharacter.centerY-injuryView.viewSize/2;
                     }
+                    injuryView.centerX = left + injuryView.viewSize / 2;
+                    injuryView.centerY = top + injuryView.viewSize / 2;
+                    FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) injuryView.getLayoutParams();
+                    if (layoutParams == null) {
+                        layoutParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                    }
+                    layoutParams.leftMargin = left;
+                    layoutParams.topMargin = top;
+
+                    injuryView.setLayoutParams(layoutParams);
+
+                    beAttackedCharacter.injuryViews.add(injuryView);
+
+                    beAttackedCharacter.lastInjureTime = new Date().getTime();
+
                 }
             }
 
@@ -658,37 +666,47 @@ public class GameMainEngine {
     }
 
     private void dealInjury() {
-        synchronized (gameInfo.injuryViews) {
-            if (gameInfo.injuryViews.size() == 0)
-                return;
+        for (BaseCharacterView character : gameInfo.allCharacters) {
+
+            if (character.injuryViews.size() == 0)
+                continue;
             long nowTime = new Date().getTime();
-            Iterator<InjuryView> iterator = gameInfo.injuryViews.iterator();
+            Iterator<InjuryView> iterator = character.injuryViews.iterator();
             while (iterator.hasNext()) {
                 InjuryView injuryView = iterator.next();
-                if (injuryView.hasAddedToBaseFrame) {
-                    if (nowTime - injuryView.createTime > myCharacter.nowRecoverTime) {
-                        baseFrame.removeView(injuryView);
+                if (character.isMyCharacter) {
+                    if (injuryView.hasAddedToBaseFrame) {
+                        if (nowTime - injuryView.createTime > character.nowRecoverTime) {
+                            character.nowHealthPoint++;
+                            baseFrame.removeView(injuryView);
+                            iterator.remove();
+                        }
+                    }else{
+                        baseFrame.addView(injuryView);
+                        injuryView.hasAddedToBaseFrame = true;
+                        injuryView.bringToFront();
+                    }
+                }else{
+                    if (nowTime - injuryView.createTime > character.nowRecoverTime) {
+                        character.nowHealthPoint++;
                         iterator.remove();
                     }
-                } else {
-                    baseFrame.addView(injuryView);
-                    injuryView.hasAddedToBaseFrame = true;
-                    injuryView.bringToFront();
                 }
+
             }
         }
     }
 
     private synchronized void reflash() {
 
-        if (myCharacter == null || leftRocker == null || rightRocker == null || mapBaseFrame == null)
+        if (myCharacter == null || (leftRocker == null && rightRocker == null) || mapBaseFrame == null)
             return;
 
         if (gameInfo.beAttackedList.size() > 0)
             dealNeedToBeKilled();
 
         //处理攻击导致的受伤或死亡
-        dealInjury();
+
 
 
         for (BaseCharacterView c : gameInfo.allCharacters) {
@@ -698,6 +716,7 @@ public class GameMainEngine {
                 c.hasUpdatedPosition = false;
                 c.updateInvincibleState();
                 c.updateNowPosition();
+                c.dealInjury();
                 if (c.isAttackting) {
                     c.attack();
                 }
@@ -709,7 +728,7 @@ public class GameMainEngine {
                 }
                 if (c.isKnockedAway) {
                     c.beKnockedAway(0, 0, mapBaseFrame.getWidth(), mapBaseFrame.getHeight());
-                } else if (c.jumpToX > -99999 && c.jumpToY > -99999) {
+                } else if (c.isJumping) {
                     c.keepDirectionAndJump(0, 0, mapBaseFrame.getWidth(), mapBaseFrame.getHeight());
                 } else {
                     if (c.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER)
@@ -745,7 +764,7 @@ public class GameMainEngine {
                 //视觉范围view跟随移动
                 c.viewRange.centerX = c.centerX;
                 c.viewRange.centerY = c.centerY;
-                FrameLayout.LayoutParams viewRangeLP = (FrameLayout.LayoutParams) myCharacter.viewRange.getLayoutParams();
+                FrameLayout.LayoutParams viewRangeLP = (FrameLayout.LayoutParams) c.viewRange.getLayoutParams();
                 viewRangeLP.leftMargin = c.viewRange.centerX - c.nowViewRadius;
                 viewRangeLP.topMargin = c.viewRange.centerY - c.nowViewRadius;
                 c.viewRange.setLayoutParams(viewRangeLP);
@@ -762,7 +781,7 @@ public class GameMainEngine {
 
 //            myCharacter.viewRange.invalidate();
 
-
+                c.targetFacingAngle = -1;
                 c.hasUpdatedPosition = false;
                 int relateX = myCharacter.centerX - c.centerX;
                 int relateY = myCharacter.centerY - c.centerY;
@@ -773,7 +792,6 @@ public class GameMainEngine {
 
             }
         }
-
         virtualWindow.virtualWindowPassiveFollow(gameBaseAreaActivity, focusCharacter);
         myCharacter.changeOtherCharacterLandformState();
         virtualWindow.reflashWindowPosition();

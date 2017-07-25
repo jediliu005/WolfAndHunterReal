@@ -29,7 +29,7 @@ public class MyVirtualWindow {
     public int targetRight;
     public int targetBottom;
     public FrameLayout movingLayout;
-    public boolean hasUpdatedWindowPosition = false;
+//    public boolean hasUpdatedWindowPosition = false;
 
     public void virtualWindowPassiveFollow(Context context, BaseCharacterView focusCharacter){
         int windowCenterX;
@@ -75,14 +75,13 @@ public class MyVirtualWindow {
     }
     public void updateNowWindowPosition(FrameLayout movingLayout) {
         synchronized (this) {
-            if (hasUpdatedWindowPosition == true)
-                return;
+
             this.movingLayout = movingLayout;
             left = -movingLayout.getLeft();
             top = -movingLayout.getTop();
             right = left + windowWidth;
             bottom = top + windowHeight;
-            hasUpdatedWindowPosition = true;
+//            hasUpdatedWindowPosition = true;
         }
     }
 //    public void autoUpdateNowWindowPosition() {

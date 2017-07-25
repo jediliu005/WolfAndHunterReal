@@ -39,7 +39,7 @@ public class NormalWolf extends BaseCharacterView {
     public final static int defaultSpeed = 15;
     public final static int defaultHealthPoint = 2;
     public final static int defaultKnockAwayStrength = 300;
-    public final static int defaultRecoverTime = 1500;
+    public final static int defaultRecoverTime = 10000;
     boolean isStop = false;
     Thread attackThread;
     //下面一行控制bitmap是否自适应分辨率，不强制设flase可能出现图片分辨率和draw分辨率不一致
