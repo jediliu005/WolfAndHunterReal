@@ -73,15 +73,20 @@ public class NormalWolf extends BaseCharacterView {
         init();
     }
 
-    public void init() {
-        characterType = CHARACTER_TYPE_WOLF;
+    @Override
+    public void initBitmapAndMedia() {
+        super.initBitmapAndMedia();
         Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.normal_wolf, option);
         Matrix matrixForCP = new Matrix();
         matrixForCP.postScale((float) characterBodySize / bitmap.getWidth() * (float) 0.8, (float) characterBodySize / bitmap.getHeight() * (float) 0.8);
         characterPic = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrixForCP, true);
-
         attackMediaPlayer = MediaPlayer.create(getContext(), R.raw.wolf_attack);
         smellMediaPlayer = MediaPlayer.create(getContext(), R.raw.smell);
+    }
+
+    public void init() {
+        characterType = CHARACTER_TYPE_WOLF;
+        initBitmapAndMedia();
         super.nowReloadAttackSpeed = defauleReloadAttackSpeed;
         attackCount = defaultMaxAttackCount;
         maxAttackCount = defaultMaxAttackCount;

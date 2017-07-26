@@ -75,9 +75,9 @@ public class NormalHunter extends BaseCharacterView {
         super(context, attrs);
         init();
     }
-
-    public void init() {
-        characterType = CHARACTER_TYPE_HUNTER;
+    @Override
+    public void initBitmapAndMedia() {
+        super.initBitmapAndMedia();
         Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.normal_hunter, option);
         Matrix matrixForCP = new Matrix();
         matrixForCP.postScale((float) characterBodySize / bitmap.getWidth() * (float) 0.8, (float) characterBodySize / bitmap.getHeight() * (float) 0.8);
@@ -86,6 +86,10 @@ public class NormalHunter extends BaseCharacterView {
         reloadMediaPlayer = MediaPlayer.create(getContext(), R.raw.reload_bollet);
         attackMediaPlayer = MediaPlayer.create(getContext(), R.raw.gun_fire);
         moveMediaPlayer = MediaPlayer.create(getContext(), R.raw.hunter_move);
+    }
+    public void init() {
+        characterType = CHARACTER_TYPE_HUNTER;
+        initBitmapAndMedia();
         super.nowReloadAttackSpeed = defauleReloadAttackSpeed;
         attackCount = defaultMaxAttackCount;
         maxAttackCount = defaultMaxAttackCount;

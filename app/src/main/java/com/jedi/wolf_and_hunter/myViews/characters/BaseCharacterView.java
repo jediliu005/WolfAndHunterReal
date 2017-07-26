@@ -135,6 +135,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public MyVirtualWindow virtualWindow;//虚拟窗口，把屏幕可视区域看成一个View；
     public Vector<InjuryView> injuryViews = new Vector<InjuryView>();
     //各种线程
+    public Thread drawThread;
     public volatile boolean isStop = false;
     public Thread movingMediaThread;//移动音效线程
     public Thread reloadAttackCountThread;//装弹运算线程
@@ -383,6 +384,10 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         sight.bindingCharacter = this;
     }
 
+    public void initBitmapAndMedia() {
+
+    }
+
     public void dealInjury() {
 
         if (injuryViews.size() == 0)
@@ -431,6 +436,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         }
         if (GameBaseAreaActivity.gameInfo.isStop == true || needMove == false || isDead == true)
             return;
+        final BaseCharacterView thisCharacter = this;
         movingMediaThread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -484,6 +490,11 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                             Thread.sleep(nowRunWaitTime);
                         moveMediaPlayer.seekTo(0);
                     } catch (Exception e) {
+                        if (thisCharacter instanceof NormalHunter) {
+                            moveMediaPlayer = MediaPlayer.create(getContext(), R.raw.hunter_move);
+                        } else if (thisCharacter instanceof NormalWolf) {
+                            moveMediaPlayer = MediaPlayer.create(getContext(), R.raw.wolf_move);
+                        }
                         e.printStackTrace();
                     }
                 }
@@ -848,44 +859,47 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                 isDiscoverByMe = false;
             }
 
+            synchronized (otherCharacter.seeMeTeamIDs) {
+                synchronized (otherCharacter.theyDiscoverMe) {
+                    if (isDiscoverByMe == true) {//处理闯入本角色视觉范围的情况
+                        if (otherCharacter.seeMeTeamIDs.contains(this.teamID)) {//已经被本队发现
+                            if (otherCharacter.theyDiscoverMe.contains(this) == false) {//第一发现人不是本角色
+                                otherCharacter.theyDiscoverMe.add(this);
+                            }
+                        } else {//自己是第一发现人
+                            otherCharacter.seeMeTeamIDs.add(this.teamID);
+                            otherCharacter.theyDiscoverMe.add(this);
 
-            if (isDiscoverByMe == true) {//处理闯入本角色视觉范围的情况
-                if (otherCharacter.seeMeTeamIDs.contains(this.teamID)) {//已经被本队发现
-                    if (otherCharacter.theyDiscoverMe.contains(this) == false) {//第一发现人不是本角色
-                        otherCharacter.theyDiscoverMe.add(this);
-                    }
-                } else {//自己是第一发现人
-                    otherCharacter.seeMeTeamIDs.add(this.teamID);
-                    otherCharacter.theyDiscoverMe.add(this);
-
-                    otherCharacter.isForceToBeSawByMe = true;
-                }
-            } else {//处理不在本角色视觉范围内的情况
-                if (otherCharacter.seeMeTeamIDs.contains(this.teamID)) {//已经被我队发现
-                    if (otherCharacter.theyDiscoverMe.contains(this)) {
-                        otherCharacter.theyDiscoverMe.remove(this);
-                    }
-                    boolean hasMyTeammate = false;
-                    Iterator<BaseCharacterView> iterator = otherCharacter.theyDiscoverMe.iterator();
-                    while (iterator.hasNext()) {
-                        BaseCharacterView c = iterator.next();
-                        if (c.teamID == this.teamID) {
-                            hasMyTeammate = true;
-                            break;
+                            otherCharacter.isForceToBeSawByMe = true;
                         }
-                    }
+                    } else {//处理不在本角色视觉范围内的情况
+                        if (otherCharacter.seeMeTeamIDs.contains(this.teamID)) {//已经被我队发现
+                            if (otherCharacter.theyDiscoverMe.contains(this)) {
+                                otherCharacter.theyDiscoverMe.remove(this);
+                            }
+                            boolean hasMyTeammate = false;
+                            Iterator<BaseCharacterView> iterator = otherCharacter.theyDiscoverMe.iterator();
+                            while (iterator.hasNext()) {
+                                BaseCharacterView c = iterator.next();
+                                if (c.teamID == this.teamID) {
+                                    hasMyTeammate = true;
+                                    break;
+                                }
+                            }
 
-                    if (hasMyTeammate == false) {
-                        int index = otherCharacter.seeMeTeamIDs.indexOf(this.teamID);
-                        if (index >= 0)
-                            otherCharacter.seeMeTeamIDs.remove(index);
-                        otherCharacter.isForceToBeSawByMe = false;
-                    } else {
-                        otherCharacter.isForceToBeSawByMe = true;
+                            if (hasMyTeammate == false) {
+                                int index = otherCharacter.seeMeTeamIDs.indexOf(this.teamID);
+                                if (index >= 0)
+                                    otherCharacter.seeMeTeamIDs.remove(index);
+                                otherCharacter.isForceToBeSawByMe = false;
+                            } else {
+                                otherCharacter.isForceToBeSawByMe = true;
+                            }
+                        }
+
+
                     }
                 }
-
-
             }
         }
 
@@ -997,12 +1011,19 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 //        this.setLayoutParams(mLayoutParams);
 //        gameHandler.sendEmptyMessage(GameBaseAreaActivity.GameHandler.ADD_ATTACT_RANGE);
 //        gameHandler.sendEmptyMessage(GameBaseAreaActivity.GameHandler.ADD_VIEW_RANGE);
-        Thread drawThread = new Thread(new CharacterDraw());
-        drawThread.setDaemon(true);
-        drawThread.start();
+        runDrawThread();
     }
 
-    class CharacterDraw implements Runnable {
+    public void runDrawThread() {
+        if (drawThread == null || drawThread.getState() == Thread.State.TERMINATED) {
+            isStop=false;
+            drawThread = new Thread(new CharacterDraw());
+            drawThread.setDaemon(true);
+            drawThread.start();
+        }
+    }
+
+    public class CharacterDraw implements Runnable {
 
 
         @Override
@@ -1020,8 +1041,8 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                 try {
                     canvas = holder.lockCanvas();
                     if (canvas == null) {
-                        isStop = true;
-                        break;
+                        Thread.sleep(30);
+                        continue;
                     }
 
 
@@ -1633,7 +1654,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public synchronized void attack() {
         if (attackMediaPlayer == null || GameBaseAreaActivity.gameInfo.isStop == true)
             return;
-
+        final BaseCharacterView thisCharacter = this;
         if (isMyCharacter == false) {
             BaseCharacterView myCharacter = GameBaseAreaActivity.myCharacter;
             int myHearRadius = myCharacter.nowHearRadius;
@@ -1664,18 +1685,26 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                 attackMediaPlayer.release();
             }
         }
-        attackMediaPlayer.seekTo(0);
-        attackMediaPlayer.start();
-
+        try {
+            attackMediaPlayer.seekTo(0);
+            attackMediaPlayer.start();
+        } catch (Exception e) {
+            if (thisCharacter instanceof NormalHunter) {
+                moveMediaPlayer = MediaPlayer.create(getContext(), R.raw.gun_fire);
+            } else if (thisCharacter instanceof NormalWolf) {
+                moveMediaPlayer = MediaPlayer.create(getContext(), R.raw.wolf_attack);
+            }
+            e.printStackTrace();
+        }
 
         Point nowXY = new Point(centerX, centerY);
         CharacterPosition characterPosition = new CharacterPosition(nowXY, this, new Date().getTime(), 3000);
-        for(BaseCharacterView character:GameBaseAreaActivity.gameInfo.allCharacters){
-            if(character==this)
+        for (BaseCharacterView character : GameBaseAreaActivity.gameInfo.allCharacters) {
+            if (character == this)
                 continue;
-            Point characterXY=new Point(character.centerX,character.centerY);
-            int distance=(int)MyMathsUtils.getDistance(nowXY,characterXY);
-            if(distance<=character.nowHearRadius){
+            Point characterXY = new Point(character.centerX, character.centerY);
+            int distance = (int) MyMathsUtils.getDistance(nowXY, characterXY);
+            if (distance <= character.nowHearRadius) {
                 synchronized (character.enemiesPositionSet) {
                     Iterator<CharacterPosition> iterator = character.enemiesPositionSet.iterator();
                     while (iterator.hasNext()) {
@@ -1691,39 +1720,45 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         }
 
 
-
     }
 
     public void reloadAttackCount() {
         if (reloadAttackCountThread != null && reloadAttackCountThread.getState() != Thread.State.TERMINATED)
             return;
-        if (reloadMediaPlayer != null) {
-            reloadMediaPlayer.seekTo(0);
-            if (reloadMediaPlayer == null)
-                return;
-            if (isMyCharacter == false) {
-                BaseCharacterView myCharacter = GameBaseAreaActivity.myCharacter;
-                int relateX = myCharacter.centerX - centerX;
-                int relateY = myCharacter.centerY - centerY;
-                double distance = Math.sqrt(relateX * relateX + relateY * relateY);
-                if (distance > nowHearRadius) {
+        final BaseCharacterView thisCharacter = this;
+        try {
+            if (reloadMediaPlayer != null) {
+                reloadMediaPlayer.seekTo(0);
+                if (reloadMediaPlayer == null)
                     return;
-                }
-                float leftVol = 0;
-                float rightVol = 0;
-                if (relateX > 0) {
-                    rightVol = (float) (nowHearRadius - distance) / nowHearRadius;
-                    leftVol = rightVol / 2;
-                } else if (relateX < 0) {
-                    leftVol = (float) (nowHearRadius - distance) / nowHearRadius;
-                    rightVol = leftVol / 2;
-                }
-                if (leftVol > 1)
-                    leftVol = 1;
-                if (rightVol > 1)
-                    rightVol = 1;
-                attackMediaPlayer.setVolume(leftVol, rightVol);
+                if (isMyCharacter == false) {
+                    BaseCharacterView myCharacter = GameBaseAreaActivity.myCharacter;
+                    int relateX = myCharacter.centerX - centerX;
+                    int relateY = myCharacter.centerY - centerY;
+                    double distance = Math.sqrt(relateX * relateX + relateY * relateY);
+                    if (distance > nowHearRadius) {
+                        return;
+                    }
+                    float leftVol = 0;
+                    float rightVol = 0;
+                    if (relateX > 0) {
+                        rightVol = (float) (nowHearRadius - distance) / nowHearRadius;
+                        leftVol = rightVol / 2;
+                    } else if (relateX < 0) {
+                        leftVol = (float) (nowHearRadius - distance) / nowHearRadius;
+                        rightVol = leftVol / 2;
+                    }
+                    if (leftVol > 1)
+                        leftVol = 1;
+                    if (rightVol > 1)
+                        rightVol = 1;
+                    reloadMediaPlayer.setVolume(leftVol, rightVol);
 
+                }
+            }
+        } catch (Exception e) {
+            if (thisCharacter instanceof NormalHunter) {
+                reloadMediaPlayer = MediaPlayer.create(getContext(), R.raw.reload_bollet);
             }
         }
         reloadMediaPlayer.start();
@@ -1764,41 +1799,41 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             synchronized (enemiesPositionSet) {
                 enemiesPositionSet.clear();
             }
-                isSmelling = true;
-                try {
-                    while (GameBaseAreaActivity.gameInfo.isStop == false && isSmelling) {
-                        nowSmellCount += nowSmellSpeed;
-                        if (nowSmellCount > smellTotalCount)
-                            nowSmellCount = smellTotalCount;
-                        if (nowSmellCount == smellTotalCount) {
-                            long nowTime = new Date().getTime();
-                            Point thisCharacterPosition = new Point(bindingCharacter.centerX, bindingCharacter.centerY);
-                            for (BaseCharacterView character : GameBaseAreaActivity.gameInfo.allCharacters) {
-                                if (character.teamID == bindingCharacter.teamID)
-                                    continue;
+            isSmelling = true;
+            try {
+                while (GameBaseAreaActivity.gameInfo.isStop == false && isSmelling) {
+                    nowSmellCount += nowSmellSpeed;
+                    if (nowSmellCount > smellTotalCount)
+                        nowSmellCount = smellTotalCount;
+                    if (nowSmellCount == smellTotalCount) {
+                        long nowTime = new Date().getTime();
+                        Point thisCharacterPosition = new Point(bindingCharacter.centerX, bindingCharacter.centerY);
+                        for (BaseCharacterView character : GameBaseAreaActivity.gameInfo.allCharacters) {
+                            if (character.teamID == bindingCharacter.teamID)
+                                continue;
 
-                                Point positionPoint = new Point(character.centerX, character.centerY);
-                                CharacterPosition characterPosition = new CharacterPosition(positionPoint, character, nowTime, 3000);
-                                double distance = MyMathsUtils.getDistance(positionPoint, thisCharacterPosition);
-                                if (distance <= nowSmellRadius) {
-                                    synchronized (enemiesPositionSet) {
-                                        enemiesPositionSet.add(characterPosition);
-                                    }
+                            Point positionPoint = new Point(character.centerX, character.centerY);
+                            CharacterPosition characterPosition = new CharacterPosition(positionPoint, character, nowTime, 3000);
+                            double distance = MyMathsUtils.getDistance(positionPoint, thisCharacterPosition);
+                            if (distance <= nowSmellRadius) {
+                                synchronized (enemiesPositionSet) {
+                                    enemiesPositionSet.add(characterPosition);
                                 }
                             }
-                            break;
                         }
-
-                        Thread.sleep(smellSleepTime);
-
+                        break;
                     }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } finally {
-                    nowSmellCount = 0;
-                    isSmelling = false;
-                    smellThread = null;
+
+                    Thread.sleep(smellSleepTime);
+
                 }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                nowSmellCount = 0;
+                isSmelling = false;
+                smellThread = null;
+            }
 
         }
     }

@@ -153,77 +153,83 @@ public class BaseAI extends TimerTask {
             if (character.isDead == true) {
                 continue;
             }
+            synchronized (character.seeMeTeamIDs) {
+                synchronized (character.theyDiscoverMe) {
 
-            isInViewRange = bindingCharacter.isInViewRange(character, bindingCharacter.nowViewRadius);
 
-            if (isInViewRange == true) {
-                if (character.nowHiddenLevel == 0)
-                    isDiscoverByMe = true;
-                else {
-                    boolean isInForceViewRange = bindingCharacter.isInViewRange(character, bindingCharacter.nowForceViewRadius);
-                    if (isInForceViewRange)
-                        isDiscoverByMe = true;
+                    isInViewRange = bindingCharacter.isInViewRange(character, bindingCharacter.nowViewRadius);
 
-                }
-            }
-            if (isDiscoverByMe == true) {//处理闯入本AI视觉范围的情况
-                if (character.seeMeTeamIDs.contains(bindingCharacter.getTeamID())) {//已经被AI本队发现
-                    if (character.theyDiscoverMe.contains(bindingCharacter) == false) {//第一发现人不是本AI
-                        character.theyDiscoverMe.add(bindingCharacter);
+                    if (isInViewRange == true) {
+                        if (character.nowHiddenLevel == 0)
+                            isDiscoverByMe = true;
+                        else {
+                            boolean isInForceViewRange = bindingCharacter.isInViewRange(character, bindingCharacter.nowForceViewRadius);
+                            if (isInForceViewRange)
+                                isDiscoverByMe = true;
+
+                        }
                     }
-                } else {//本AI是第一发现人
-                    character.seeMeTeamIDs.add(bindingCharacter.getTeamID());
-                    character.theyDiscoverMe.add(bindingCharacter);
-                    if (bindingCharacter.getTeamID() == GameBaseAreaActivity.myCharacter.getTeamID())
-                        character.isForceToBeSawByMe = true;
+                    if (isDiscoverByMe == true) {//处理闯入本AI视觉范围的情况
+                        if (character.seeMeTeamIDs.contains(bindingCharacter.getTeamID())) {//已经被AI本队发现
+                            if (character.theyDiscoverMe.contains(bindingCharacter) == false) {//第一发现人不是本AI
+                                character.theyDiscoverMe.add(bindingCharacter);
+                            }
+                        } else {//本AI是第一发现人
+                            character.seeMeTeamIDs.add(bindingCharacter.getTeamID());
+                            character.theyDiscoverMe.add(bindingCharacter);
+                            if (bindingCharacter.getTeamID() == GameBaseAreaActivity.myCharacter.getTeamID())
+                                character.isForceToBeSawByMe = true;
 
-                }
-            } else {//处理不在本AI视觉范围内的情况
-                if (character.seeMeTeamIDs.contains(bindingCharacter.getTeamID())) {//已经被AI本队发现
-                    if (character.theyDiscoverMe.contains(bindingCharacter)) {
-                        character.theyDiscoverMe.remove(bindingCharacter);
+                        }
+                    } else {//处理不在本AI视觉范围内的情况
+                        if (character.seeMeTeamIDs.contains(bindingCharacter.getTeamID())) {//已经被AI本队发现
+                            if (character.theyDiscoverMe.contains(bindingCharacter)) {
+                                character.theyDiscoverMe.remove(bindingCharacter);
+                            }
+                            boolean hasMyTeammate = false;
+                            Iterator<BaseCharacterView> iterator = character.theyDiscoverMe.iterator();
+                            while (iterator.hasNext()) {
+                                BaseCharacterView c = iterator.next();
+                                if (c.getTeamID() == bindingCharacter.getTeamID()) {
+                                    hasMyTeammate = true;
+                                    break;
+                                }
+                            }
+
+                            if (hasMyTeammate == false) {
+                                int index = character.seeMeTeamIDs.indexOf(bindingCharacter.getTeamID());
+                                character.seeMeTeamIDs.remove(index);
+                            }
+                        } else if (GameBaseAreaActivity.myCharacter != null && bindingCharacter.getTeamID() == GameBaseAreaActivity.myCharacter.getTeamID()) {
+                            character.isForceToBeSawByMe = false;
+                        }
+
+
                     }
-                    boolean hasMyTeammate = false;
-                    Iterator<BaseCharacterView> iterator = character.theyDiscoverMe.iterator();
-                    while (iterator.hasNext()) {
-                        BaseCharacterView c = iterator.next();
-                        if (c.getTeamID() == bindingCharacter.getTeamID()) {
-                            hasMyTeammate = true;
-                            break;
+
+                    //对方比我方任何玩家发现
+                    if (character.seeMeTeamIDs.contains(bindingCharacter.getTeamID())) {
+                        reset();
+                        targetCharacter = character;
+                        intent = INTENT_ATTACK;
+                        return;
+                    } else {//对方此刻没被发现
+                        //如果对方是突然消失的话即展开追击
+                        if (targetCharacter != null) {
+                            hasDealTrackOnce = false;
+                            intent = INTENT_TRACK_CHARACTER;
+                            continue;
+                        }
+                        //对方已经被执行过一次追击，但还没完成追击则继续追
+                        else if (hasDealTrackOnce == true || (targetLastX > 0 && targetLastY > 0)) {//处理被发现的目标突然消失的情况，执行追踪
+                            intent = INTENT_TRACK_CHARACTER;
+                            continue;
+
                         }
                     }
 
-                    if (hasMyTeammate == false) {
-                        int index = character.seeMeTeamIDs.indexOf(bindingCharacter.getTeamID());
-                        character.seeMeTeamIDs.remove(index);
-                    }
-                } else if (GameBaseAreaActivity.myCharacter != null && bindingCharacter.getTeamID() == GameBaseAreaActivity.myCharacter.getTeamID()) {
-                    character.isForceToBeSawByMe = false;
-                }
-
-
-            }
-            //对方比我方任何玩家发现
-            if (character.seeMeTeamIDs.contains(bindingCharacter.getTeamID())) {
-                reset();
-                targetCharacter = character;
-                intent = INTENT_ATTACK;
-                return;
-            } else {//对方此刻没被发现
-                //如果对方是突然消失的话即展开追击
-                if (targetCharacter != null) {
-                    hasDealTrackOnce = false;
-                    intent = INTENT_TRACK_CHARACTER;
-                    continue;
-                }
-                //对方已经被执行过一次追击，但还没完成追击则继续追
-                else if (hasDealTrackOnce == true || (targetLastX > 0 && targetLastY > 0)) {//处理被发现的目标突然消失的情况，执行追踪
-                    intent = INTENT_TRACK_CHARACTER;
-                    continue;
-
                 }
             }
-
         }
         if (intent == INTENT_HUNT && trackTrajectory == null) {
             double minDistance = -1;
@@ -269,7 +275,7 @@ public class BaseAI extends TimerTask {
         targetLastY = -1;
         trackTrajectory = null;
         hasDealTrackOnce = false;
-        bindingCharacter.targetFacingAngle=-1;
+        bindingCharacter.targetFacingAngle = -1;
         bindingCharacter.isStay = false;
     }
 
