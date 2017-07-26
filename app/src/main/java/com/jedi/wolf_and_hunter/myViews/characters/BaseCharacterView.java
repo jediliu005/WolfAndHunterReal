@@ -673,8 +673,8 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             else
                 relateAngle = 360 - relateAngle;
         }
-        if (Math.abs(relateAngle) > nowAngleChangSpeed * 2)
-            realRelateAngle = Math.abs(relateAngle) / relateAngle * nowAngleChangSpeed * 2;
+        if (Math.abs(relateAngle) > nowAngleChangSpeed * 4)
+            realRelateAngle = Math.abs(relateAngle) / relateAngle * nowAngleChangSpeed * 4;
         else
             realRelateAngle = relateAngle;
 
@@ -1008,11 +1008,11 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         @Override
         public void run() {
 
-            if (isMyCharacter == false) {
-                Log.i("", "");
-            }
-            while (GameBaseAreaActivity.gameInfo.isStop == false && isStop == false) {
 
+            while (GameBaseAreaActivity.gameInfo.isStop == false && isStop == false) {
+                if (isMyCharacter == false) {
+                    Log.i("", "");
+                }
                 SurfaceHolder holder = getHolder();
                 if (holder == null)
                     continue;

@@ -630,7 +630,7 @@ public class GameMainEngine {
                         beAttackedCharacter.startKnockedAwayThread(toPoint);
                     }
 
-                    InjuryView injuryView = new InjuryView(gameBaseAreaActivity, beAttackedCharacter);
+                    InjuryView injuryView = new InjuryView(gameBaseAreaActivity, beAttackedCharacter,angleBetweenXAxus);
                     int left = 0;
                     int top = 0;
                     if (beAttackedCharacter.isMyCharacter) {

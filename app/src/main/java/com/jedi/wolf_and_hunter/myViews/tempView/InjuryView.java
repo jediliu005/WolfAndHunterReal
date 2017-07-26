@@ -24,17 +24,19 @@ import java.util.Date;
 public class InjuryView extends View {
     BaseCharacterView bindingCharacter;
     Paint alphaPaint;
+    public float attackFromAngle;
     public int centerX;
     public int centerY;
     public long createTime = new Date().getTime();
     public boolean hasAddedToBaseFrame = false;
     public int viewSize;
-    private static Bitmap bigBloodBitmap;
-    private Bitmap smallBloodBitmap;
+    private static Bitmap bloodForMyCharacterBitmap;
+    private static Bitmap bloodForOtherCharacterBitmap;
 
-    public InjuryView(Context context, BaseCharacterView bindingCharacter) {
+    public InjuryView(Context context, BaseCharacterView bindingCharacter,float attackFromAngle) {
         super(context);
         this.bindingCharacter = bindingCharacter;
+        this.attackFromAngle=attackFromAngle;
         init();
     }
 
@@ -53,22 +55,23 @@ public class InjuryView extends View {
             int windowWidth = MyVirtualWindow.getWindowWidth(getContext());
             viewSize = (int) (windowWidth * 0.3);
         } else {
-            viewSize = (int) (bindingCharacter.characterBodySize * 1.5);
+            viewSize = (int) (bindingCharacter.characterBodySize * 6);
         }
 
         this.setLayoutParams(layoutParams);
-        Bitmap originBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.blood);
-        if (bindingCharacter.isMyCharacter) {
-            if (bigBloodBitmap == null) {
-                Matrix matrix = new Matrix();
-                matrix.postScale((float) (viewSize) / originBitmap.getWidth(), (float) (viewSize) / originBitmap.getHeight());
-                bigBloodBitmap = Bitmap.createBitmap(originBitmap, 0, 0, originBitmap.getWidth(), originBitmap.getHeight(), matrix, true);
+        Bitmap originBloodBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.blood);
+        Bitmap originBloodBitmap2 = BitmapFactory.decodeResource(getResources(), R.drawable.blood2);
 
-            }
-        } else {
+        if (bloodForMyCharacterBitmap == null) {
             Matrix matrix = new Matrix();
-            matrix.postScale((float) (viewSize) / originBitmap.getWidth(), (float) (viewSize) / originBitmap.getHeight());
-            smallBloodBitmap = Bitmap.createBitmap(originBitmap, 0, 0, originBitmap.getWidth(), originBitmap.getHeight(), matrix, true);
+            matrix.postScale((float) (viewSize) / originBloodBitmap.getWidth(), (float) (viewSize) / originBloodBitmap.getHeight());
+            bloodForMyCharacterBitmap = Bitmap.createBitmap(originBloodBitmap, 0, 0, originBloodBitmap.getWidth(), originBloodBitmap.getHeight(), matrix, true);
+
+        }
+        if (bloodForOtherCharacterBitmap == null) {
+            Matrix matrix = new Matrix();
+            matrix.postScale((float) (viewSize) / originBloodBitmap2.getWidth(), (float) (viewSize) / originBloodBitmap2.getHeight());
+            bloodForOtherCharacterBitmap = Bitmap.createBitmap(originBloodBitmap2, 0, 0, originBloodBitmap2.getWidth(), originBloodBitmap2.getHeight(), matrix, true);
         }
     }
 
@@ -90,10 +93,11 @@ public class InjuryView extends View {
             alpha = (int) (255 * relateTime / bindingCharacter.nowRecoverTime);
         alphaPaint.setAlpha(alpha);
         if (bindingCharacter.isMyCharacter)
-            canvas.drawBitmap(bigBloodBitmap, 0, 0, alphaPaint);
-        else
-            canvas.drawBitmap(smallBloodBitmap, 0, 0, alphaPaint);
-
+            canvas.drawBitmap(bloodForMyCharacterBitmap, 0, 0, alphaPaint);
+        else {
+            canvas.rotate(attackFromAngle-45,viewSize/2,viewSize/2);
+            canvas.drawBitmap(bloodForOtherCharacterBitmap, 0, 0, alphaPaint);
+        }
         invalidate();
     }
 }

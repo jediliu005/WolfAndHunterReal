@@ -32,10 +32,10 @@ public class NormalHunter extends BaseCharacterView {
     private final static int defaultMaxAttackCount = 3;
     private final static int defauleReloadAttackSpeed = 25;
     public final static int defaultAttackRadius = 700;
-    public final static int defaultViewRadius = 600;
+    public final static int defaultViewRadius = 700;
     public final static int defaultViewAngle = 90;
     public final static int defaultHearRadius = 400;
-    public final static int defaultForceViewRadius = 200;
+    public final static int defaultForceViewRadius = 350;
     public final static int defaultWalkWaitTime = 800;
     public final static int defaultRunWaitTime = 300;
     public final static int defaultSpeed = 10;
@@ -132,7 +132,7 @@ public class NormalHunter extends BaseCharacterView {
             if (isLocking) {
 
                 this.nowViewRadius = (int) (1.25 * defaultViewRadius);
-                this.nowForceViewRadius = (int) (2 * defaultForceViewRadius);
+                this.nowForceViewRadius = (int) (1.5 * defaultForceViewRadius);
                 this.nowViewAngle = (float) (0.5 * defaultViewAngle);
                 this.nowSpeed = (int) (0.5 * defaultSpeed);
                 this.nowAngleChangSpeed = (int) (0.4 * defaultAngleChangSpeed);
