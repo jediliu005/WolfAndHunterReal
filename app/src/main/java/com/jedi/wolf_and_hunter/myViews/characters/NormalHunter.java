@@ -34,7 +34,7 @@ public class NormalHunter extends BaseCharacterView {
     public final static int defaultAttackRadius = 700;
     public final static int defaultViewRadius = 700;
     public final static int defaultViewAngle = 90;
-    public final static int defaultHearRadius = 400;
+    public final static int defaultHearRadius = 1000;
     public final static int defaultForceViewRadius = 350;
     public final static int defaultWalkWaitTime = 800;
     public final static int defaultRunWaitTime = 300;

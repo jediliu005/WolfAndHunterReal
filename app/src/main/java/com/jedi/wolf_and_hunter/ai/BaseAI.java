@@ -135,7 +135,9 @@ public class BaseAI extends TimerTask {
     }
 
     public synchronized void decideWhatToDo() {
-
+        if (bindingCharacter == null) {
+            return;
+        }
 //        boolean isDiscover = false;
         boolean isDiscoverByMe = false;
         boolean isInViewRange;
@@ -144,9 +146,7 @@ public class BaseAI extends TimerTask {
             reset();
         }
         for (BaseCharacterView character : GameBaseAreaActivity.gameInfo.allCharacters) {
-            if (bindingCharacter == null) {
-                return;
-            }
+
             //忽略队友
             if (character == bindingCharacter || character.getTeamID() == bindingCharacter.getTeamID())
                 continue;

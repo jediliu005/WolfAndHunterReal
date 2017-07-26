@@ -1633,6 +1633,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public synchronized void attack() {
         if (attackMediaPlayer == null || GameBaseAreaActivity.gameInfo.isStop == true)
             return;
+
         if (isMyCharacter == false) {
             BaseCharacterView myCharacter = GameBaseAreaActivity.myCharacter;
             int myHearRadius = myCharacter.nowHearRadius;
@@ -1662,23 +1663,33 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             } catch (Exception e) {
                 attackMediaPlayer.release();
             }
-
-            Point nowPosition = new Point(centerX, centerY);
-            CharacterPosition characterPosition = new CharacterPosition(nowPosition, this, new Date().getTime(), 3000);
-            Vector<CharacterPosition> enemiesPositionSet = GameBaseAreaActivity.myCharacter.enemiesPositionSet;
-            synchronized (enemiesPositionSet) {
-                Iterator<CharacterPosition> iterator = enemiesPositionSet.iterator();
-                while (iterator.hasNext()) {
-                    CharacterPosition oldPosition = iterator.next();
-                    if (oldPosition.character == this) {
-                        iterator.remove();
-                    }
-                }
-                GameBaseAreaActivity.myCharacter.enemiesPositionSet.add(characterPosition);
-            }
         }
         attackMediaPlayer.seekTo(0);
         attackMediaPlayer.start();
+
+
+        Point nowXY = new Point(centerX, centerY);
+        CharacterPosition characterPosition = new CharacterPosition(nowXY, this, new Date().getTime(), 3000);
+        for(BaseCharacterView character:GameBaseAreaActivity.gameInfo.allCharacters){
+            if(character==this)
+                continue;
+            Point characterXY=new Point(character.centerX,character.centerY);
+            int distance=(int)MyMathsUtils.getDistance(nowXY,characterXY);
+            if(distance<=character.nowHearRadius){
+                synchronized (character.enemiesPositionSet) {
+                    Iterator<CharacterPosition> iterator = character.enemiesPositionSet.iterator();
+                    while (iterator.hasNext()) {
+                        CharacterPosition oldPosition = iterator.next();
+                        if (oldPosition.character == this) {
+                            iterator.remove();
+                        }
+                    }
+                    character.enemiesPositionSet.add(characterPosition);
+                }
+            }
+
+        }
+
 
 
     }
