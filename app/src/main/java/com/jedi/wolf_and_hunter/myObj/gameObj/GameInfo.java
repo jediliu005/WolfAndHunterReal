@@ -23,7 +23,7 @@ public class GameInfo implements Serializable{
     public volatile boolean isStop = false;
     public PlayerInfo myPlayerInfo;
     public Vector<PlayerInfo> playerInfos;
-    public  Vector<Trajectory> allTrajectories;
+    public  Vector<Trajectory> allTrajectories=new Vector<Trajectory>();
     public Vector<InjuryView> injuryViews=new Vector<InjuryView>();
     public int tallGrasslandDensity=50;
     public List<HashMap<BaseCharacterView, BaseCharacterView>> beAttackedList;

@@ -434,13 +434,21 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             else
                 return;
         }
-        if (GameBaseAreaActivity.gameInfo.isStop == true || needMove == false || isDead == true)
+        if (GameBaseAreaActivity.engine.isStop == true||GameBaseAreaActivity.engine.isPause || needMove == false || isDead == true)
             return;
         final BaseCharacterView thisCharacter = this;
         movingMediaThread = new Thread(new Runnable() {
             @Override
             public void run() {
-                while (GameBaseAreaActivity.gameInfo.isStop == false && needMove && isDead == false) {
+                while (GameBaseAreaActivity.engine.isStop == false && needMove && isDead == false) {
+                    if(GameBaseAreaActivity.engine.isPause){
+                        try {
+                            Thread.sleep(nowWalkWaitTime);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        continue;
+                    }
                     if (isStay) {
                         try {
                             Thread.sleep(200);
@@ -1030,9 +1038,14 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         public void run() {
 
 
-            while (GameBaseAreaActivity.gameInfo.isStop == false && isStop == false) {
-                if (isMyCharacter == false) {
-                    Log.i("", "");
+            while (GameBaseAreaActivity.engine.isStop == false && isStop == false) {
+                if (GameBaseAreaActivity.engine.isPause) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    continue;
                 }
                 SurfaceHolder holder = getHolder();
                 if (holder == null)
@@ -1293,8 +1306,15 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         @Override
         public void run() {
             isKnockedAway = true;
-            while (GameBaseAreaActivity.gameInfo.isStop == false && isKnockedAway) {
-
+            while (GameBaseAreaActivity.engine.isStop == false && isKnockedAway) {
+                if(GameBaseAreaActivity.engine.isPause){
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    continue;
+                }
                 int nowCenterX = (getLeft() + getRight()) / 2;
                 int nowCenterY = (getTop() + getBottom()) / 2;
                 int nowKnockedAwayToPointOffX = knockedAwayToPoint.x - nowCenterX;
@@ -1652,7 +1672,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     }
 
     public synchronized void attack() {
-        if (attackMediaPlayer == null || GameBaseAreaActivity.gameInfo.isStop == true)
+        if (attackMediaPlayer == null || GameBaseAreaActivity.engine.isStop == true||GameBaseAreaActivity.engine.isPause)
             return;
         final BaseCharacterView thisCharacter = this;
         if (isMyCharacter == false) {
@@ -1690,9 +1710,9 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             attackMediaPlayer.start();
         } catch (Exception e) {
             if (thisCharacter instanceof NormalHunter) {
-                moveMediaPlayer = MediaPlayer.create(getContext(), R.raw.gun_fire);
+                attackMediaPlayer = MediaPlayer.create(getContext(), R.raw.gun_fire);
             } else if (thisCharacter instanceof NormalWolf) {
-                moveMediaPlayer = MediaPlayer.create(getContext(), R.raw.wolf_attack);
+                attackMediaPlayer = MediaPlayer.create(getContext(), R.raw.wolf_attack);
             }
             e.printStackTrace();
         }
@@ -1801,7 +1821,11 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
             }
             isSmelling = true;
             try {
-                while (GameBaseAreaActivity.gameInfo.isStop == false && isSmelling) {
+                while (GameBaseAreaActivity.engine.isStop == false && isSmelling) {
+                    if(GameBaseAreaActivity.engine.isPause){
+                        Thread.sleep(1000);
+                        continue;
+                    }
                     nowSmellCount += nowSmellSpeed;
                     if (nowSmellCount > smellTotalCount)
                         nowSmellCount = smellTotalCount;

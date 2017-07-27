@@ -49,16 +49,16 @@ public class SightView extends SurfaceView implements SurfaceHolder.Callback {
     public boolean needMove = false;
     //以下为视点基本共有属性
     public boolean hasUpdatedPosition = false;
-    public int centerX=-1, centerY=-1;
-    public int nowLeft=-1;
-    public int nowTop=-1;
-    public int nowRight=-1;
-    public int nowBottom=-1;
+    public int centerX = -1, centerY = -1;
+    public int nowLeft = -1;
+    public int nowTop = -1;
+    public int nowRight = -1;
+    public int nowBottom = -1;
     public int speed = 15;
     public int sightSize;
     //以下为绘图杂项
 
-    public static boolean isStop=true;
+    public static boolean isStop = true;
     public Bitmap sightBitmap;
     public Matrix matrix;
     public SurfaceHolder mHolder;
@@ -98,22 +98,21 @@ public class SightView extends SurfaceView implements SurfaceHolder.Callback {
         mHolder.setFormat(PixelFormat.TRANSLUCENT);
         setZOrderOnTop(true);
 
-        if(nowLeft<0||nowTop<0){
-            nowLeft=0;
-            nowTop=0;
-            nowRight=sightSize;
-            nowBottom=sightSize;
+        if (nowLeft < 0 || nowTop < 0) {
+            nowLeft = 0;
+            nowTop = 0;
+            nowRight = sightSize;
+            nowBottom = sightSize;
         }
-        mLayoutParams=(FrameLayout.LayoutParams)getLayoutParams();
-        if(mLayoutParams==null)
-            mLayoutParams=new FrameLayout.LayoutParams(sightSize,sightSize);
-        mLayoutParams.leftMargin=nowLeft;
-        mLayoutParams.topMargin=nowTop;
+        mLayoutParams = (FrameLayout.LayoutParams) getLayoutParams();
+        if (mLayoutParams == null)
+            mLayoutParams = new FrameLayout.LayoutParams(sightSize, sightSize);
+        mLayoutParams.leftMargin = nowLeft;
+        mLayoutParams.topMargin = nowTop;
         this.setLayoutParams(mLayoutParams);
         centerX = nowLeft + (sightSize) / 2;
         centerY = nowTop + (sightSize) / 2;
     }
-
 
 
     public void goWatchingCharacter() {
@@ -237,7 +236,7 @@ public class SightView extends SurfaceView implements SurfaceHolder.Callback {
         int newCenterY = nowCharacterCenterY + resultRelateY;
 //        mLayoutParams.leftMargin=bindingCharacter.centerX+resultRelateX-this.getWidth()/2;
 //        mLayoutParams.topMargin=bindingCharacter.centerY+resultRelateY-this.getHeight()/2;
-        if(isHidden==false) {
+        if (isHidden == false) {
             nowLeft = newCenterX - getWidth() / 2;
             nowTop = newCenterY - getHeight() / 2;
             nowRight = nowLeft + getWidth();
@@ -378,11 +377,11 @@ public class SightView extends SurfaceView implements SurfaceHolder.Callback {
     public void normalModeOffsetLRTBParams() {
         int nowOffX = offX;
         int nowOffY = offY;
-        float targetFacingAngle=0;
-        if(nowOffX==0&&nowOffY==0)
+        float targetFacingAngle = 0;
+        if (nowOffX == 0 && nowOffY == 0)
             return;
         try {
-            targetFacingAngle=MyMathsUtils.getAngleBetweenXAxus(nowOffX,nowOffY);
+            targetFacingAngle = MyMathsUtils.getAngleBetweenXAxus(nowOffX, nowOffY);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -398,7 +397,7 @@ public class SightView extends SurfaceView implements SurfaceHolder.Callback {
             relateAngle = Math.abs(relateAngle) / relateAngle * bindingCharacter.nowAngleChangSpeed;
 
         targetFacingAngle = bindingCharacter.nowFacingAngle + relateAngle;
-        bindingCharacter.nowFacingAngle=targetFacingAngle;
+        bindingCharacter.nowFacingAngle = targetFacingAngle;
 
         if (bindingCharacter.nowFacingAngle < 0)
             bindingCharacter.nowFacingAngle = bindingCharacter.nowFacingAngle + 360;
@@ -406,8 +405,7 @@ public class SightView extends SurfaceView implements SurfaceHolder.Callback {
             bindingCharacter.nowFacingAngle = bindingCharacter.nowFacingAngle - 360;
 
 
-
-        if(isHidden==false) {
+        if (isHidden == false) {
             //这模式下sight隐藏，但跟随character
             this.nowLeft = (bindingCharacter.nowLeft + bindingCharacter.nowRight + sightSize) / 2;
             this.nowRight = this.nowLeft + getWidth();
@@ -471,7 +469,6 @@ public class SightView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
 
-
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int wMode = MeasureSpec.getMode(widthMeasureSpec);
@@ -524,7 +521,6 @@ public class SightView extends SurfaceView implements SurfaceHolder.Callback {
     public void surfaceCreated(SurfaceHolder holder) {
 
 
-
         transparentPaint = new Paint();
         transparentPaint.setAlpha(0);
 
@@ -549,7 +545,7 @@ public class SightView extends SurfaceView implements SurfaceHolder.Callback {
 //        virtualWindow.top = -parent.getTop();
 //        virtualWindow.right =  windowWidth- parent.getLeft();
 //        virtualWindow.bottom =  windowHeight- parent.getTop();
-        if(isHidden==false) {
+        if (isHidden == false) {
             centerX = sightBitmapHeight / 2;
             centerY = sightBitmapWidth / 2;
             Thread drawThread = new Thread(new SightDraw());
@@ -563,12 +559,19 @@ public class SightView extends SurfaceView implements SurfaceHolder.Callback {
         @Override
         public void run() {
 
-            while (GameBaseAreaActivity.gameInfo.isStop==false&&isStop==false) {
-
+            while (GameBaseAreaActivity.engine.isStop == false && isStop == false) {
+                if (GameBaseAreaActivity.engine.isPause) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    continue;
+                }
                 Canvas canvas = getHolder().lockCanvas();
                 try {
                     canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);//清除屏幕
-                    if(isHidden)
+                    if (isHidden)
                         canvas.drawBitmap(sightBitmap, 0, 0, transparentPaint);
                     else
                         canvas.drawBitmap(sightBitmap, 0, 0, null);

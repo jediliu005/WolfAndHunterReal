@@ -64,7 +64,7 @@ public class BaseAI extends TimerTask {
 //                            continue;
 //                        }
 //                        synchronized (bindingCharacter) {
-//                            if (GameBaseAreaActivity.gameInfo.isStop == true)
+//                            if (GameBaseAreaActivity.engine.isStop == true)
 //                                break;
 //
 //
@@ -113,7 +113,7 @@ public class BaseAI extends TimerTask {
     @Override
     public void run() {
 //        addFacingThread();
-        if (GameBaseAreaActivity.gameInfo.isStop)
+        if (GameBaseAreaActivity.engine.isStop||GameBaseAreaActivity.engine.isPause)
             return;
 //        addFacingThread();
         decideWhatToDo();

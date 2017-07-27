@@ -29,7 +29,7 @@ public class HunterAI extends BaseAI {
         if (bindingCharacter == null || bindingCharacter.isDead) {
             return;
         }
-        if (GameBaseAreaActivity.gameInfo.isStop == true)
+        if (GameBaseAreaActivity.engine.isStop == true||GameBaseAreaActivity.engine.isPause)
             return;
         synchronized (bindingCharacter) {
 
@@ -64,7 +64,7 @@ public class HunterAI extends BaseAI {
 //                            continue;
 //                        }
 //                        synchronized (bindingCharacter) {
-//                            if (GameBaseAreaActivity.gameInfo.isStop == true)
+//                            if (GameBaseAreaActivity.engine.isStop == true)
 //                                break;
 //
 //
@@ -113,7 +113,7 @@ public class HunterAI extends BaseAI {
     @Override
     public void run() {
 //        addFacingThread();
-        if (GameBaseAreaActivity.gameInfo.isStop)
+        if (GameBaseAreaActivity.engine.isStop||GameBaseAreaActivity.engine.isPause)
             return;
 //        addFacingThread();
         decideWhatToDo();

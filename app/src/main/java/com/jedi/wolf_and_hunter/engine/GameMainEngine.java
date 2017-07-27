@@ -79,6 +79,8 @@ public class GameMainEngine {
     private Timer timerForAllMoving = new Timer();
     private Timer timerForTrajectory = new Timer();
     private ArrayList<Timer> timerForAIList = new ArrayList<Timer>();
+    public boolean isStop = false;
+    public boolean isPause = false;
 
     public GameInfo getGameInfo() {
         return gameInfo;
@@ -109,8 +111,7 @@ public class GameMainEngine {
         gameInfo = (GameInfo) gameBaseAreaActivity.getIntent().getExtras().get("gameInfo");
         if (gameInfo == null)
             gameBaseAreaActivity.finish();
-        gameInfo.isStop = false;
-        gameInfo.allTrajectories = new Vector<Trajectory>();
+
         backGroundMediaPlayer = MediaPlayer.create(gameBaseAreaActivity, R.raw.background);
         ViewUtils.initWindowParams(gameBaseAreaActivity);
         DisplayMetrics dm = ViewUtils.getWindowsDisplayMetrics();
@@ -182,20 +183,6 @@ public class GameMainEngine {
 
     }
 
-    public void stopEngine() {
-        gameInfo.isStop = true;
-        timerForTrajectory.cancel();
-        backGroundMediaPlayer.release();
-        if (timerForAllMoving != null)
-            timerForAllMoving.cancel();
-
-
-        for (Timer timer : timerForAIList) {
-            timer.cancel();
-        }
-
-
-    }
 
     public class GameHandler extends Handler {
         public static final int ADD_TRAJECTORY = 1;
@@ -240,22 +227,22 @@ public class GameMainEngine {
                     }
                     if (team1KillCount >= gameInfo.targetKillCount) {
                         gameResult.setText("1队胜");
-                        gameInfo.isStop = true;
+                        isStop = true;
                     }
                     if (team2KillCount >= gameInfo.targetKillCount) {
                         gameResult.setText("2队胜");
-                        gameInfo.isStop = true;
+                        isStop = true;
                     }
                     if (team3KillCount >= gameInfo.targetKillCount) {
                         gameResult.setText("3队胜");
-                        gameInfo.isStop = true;
+                        isStop = true;
                     }
                     if (team4KillCount >= gameInfo.targetKillCount) {
                         gameResult.setText("4队胜");
-                        gameInfo.isStop = true;
+                        isStop = true;
 
                     }
-                    if (gameInfo.isStop)
+                    if (isStop)
                         return;
                     reflash();
             }
@@ -295,12 +282,15 @@ public class GameMainEngine {
     private class GameMainTask extends TimerTask {
         @Override
         public void run() {
+            if(isStop||isPause)
+                backGroundMediaPlayer.pause();
             try {
                 if (backGroundMediaPlayer.isPlaying() == false) {
                     backGroundMediaPlayer.setLooping(true);
                     backGroundMediaPlayer.seekTo(0);
                     backGroundMediaPlayer.start();
                 }
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -340,16 +330,6 @@ public class GameMainEngine {
     }
 
     public void runEngine() {
-
-
-//        for (int i = 0; i < gameMap.landformses.length; i++) {
-//            if (Math.abs(i) % 3 == 0) {
-//                for (int j = 0; j < gameMap.landformses[i].length; j++) {
-//                    if (Math.abs(i - j) % 3 == 0)
-//                        gameMap.landformses[i][j] = new TallGrassland(this);
-//                }
-//            }
-//        }
 
 
         //添加地形
@@ -545,6 +525,35 @@ public class GameMainEngine {
         timerForTrajectory.schedule(new RemoveTrajectoryTask(), 1000, 300);
     }
 
+    public void stopEngine() {
+        isStop = true;
+        timerForTrajectory.cancel();
+        backGroundMediaPlayer.release();
+        if (timerForAllMoving != null)
+            timerForAllMoving.cancel();
+
+
+        for (Timer timer : timerForAIList) {
+            timer.cancel();
+        }
+
+
+    }
+
+    public void pauseEngine() {
+        isPause = true;
+    }
+
+    public void restartEngine() {
+        isPause = false;
+        for (BaseCharacterView character : gameInfo.allCharacters) {
+            character.initBitmapAndMedia();
+            if (character.drawThread == null || character.drawThread.getState() == Thread.State.TERMINATED) {
+                character.runDrawThread();
+            }
+        }
+    }
+
     private void startAI() {
         for (int i = 1; i < gameInfo.playerInfos.size(); i++) {
             PlayerInfo playerInfo = gameInfo.playerInfos.get(i);
@@ -576,93 +585,95 @@ public class GameMainEngine {
     }
 
     public void dealNeedToBeKilled() {
-        Iterator<HashMap<BaseCharacterView, BaseCharacterView>> iterator = gameInfo.beAttackedList.iterator();
+        synchronized (gameInfo.beAttackedList) {
+            Iterator<HashMap<BaseCharacterView, BaseCharacterView>> iterator = gameInfo.beAttackedList.iterator();
 
-        while (iterator.hasNext()) {
-            Map<BaseCharacterView, BaseCharacterView> attackMap = iterator.next();
-            Set<Map.Entry<BaseCharacterView, BaseCharacterView>> entrySet = attackMap.entrySet();
-            for (Map.Entry<BaseCharacterView, BaseCharacterView> entry : entrySet) {
-                BaseCharacterView attackCharacter = entry.getKey();
-                BaseCharacterView beAttackedCharacter = entry.getValue();
-                if (beAttackedCharacter.isInvincible)
-                    break;
-                if (beAttackedCharacter.isDead)
-                    break;
-                int relateX = beAttackedCharacter.centerX - attackCharacter.centerX;
-                int relateY = beAttackedCharacter.centerY - attackCharacter.centerY;
-                if (relateX == 0 && relateY == 0) {
-                    beAttackedCharacter.isDead = true;
-                    beAttackedCharacter.dieCount++;
-                    beAttackedCharacter.deadTime = new Date().getTime();
-                    attackCharacter.killCount++;
-                    continue;
-                }
-                float angleBetweenXAxus = 0;
-                try {
-                    angleBetweenXAxus = MyMathsUtils.getAngleBetweenXAxus(relateX, relateY);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                float relateFacingAngle = Math.abs(beAttackedCharacter.nowFacingAngle - angleBetweenXAxus);
-
-                if (relateFacingAngle < 90 || relateFacingAngle > 270) {//背击
-                    beAttackedCharacter.nowHealthPoint = 0;
-                } else {
-                    beAttackedCharacter.nowHealthPoint -= 1;
-                }
-                if (beAttackedCharacter.nowHealthPoint <= 0) {
-                    beAttackedCharacter.isDead = true;
-                    beAttackedCharacter.dieCount++;
-                    beAttackedCharacter.deadTime = new Date().getTime();
-                    attackCharacter.killCount++;
-                } else {
-                    if (beAttackedCharacter.knockedAwayThread == null || beAttackedCharacter.knockedAwayThread.getState() == Thread.State.TERMINATED) {
-                        double cosAlpha = Math.cos(Math.toRadians(attackCharacter.nowFacingAngle));
-                        double offX = cosAlpha * attackCharacter.nowKnockAwayStrength;
-
-                        double offY = Math.sqrt(attackCharacter.nowKnockAwayStrength * attackCharacter.nowKnockAwayStrength - offX * offX);
-                        if (attackCharacter.nowFacingAngle >= 180)
-                            offY = -offY;
-                        double endX = offX + beAttackedCharacter.centerX;
-                        double endY = offY + beAttackedCharacter.centerY;
-//        Point fromPoint = new Point(centerX, centerY);
-                        Point toPoint = new Point((int) endX, (int) endY);
-                        beAttackedCharacter.startKnockedAwayThread(toPoint);
+            while (iterator.hasNext()) {
+                Map<BaseCharacterView, BaseCharacterView> attackMap = iterator.next();
+                Set<Map.Entry<BaseCharacterView, BaseCharacterView>> entrySet = attackMap.entrySet();
+                for (Map.Entry<BaseCharacterView, BaseCharacterView> entry : entrySet) {
+                    BaseCharacterView attackCharacter = entry.getKey();
+                    BaseCharacterView beAttackedCharacter = entry.getValue();
+                    if (beAttackedCharacter.isInvincible)
+                        break;
+                    if (beAttackedCharacter.isDead)
+                        break;
+                    int relateX = beAttackedCharacter.centerX - attackCharacter.centerX;
+                    int relateY = beAttackedCharacter.centerY - attackCharacter.centerY;
+                    if (relateX == 0 && relateY == 0) {
+                        beAttackedCharacter.isDead = true;
+                        beAttackedCharacter.dieCount++;
+                        beAttackedCharacter.deadTime = new Date().getTime();
+                        attackCharacter.killCount++;
+                        continue;
                     }
+                    float angleBetweenXAxus = 0;
+                    try {
+                        angleBetweenXAxus = MyMathsUtils.getAngleBetweenXAxus(relateX, relateY);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    float relateFacingAngle = Math.abs(beAttackedCharacter.nowFacingAngle - angleBetweenXAxus);
 
-                    InjuryView injuryView = new InjuryView(gameBaseAreaActivity, beAttackedCharacter,angleBetweenXAxus);
-                    int left = 0;
-                    int top = 0;
-                    if (beAttackedCharacter.isMyCharacter) {
-                        Random r = new Random();
-                        left = r.nextInt(MyVirtualWindow.getWindowWidth(gameBaseAreaActivity) - injuryView.viewSize);
-                        top = r.nextInt(MyVirtualWindow.getWindowHeight(gameBaseAreaActivity) - injuryView.viewSize);
-
+                    if (relateFacingAngle < 90 || relateFacingAngle > 270) {//背击
+                        beAttackedCharacter.nowHealthPoint = 0;
                     } else {
-                        left = beAttackedCharacter.centerX - injuryView.viewSize / 2;
-                        top = beAttackedCharacter.centerY - injuryView.viewSize / 2;
+                        beAttackedCharacter.nowHealthPoint -= 1;
                     }
-                    injuryView.centerX = left + injuryView.viewSize / 2;
-                    injuryView.centerY = top + injuryView.viewSize / 2;
-                    FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) injuryView.getLayoutParams();
-                    if (layoutParams == null) {
-                        layoutParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                    if (beAttackedCharacter.nowHealthPoint <= 0) {
+                        beAttackedCharacter.isDead = true;
+                        beAttackedCharacter.dieCount++;
+                        beAttackedCharacter.deadTime = new Date().getTime();
+                        attackCharacter.killCount++;
+                    } else {
+                        if (beAttackedCharacter.knockedAwayThread == null || beAttackedCharacter.knockedAwayThread.getState() == Thread.State.TERMINATED) {
+                            double cosAlpha = Math.cos(Math.toRadians(attackCharacter.nowFacingAngle));
+                            double offX = cosAlpha * attackCharacter.nowKnockAwayStrength;
+
+                            double offY = Math.sqrt(attackCharacter.nowKnockAwayStrength * attackCharacter.nowKnockAwayStrength - offX * offX);
+                            if (attackCharacter.nowFacingAngle >= 180)
+                                offY = -offY;
+                            double endX = offX + beAttackedCharacter.centerX;
+                            double endY = offY + beAttackedCharacter.centerY;
+//        Point fromPoint = new Point(centerX, centerY);
+                            Point toPoint = new Point((int) endX, (int) endY);
+                            beAttackedCharacter.startKnockedAwayThread(toPoint);
+                        }
+
+                        InjuryView injuryView = new InjuryView(gameBaseAreaActivity, beAttackedCharacter, angleBetweenXAxus);
+                        int left = 0;
+                        int top = 0;
+                        if (beAttackedCharacter.isMyCharacter) {
+                            Random r = new Random();
+                            left = r.nextInt(MyVirtualWindow.getWindowWidth(gameBaseAreaActivity) - injuryView.viewSize);
+                            top = r.nextInt(MyVirtualWindow.getWindowHeight(gameBaseAreaActivity) - injuryView.viewSize);
+
+                        } else {
+                            left = beAttackedCharacter.centerX - injuryView.viewSize / 2;
+                            top = beAttackedCharacter.centerY - injuryView.viewSize / 2;
+                        }
+                        injuryView.centerX = left + injuryView.viewSize / 2;
+                        injuryView.centerY = top + injuryView.viewSize / 2;
+                        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) injuryView.getLayoutParams();
+                        if (layoutParams == null) {
+                            layoutParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                        }
+                        layoutParams.leftMargin = left;
+                        layoutParams.topMargin = top;
+
+                        injuryView.setLayoutParams(layoutParams);
+
+                        beAttackedCharacter.injuryViews.add(injuryView);
+
+                        beAttackedCharacter.lastInjureTime = new Date().getTime();
+
                     }
-                    layoutParams.leftMargin = left;
-                    layoutParams.topMargin = top;
-
-                    injuryView.setLayoutParams(layoutParams);
-
-                    beAttackedCharacter.injuryViews.add(injuryView);
-
-                    beAttackedCharacter.lastInjureTime = new Date().getTime();
-
                 }
+
             }
 
+            gameInfo.beAttackedList.clear();
         }
-
-        gameInfo.beAttackedList.clear();
     }
 
     private void dealInjury() {
@@ -699,7 +710,7 @@ public class GameMainEngine {
 
     private synchronized void reflash() {
 
-        if (myCharacter == null || (leftRocker == null && rightRocker == null) || mapBaseFrame == null)
+        if (myCharacter == null || (leftRocker == null && rightRocker == null) || mapBaseFrame == null||isPause||isStop)
             return;
 
         if (gameInfo.beAttackedList.size() > 0)

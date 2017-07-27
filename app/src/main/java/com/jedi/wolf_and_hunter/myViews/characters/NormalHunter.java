@@ -75,6 +75,7 @@ public class NormalHunter extends BaseCharacterView {
         super(context, attrs);
         init();
     }
+
     @Override
     public void initBitmapAndMedia() {
         super.initBitmapAndMedia();
@@ -82,11 +83,14 @@ public class NormalHunter extends BaseCharacterView {
         Matrix matrixForCP = new Matrix();
         matrixForCP.postScale((float) characterBodySize / bitmap.getWidth() * (float) 0.8, (float) characterBodySize / bitmap.getHeight() * (float) 0.8);
         characterPic = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrixForCP, true);
-
-        reloadMediaPlayer = MediaPlayer.create(getContext(), R.raw.reload_bollet);
-        attackMediaPlayer = MediaPlayer.create(getContext(), R.raw.gun_fire);
-        moveMediaPlayer = MediaPlayer.create(getContext(), R.raw.hunter_move);
+        if (reloadMediaPlayer == null)
+            reloadMediaPlayer = MediaPlayer.create(getContext(), R.raw.reload_bollet);
+        if (attackMediaPlayer == null)
+            attackMediaPlayer = MediaPlayer.create(getContext(), R.raw.gun_fire);
+        if (moveMediaPlayer == null)
+            moveMediaPlayer = MediaPlayer.create(getContext(), R.raw.hunter_move);
     }
+
     public void init() {
         characterType = CHARACTER_TYPE_HUNTER;
         initBitmapAndMedia();
@@ -104,7 +108,7 @@ public class NormalHunter extends BaseCharacterView {
         nowSpeed = defaultSpeed;
         nowHealthPoint = defaultHealthPoint;
         nowKnockAwayStrength = defaultKnockAwayStrength;
-        nowRecoverTime=defaultRecoverTime;
+        nowRecoverTime = defaultRecoverTime;
         FrameLayout.LayoutParams viewRangeLP = (FrameLayout.LayoutParams) viewRange.getLayoutParams();
         viewRangeLP.width = 2 * defaultViewRadius;
         viewRange.setLayoutParams(viewRangeLP);
@@ -202,8 +206,9 @@ public class NormalHunter extends BaseCharacterView {
             if (pointToLineDistance <= targetCharacterSize + nowExtraAttackRevise) {
                 HashMap<BaseCharacterView, BaseCharacterView> map = new HashMap<BaseCharacterView, BaseCharacterView>();
                 map.put(this, targetCharacter);
-                GameBaseAreaActivity.gameInfo.beAttackedList.add(map);
-
+                synchronized (GameBaseAreaActivity.gameInfo.beAttackedList) {
+                    GameBaseAreaActivity.gameInfo.beAttackedList.add(map);
+                }
 //                float relateFacingAngle = Math.abs(targetCharacter.nowFacingAngle - nowFacingAngle);
 //
 //                if (relateFacingAngle < 90 || relateFacingAngle > 270) {//背击

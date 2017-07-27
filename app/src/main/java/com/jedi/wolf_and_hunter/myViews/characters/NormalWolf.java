@@ -51,14 +51,8 @@ public class NormalWolf extends BaseCharacterView {
 
     public static final int defaultHiddenLevel = BaseCharacterView.HIDDEN_LEVEL_NO_HIDDEN;
 
-    public NormalWolf(Context context) {
-        super(context);
-        init();
-    }
 
     /**
-     * myCharacter最好用这个构造方法
-     *
      * @param context
      * @param virtualWindow
      */
@@ -68,10 +62,6 @@ public class NormalWolf extends BaseCharacterView {
         init();
     }
 
-    public NormalWolf(Context context, AttributeSet attrs) {
-        super(context, attrs);
-        init();
-    }
 
     @Override
     public void initBitmapAndMedia() {
@@ -128,7 +118,15 @@ public class NormalWolf extends BaseCharacterView {
                 new Runnable() {
                     @Override
                     public void run() {
-                        while (GameBaseAreaActivity.gameInfo.isStop == false && isStop == false) {
+                        while (GameBaseAreaActivity.engine.isStop == false && isStop == false) {
+                            if (GameBaseAreaActivity.engine.isPause) {
+                                try {
+                                    Thread.sleep(1000);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                                continue;
+                            }
                             if (attackCount == maxAttackCount) {
                                 if (nowSpeed != defaultSpeed)
                                     nowSpeed = defaultSpeed;
@@ -176,8 +174,15 @@ public class NormalWolf extends BaseCharacterView {
         @Override
         public void run() {
             isJumping = true;
-            while (GameBaseAreaActivity.gameInfo.isStop == false && isJumping) {
-
+            while (GameBaseAreaActivity.engine.isStop == false && isJumping) {
+                if (GameBaseAreaActivity.engine.isPause) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    continue;
+                }
                 int nowCenterX = (getLeft() + getRight()) / 2;
                 int nowCenterY = (getTop() + getBottom()) / 2;
                 int nowJumpToPointOffX = jumpToPoint.x - nowCenterX;
@@ -213,7 +218,9 @@ public class NormalWolf extends BaseCharacterView {
                     if (relateX == 0 & relateY == 0) {
                         HashMap<BaseCharacterView, BaseCharacterView> map = new HashMap<BaseCharacterView, BaseCharacterView>();
                         map.put(attackCharacter, targetCharacter);
-                        GameBaseAreaActivity.gameInfo.beAttackedList.add(map);
+                        synchronized (GameBaseAreaActivity.gameInfo.beAttackedList) {
+                            GameBaseAreaActivity.gameInfo.beAttackedList.add(map);
+                        }
 //                        targetCharacter.isDead = true;
 //                        attackCharacter.killCount++;
 //                        targetCharacter.dieCount++;
@@ -247,7 +254,9 @@ public class NormalWolf extends BaseCharacterView {
                     if (pointToLineDistance <= characterBodySize / 2 + targetCharacterSize + nowExtraAttackRevise) {
                         HashMap<BaseCharacterView, BaseCharacterView> map = new HashMap<BaseCharacterView, BaseCharacterView>();
                         map.put(attackCharacter, targetCharacter);
-                        GameBaseAreaActivity.gameInfo.beAttackedList.add(map);
+                        synchronized (GameBaseAreaActivity.gameInfo.beAttackedList) {
+                            GameBaseAreaActivity.gameInfo.beAttackedList.add(map);
+                        }
 //                        targetCharacter.isDead = true;
 //                        attackCharacter.killCount++;
 //                        targetCharacter.dieCount++;
