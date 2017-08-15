@@ -31,7 +31,7 @@ public class TallGrassland extends DynamicLandform{
     public void init() {
         super.init();
         if(bitmap==null) {
-            bitmap = BitmapBox.getLandformBitmaps(getContext()).get("tall_grass");
+            bitmap = BitmapBox.getLandformBitmap(getContext(),"tallGrass");
             Matrix matrix = new Matrix();
             matrix.postScale((float) 100 / bitmap.getWidth(), (float) 100 / bitmap.getHeight());
             bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);

@@ -14,6 +14,7 @@ import com.jedi.wolf_and_hunter.R;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
 import com.jedi.wolf_and_hunter.myObj.gameObj.MyVirtualWindow;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
+import com.jedi.wolf_and_hunter.utils.BitmapBox;
 
 import java.util.Date;
 
@@ -23,33 +24,34 @@ import java.util.Date;
 
 public class InjuryView extends View {
     BaseCharacterView bindingCharacter;
-    Paint alphaPaint;
+    private static Paint alphaPaint;
     public float attackFromAngle;
     public int centerX;
     public int centerY;
     public long createTime = new Date().getTime();
     public boolean hasAddedToBaseFrame = false;
     public int viewSize;
-    private static Bitmap bloodForMyCharacterBitmap;
-    private static Bitmap bloodForOtherCharacterBitmap;
+    private static Bitmap bloodOfMyCharacterBitmap;
+    private static Bitmap bloodOfOtherCharacterBitmap;
 
-    public InjuryView(Context context, BaseCharacterView bindingCharacter,float attackFromAngle) {
+    public InjuryView(Context context, BaseCharacterView bindingCharacter, float attackFromAngle) {
         super(context);
         this.bindingCharacter = bindingCharacter;
-        this.attackFromAngle=attackFromAngle;
+        this.attackFromAngle = attackFromAngle;
         init();
     }
 
     private void init() {
-
-        alphaPaint = new Paint();
-        alphaPaint.setAlpha(0);
-        alphaPaint.setStyle(Paint.Style.FILL);
-        alphaPaint.setStrokeWidth(5);
-
+        if (alphaPaint == null) {
+            alphaPaint = new Paint();
+            alphaPaint.setAlpha(0);
+            alphaPaint.setStyle(Paint.Style.FILL);
+            alphaPaint.setStrokeWidth(5);
+        }
         FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) this.getLayoutParams();
         if (layoutParams == null) {
             layoutParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            this.setLayoutParams(layoutParams);
         }
         if (bindingCharacter.isMyCharacter) {
             int windowWidth = MyVirtualWindow.getWindowWidth(getContext());
@@ -58,20 +60,18 @@ public class InjuryView extends View {
             viewSize = (int) (bindingCharacter.characterBodySize * 6);
         }
 
-        this.setLayoutParams(layoutParams);
-        Bitmap originBloodBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.blood);
-        Bitmap originBloodBitmap2 = BitmapFactory.decodeResource(getResources(), R.drawable.blood2);
-
-        if (bloodForMyCharacterBitmap == null) {
+        if (bloodOfMyCharacterBitmap == null) {
+            Bitmap oriBloodOfMyCharacter = BitmapBox.getOtherBitmap(getContext(),"oriBloodOfMyCharacter") ;
             Matrix matrix = new Matrix();
-            matrix.postScale((float) (viewSize) / originBloodBitmap.getWidth(), (float) (viewSize) / originBloodBitmap.getHeight());
-            bloodForMyCharacterBitmap = Bitmap.createBitmap(originBloodBitmap, 0, 0, originBloodBitmap.getWidth(), originBloodBitmap.getHeight(), matrix, true);
+            matrix.postScale((float) (viewSize) / oriBloodOfMyCharacter.getWidth(), (float) (viewSize) / oriBloodOfMyCharacter.getHeight());
+            bloodOfMyCharacterBitmap = Bitmap.createBitmap(oriBloodOfMyCharacter, 0, 0, oriBloodOfMyCharacter.getWidth(), oriBloodOfMyCharacter.getHeight(), matrix, true);
 
         }
-        if (bloodForOtherCharacterBitmap == null) {
+        if (bloodOfOtherCharacterBitmap == null) {
+            Bitmap oriBloodOfOtherCharacter =  BitmapBox.getOtherBitmap(getContext(),"oriBloodOfOtherCharacter") ;
             Matrix matrix = new Matrix();
-            matrix.postScale((float) (viewSize) / originBloodBitmap2.getWidth(), (float) (viewSize) / originBloodBitmap2.getHeight());
-            bloodForOtherCharacterBitmap = Bitmap.createBitmap(originBloodBitmap2, 0, 0, originBloodBitmap2.getWidth(), originBloodBitmap2.getHeight(), matrix, true);
+            matrix.postScale((float) (viewSize) / oriBloodOfOtherCharacter.getWidth(), (float) (viewSize) / oriBloodOfOtherCharacter.getHeight());
+            bloodOfOtherCharacterBitmap = Bitmap.createBitmap(oriBloodOfOtherCharacter, 0, 0, oriBloodOfOtherCharacter.getWidth(), oriBloodOfOtherCharacter.getHeight(), matrix, true);
         }
     }
 
@@ -93,10 +93,10 @@ public class InjuryView extends View {
             alpha = (int) (255 * relateTime / bindingCharacter.nowRecoverTime);
         alphaPaint.setAlpha(alpha);
         if (bindingCharacter.isMyCharacter)
-            canvas.drawBitmap(bloodForMyCharacterBitmap, 0, 0, alphaPaint);
+            canvas.drawBitmap(bloodOfMyCharacterBitmap, 0, 0, alphaPaint);
         else {
-            canvas.rotate(attackFromAngle-45,viewSize/2,viewSize/2);
-            canvas.drawBitmap(bloodForOtherCharacterBitmap, 0, 0, alphaPaint);
+            canvas.rotate(attackFromAngle - 45, viewSize / 2, viewSize / 2);
+            canvas.drawBitmap(bloodOfOtherCharacterBitmap, 0, 0, alphaPaint);
         }
         invalidate();
     }

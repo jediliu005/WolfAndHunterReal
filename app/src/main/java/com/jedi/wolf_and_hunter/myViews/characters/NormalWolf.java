@@ -11,6 +11,7 @@ import android.util.AttributeSet;
 import com.jedi.wolf_and_hunter.R;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
 import com.jedi.wolf_and_hunter.myObj.gameObj.MyVirtualWindow;
+import com.jedi.wolf_and_hunter.utils.BitmapBox;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 
 import java.util.HashMap;
@@ -66,7 +67,7 @@ public class NormalWolf extends BaseCharacterView {
     @Override
     public void initBitmapAndMedia() {
         super.initBitmapAndMedia();
-        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.normal_wolf, option);
+        Bitmap bitmap = BitmapBox.getCharacterBitmap(getContext(),"oriNormalWolf");
         Matrix matrixForCP = new Matrix();
         matrixForCP.postScale((float) characterBodySize / bitmap.getWidth() * (float) 0.8, (float) characterBodySize / bitmap.getHeight() * (float) 0.8);
         characterPic = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrixForCP, true);

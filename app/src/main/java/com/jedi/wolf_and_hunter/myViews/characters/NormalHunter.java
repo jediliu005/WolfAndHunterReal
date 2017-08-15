@@ -16,6 +16,7 @@ import com.jedi.wolf_and_hunter.engine.GameMainEngine;
 import com.jedi.wolf_and_hunter.myObj.gameObj.MyVirtualWindow;
 import com.jedi.wolf_and_hunter.myViews.tempView.InjuryView;
 import com.jedi.wolf_and_hunter.myViews.tempView.Trajectory;
+import com.jedi.wolf_and_hunter.utils.BitmapBox;
 import com.jedi.wolf_and_hunter.utils.MyMathsUtils;
 
 import java.util.Date;
@@ -40,7 +41,7 @@ public class NormalHunter extends BaseCharacterView {
     public final static int defaultRunWaitTime = 300;
     public final static int defaultSpeed = 10;
     public final static int defaultAngleChangSpeed = 5;
-    public final static int defaultHealthPoint = 3;
+    public final static int defaultHealthPoint = 2;
     public final static int defaultKnockAwayStrength = 300;
     public final static int defaultRecoverTime = 15000;
 
@@ -79,7 +80,7 @@ public class NormalHunter extends BaseCharacterView {
     @Override
     public void initBitmapAndMedia() {
         super.initBitmapAndMedia();
-        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.normal_hunter, option);
+        Bitmap bitmap = BitmapBox.getCharacterBitmap(getContext(),"oriNormalHunter");
         Matrix matrixForCP = new Matrix();
         matrixForCP.postScale((float) characterBodySize / bitmap.getWidth() * (float) 0.8, (float) characterBodySize / bitmap.getHeight() * (float) 0.8);
         characterPic = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrixForCP, true);

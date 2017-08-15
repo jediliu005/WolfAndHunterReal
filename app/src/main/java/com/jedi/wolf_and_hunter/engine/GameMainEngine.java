@@ -282,9 +282,10 @@ public class GameMainEngine {
     private class GameMainTask extends TimerTask {
         @Override
         public void run() {
-            if(isStop||isPause)
-                backGroundMediaPlayer.pause();
+
             try {
+                if(isStop||isPause)
+                    backGroundMediaPlayer.pause();
                 if (backGroundMediaPlayer.isPlaying() == false) {
                     backGroundMediaPlayer.setLooping(true);
                     backGroundMediaPlayer.seekTo(0);
@@ -293,6 +294,7 @@ public class GameMainEngine {
 
             } catch (Exception e) {
                 e.printStackTrace();
+                backGroundMediaPlayer=MediaPlayer.create(gameBaseAreaActivity, R.raw.background);
             }
 //            if (backGroundMusicThread == null) {
 //                backGroundMusicThread = new Thread(new Runnable() {
@@ -635,7 +637,6 @@ public class GameMainEngine {
                                 offY = -offY;
                             double endX = offX + beAttackedCharacter.centerX;
                             double endY = offY + beAttackedCharacter.centerY;
-//        Point fromPoint = new Point(centerX, centerY);
                             Point toPoint = new Point((int) endX, (int) endY);
                             beAttackedCharacter.startKnockedAwayThread(toPoint);
                         }
@@ -713,9 +714,9 @@ public class GameMainEngine {
         if (myCharacter == null || (leftRocker == null && rightRocker == null) || mapBaseFrame == null||isPause||isStop)
             return;
 
-        if (gameInfo.beAttackedList.size() > 0)
+        if (gameInfo.beAttackedList.size() > 0) {
             dealNeedToBeKilled();
-
+        }
         //处理攻击导致的受伤或死亡
 
 
