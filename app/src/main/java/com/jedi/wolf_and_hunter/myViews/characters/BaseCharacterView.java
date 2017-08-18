@@ -1328,6 +1328,9 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         knockedAwayThread.start();
     }
 
+    /**
+     * 被击飞用到的线程，由于一些历史遗留原因，以后或将取消这样的实现方式
+     */
     public class KnockedAwayThread implements Runnable {
 
         public Point knockedAwayToPoint;
