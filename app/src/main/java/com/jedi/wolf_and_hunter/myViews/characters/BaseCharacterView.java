@@ -115,7 +115,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     private int teamID;
     public int id;
     public long lastInjureTime;
-    public int nowRecoverTime;
+    public int nowRecoverTime;//本角色恢复生命值需要等待的时间（ms）
     public volatile boolean isDead = false;
     public volatile boolean isKnockedAway = false;
     public long deadTime;
@@ -269,7 +269,9 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         init();
     }
 
-    //sight仅对玩家操控角色有意义，不在这里统一创建
+    /**
+     * 初始化
+     */
     private void init() {
         enemiesPositionSet = new Vector<CharacterPosition>();
         nowReloadingAttackCount = 0;
@@ -388,6 +390,9 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
     }
 
+    /**
+     * 更新画面内的贱血效果
+     */
     public void dealInjury() {
 
         if (injuryViews.size() == 0)
@@ -426,7 +431,9 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
     }
 
-
+    /**
+     * 开启移动音效
+     */
     public void startMovingMediaThread() {
         if (movingMediaThread != null) {
             if (movingMediaThread.getState() == Thread.State.TERMINATED)
@@ -513,6 +520,9 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         movingMediaThread.start();
     }
 
+    /**
+     * 重新计算当前角色确切位置
+     */
     public void updateNowPosition() {
         if (hasUpdatedPosition == true)
             return;
@@ -576,7 +586,9 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     public void initCharacterState() {
 
     }
-
+    /**
+     * 计算该帧猎人普通运动位置所用的方法
+     */
     public void reactHunterMove() {
         if (isStay)
             return;
@@ -666,6 +678,9 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
     }
 
+    /**
+     * 计算该帧狼普通运动位置所用的方法
+     */
     public void reactWolfMove() {
         isSmelling = false;
         int nowOffX = offX;
@@ -739,7 +754,10 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         }
     }
 
-
+    /**
+     * 留给联机功能用的方法，现在没第二台测试机，于是呵呵了
+     * @param playerInfo
+     */
     public void reactOtherOnlinePlayerWolfMove(PlayerInfo playerInfo) {
         int nowOffX = offX;
         int nowOffY = offY;
@@ -912,19 +930,19 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         }
 
     }
-
-    public void changeRotate() {
-        int relateX = sight.centerX - this.centerX;
-        int relateY = sight.centerY - this.centerY;
-
-
-        try {
-            nowFacingAngle = MyMathsUtils.getAngleBetweenXAxus(relateX, relateY);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-    }
+//
+//    public void changeRotate() {
+//        int relateX = sight.centerX - this.centerX;
+//        int relateY = sight.centerY - this.centerY;
+//
+//
+//        try {
+//            nowFacingAngle = MyMathsUtils.getAngleBetweenXAxus(relateX, relateY);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//
+//    }
 
 
     @Override
@@ -975,7 +993,13 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 //        return true;
 //    }
 
-
+    /**
+     * 判断对方是否在本角色视觉范围内，为什么viewRadius要独立作为参数而不直接调用nowViewRadius？
+     * 因为还有个nowForceViewRadius
+     * @param otherCharacter 目标角色
+     * @param viewRadius 视觉半径
+     * @return
+     */
     public boolean isInViewRange(BaseCharacterView otherCharacter, int viewRadius) {
         boolean returnResult = false;
 
@@ -1031,6 +1055,9 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         }
     }
 
+    /**
+     * 角色本身的绘制线程，这里是SurfaceVIew
+     */
     public class CharacterDraw implements Runnable {
 
 
@@ -1161,6 +1188,9 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         }
     }
 
+    /**
+     * 控制无敌时间
+     */
     public void updateInvincibleState() {
         if (isInvincible == true && new Date().getTime() - invincibleStartTime > invincibleLastTime) {
             isInvincible = false;
@@ -1169,9 +1199,12 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         }
     }
 
+    /**
+     * 处理死亡后各种数据的重置
+     */
     public void deadReset() {
         targetFacingAngle = -1;
-        lastInjureTime = -1;
+
         isReloadingAttack = false;
         isAttackting = false;
         nowReloadingAttackCount = 0;
@@ -1348,7 +1381,13 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         }
     }
 
-
+    /**
+     * 计算击飞轨迹用的方法，和下面的keepDirectionAndJump一样不美观，下次再改，再改，改。。。
+     * @param limitLeft
+     * @param limitTop
+     * @param limitRight
+     * @param limitBottom
+     */
     public void beKnockedAway(int limitLeft, int limitTop, int limitRight, int limitBottom) {
         if (isJumping == true) {
             isJumping = false;
@@ -1478,6 +1517,14 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
         }
     }
 
+    /**
+     * 暂时为狼扑咬攻击判定移动轨迹用，四个参数分别为四个墙边限制方位
+     * 我也知道这样写不漂亮，找个时间再改吧
+     * @param limitLeft
+     * @param limitTop
+     * @param limitRight
+     * @param limitBottom
+     */
     public void keepDirectionAndJump(int limitLeft, int limitTop, int limitRight, int limitBottom) {
         if (jumpToX == -99999 || jumpToY == -99999)
             return;
@@ -1604,6 +1651,7 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
 
     /**
+     * 攻击方向自动朝向目标
      * 这方法也是myCharacter专用
      */
     public void dealLocking() {
@@ -1667,6 +1715,10 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
     }
 
 
+    /**
+     * 转换锁定模式并修改因锁定模式不同而影响的各项参数。参数由子类重写此方法实现
+     * @param isLocking
+     */
     public void switchLockingState(Boolean isLocking) {
         this.isLocking = isLocking;
     }
@@ -1742,10 +1794,14 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
 
     }
 
+    /**
+     * 恢复攻击次数（上弹）
+     * 子类负责实现恢复逻辑，这里主要处理声音
+     */
     public void reloadAttackCount() {
         if (reloadAttackCountThread != null && reloadAttackCountThread.getState() != Thread.State.TERMINATED)
             return;
-        final BaseCharacterView thisCharacter = this;
+
         try {
             if (reloadMediaPlayer != null) {
                 reloadMediaPlayer.seekTo(0);
@@ -1777,14 +1833,18 @@ public class BaseCharacterView extends SurfaceView implements SurfaceHolder.Call
                 }
             }
         } catch (Exception e) {
-            if (thisCharacter instanceof NormalHunter) {
+            if (this instanceof NormalHunter) {
                 reloadMediaPlayer = MediaPlayer.create(getContext(), R.raw.reload_bollet);
             }
+        }finally {
+            reloadMediaPlayer.start();
         }
-        reloadMediaPlayer.start();
+
     }
 
-
+    /**
+     * 嗅觉探测，搜索该时间点敌人大概位置
+     */
     public synchronized void smell() {
         if (smellThread != null) {
             return;

@@ -659,7 +659,6 @@ public class GameMainEngine {
 
                         beAttackedCharacter.injuryViews.add(injuryView);
 
-                        beAttackedCharacter.lastInjureTime = new Date().getTime();
 
                     }
                 }

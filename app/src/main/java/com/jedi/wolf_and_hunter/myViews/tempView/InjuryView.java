@@ -83,7 +83,7 @@ public class InjuryView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        if (bindingCharacter == null || bindingCharacter.lastInjureTime < 0)
+        if (bindingCharacter == null )
             return;
         long nowTime = new Date().getTime();
         long passTime = nowTime - createTime;
