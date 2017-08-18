@@ -197,7 +197,7 @@ public class GameMainEngine {
                     trajectory.addTime = new Date().getTime();
                     gameInfo.allTrajectories.add(trajectory);
                     trajectory.addTrajectory(mapBaseFrame);
-                    break;
+                    return;
                 case REMOVE_TRAJECTORY:
                     long nowTime = new Date().getTime();
                     ArrayList<Trajectory> removeTrajectories = new ArrayList<Trajectory>();
@@ -209,7 +209,7 @@ public class GameMainEngine {
                             t.parent.removeView(t);
                         }
                     }
-                    break;
+                    return;
                 default:
                     int team1KillCount = 0;
                     int team2KillCount = 0;
@@ -375,13 +375,6 @@ public class GameMainEngine {
 //        gameInfo.mySight.sightSize = myCharacter.characterBodySize;
 //        if (gameInfo.controlMode == GameInfo.CONTROL_MODE_NORMAL)
 //            gameInfo.mySight.isHidden = true;
-//
-//        myCharacter.setSight(gameInfo.mySight);
-//        if (gameInfo.mySight.isHidden == false) {
-//            mapBaseFrame.addView(gameInfo.mySight);
-//            mapBaseFrame.mySight = gameInfo.mySight;
-//        }
-
 
         atttackButton = (AttackButton) gameBaseAreaActivity.findViewById(R.id.attack_button_right);
         int buttonSize = atttackButton.buttonSize;

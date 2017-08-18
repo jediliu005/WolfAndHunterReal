@@ -19,6 +19,7 @@ import com.jedi.wolf_and_hunter.R;
 import com.jedi.wolf_and_hunter.activities.GameBaseAreaActivity;
 import com.jedi.wolf_and_hunter.myObj.gameObj.MyVirtualWindow;
 import com.jedi.wolf_and_hunter.myViews.characters.BaseCharacterView;
+import com.jedi.wolf_and_hunter.utils.BitmapBox;
 
 import java.util.Date;
 
@@ -61,9 +62,9 @@ public class AttackButton extends View {
     public void reCreateBitmap() {
         if (GameBaseAreaActivity.myCharacter != null) {
             if (GameBaseAreaActivity.myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_HUNTER) {
-                attackBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.fire);
+                attackBitmap = BitmapBox.getOtherBitmap(getContext(),"hunterFire");
             } else if (GameBaseAreaActivity.myCharacter.characterType == BaseCharacterView.CHARACTER_TYPE_WOLF) {
-                attackBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.wolf_attack);
+                attackBitmap = BitmapBox.getOtherBitmap(getContext(),"wolfAttack");
             }
             Matrix matrix = new Matrix();
             matrix.postScale((float) (buttonSize * 0.8) / attackBitmap.getWidth(), (float) (buttonSize * 0.8) / attackBitmap.getHeight());

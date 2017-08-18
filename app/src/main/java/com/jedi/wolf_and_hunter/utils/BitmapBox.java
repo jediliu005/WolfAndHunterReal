@@ -53,6 +53,12 @@ public class BitmapBox {
 
             Bitmap bloodOfOtherCharacterBitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.blood2, option);
             otherBitmaps.put("oriBloodOfOtherCharacter",bloodOfOtherCharacterBitmap);
+
+            Bitmap hunterFireBitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.fire);
+            otherBitmaps.put("hunterFire",hunterFireBitmap);
+
+            Bitmap wolfAttackBitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.wolf_attack);
+            otherBitmaps.put("wolfAttack",wolfAttackBitmap);
         }
     }
     public static Bitmap getLandformBitmap(Context context,String bitmapName){
